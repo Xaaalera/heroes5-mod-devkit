@@ -158,8 +158,11 @@ class ModDevelopmentTests(unittest.TestCase):
         }), encoding='utf-8')
 
     def test_external_source_checkout_builds_without_workspace_recipe_copy(self):
-        source = self.root / 'separate-checkout'
+        checkout = tempfile.TemporaryDirectory()
+        self.addCleanup(checkout.cleanup)
+        source = Path(checkout.name) / 'separate-checkout'
         source.mkdir()
+        self.assertFalse(source.resolve().is_relative_to(self.root.resolve()))
         (source / 'mod.json').write_text(self.recipe.read_text(encoding='utf-8'), encoding='utf-8')
         self.recipe.unlink()
         workshop = mod_dev.Workshop(self.root, 'menu-marker', source=source)

@@ -73,7 +73,7 @@ Run commands from the devkit checkout with the Python environment active and bot
 
 ### Resource workflow
 
-The shared table defines prepare/build/deploy/status/launch/cycle/rollback. Add `--source <checkout-with-mod.json>` for an external recipe; its id must match --mod. Without it, use H5_WORKSPACE/mods/<id>. **Always pass `--sandbox` for tests**; omission targets the original installation. Existing sandboxes and foreign/externally modified packages are not overwritten or removed. Deployment checks game/editor processes, but cannot prevent a separate external launch between checking and writing. XML syntax checks do not validate every game reference.
+The shared table defines prepare/build/deploy/status/launch/cycle/rollback. Add `--source <checkout-with-mod.json>` to build/cycle for an external recipe; its id must match --mod. Without it, use H5_WORKSPACE/mods/<id>. Deploy uses the existing package; rebuild after recipe changes. **Always pass `--sandbox` for tests**; omission targets the original installation. Existing sandboxes and foreign/externally modified packages are not overwritten or removed. Deployment checks game/editor processes, but cannot prevent a separate external launch between checking and writing. XML syntax checks do not validate every game reference.
 
 ### Terminal workflow
 

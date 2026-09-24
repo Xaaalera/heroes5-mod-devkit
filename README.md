@@ -53,7 +53,7 @@ python -X utf8 scripts/mod-dev.py rollback --sandbox --mod menu-marker
 
 ```powershell
 python scripts/mod-dev.py build --sandbox --mod army-reference --source ../heroes5-bank-reference
-python scripts/mod-dev.py deploy --sandbox --mod army-reference --source ../heroes5-bank-reference
+python scripts/mod-dev.py deploy --sandbox --mod army-reference
 ```
 
 Путь указывает на папку с `mod.json`; её имя может отличаться от ID мода. Поле `id` должно совпадать с `--mod`. Выходные файлы и журнал остаются в H5_WORKSPACE. Рецепт окон может содержать свой `object_reference` каталог; старые рецепты с `reference_windows.catalog` продолжают читаться из workspace/mods.
@@ -116,7 +116,7 @@ Close the game/editor before `prepare --sandbox`. It makes separate file copies 
 
 ### Separate mod repositories
 
-Use `--source <checkout>` with build/deploy to read `mod.json` directly from an external mod checkout, as in the shared commands above. Folder name may differ from the mod ID; recipe `id` must match `--mod`. Outputs/state stay in H5_WORKSPACE. Window recipes may embed their own `object_reference` catalog; legacy `reference_windows.catalog` references still resolve through workspace/mods.
+Use `--source <checkout>` with build (or cycle) to read `mod.json` directly from an external mod checkout, as in the shared commands above. Folder name may differ from the mod ID; recipe `id` must match `--mod`. Outputs/state stay in H5_WORKSPACE. Rebuild after editing a recipe: deploy installs the existing H5U and does not reread mod.json. Window recipes may embed their own `object_reference` catalog; legacy `reference_windows.catalog` references still resolve through workspace/mods.
 
 ### Maps, workspace and control
 
