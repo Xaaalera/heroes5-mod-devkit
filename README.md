@@ -56,7 +56,7 @@ python scripts/mod-dev.py build --sandbox --mod army-reference --source ../heroe
 python scripts/mod-dev.py deploy --sandbox --mod army-reference
 ```
 
-Путь указывает на папку с `mod.json`; её имя может отличаться от ID мода. Поле `id` должно совпадать с `--mod`. Выходные файлы и журнал остаются в H5_WORKSPACE. Рецепт окон может содержать свой `object_reference` каталог; старые рецепты с `reference_windows.catalog` продолжают читаться из workspace/mods.
+Путь указывает на папку с `mod.json`; её имя может отличаться от ID мода. Поле `id` должно совпадать с `--mod`. Выходные файлы и журнал остаются в H5_WORKSPACE. После изменения рецепта сначала выполняй build: deploy устанавливает уже собранный H5U и не перечитывает mod.json. Рецепт окон может содержать свой `object_reference` каталог; старые рецепты с `reference_windows.catalog` продолжают читаться из workspace/mods.
 
 ### Карта и команды игры
 
