@@ -34,7 +34,7 @@ class WorkspaceTests(unittest.TestCase):
                                         cwd=root, env=environment, text=True, capture_output=True, check=True)
             report = json.loads(result.stdout)
             self.assertTrue(report['ok'])
-            self.assertEqual(Path(report['result']['artifact']), workspace / '.local/test-state/menu-marker.h5u')
+            self.assertEqual(Path(report['result']['artifact']).resolve(), (workspace / '.local/test-state/menu-marker.h5u').resolve())
             self.assertFalse(baseline.exists())
             self.assertFalse((root / '.local').exists())
 
