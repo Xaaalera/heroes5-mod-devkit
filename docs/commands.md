@@ -18,6 +18,8 @@
 | cycle | Build + deploy; запуск только с дополнительным `--launch` |
 | rollback | Удаляет собственную неизменённую установку |
 
+Для отдельного checkout добавь `--source <папка-с-mod.json>` к build/deploy/cycle; ID рецепта должен совпадать с `--mod`. Без этого параметра используется `H5_WORKSPACE/mods/<id>`.
+
 **Всегда указывай `--sandbox` для тестов.** Без него mod-dev работает с исходной установкой. Deploy/rollback блокируются при работающей игре или редакторе; внешний запуск между проверкой и записью полностью не исключён. XML-парсинг не доказывает корректности всех игровых ссылок.
 
 ### Командный канал
@@ -71,7 +73,7 @@ Run commands from the devkit checkout with the Python environment active and bot
 
 ### Resource workflow
 
-The shared table defines prepare/build/deploy/status/launch/cycle/rollback. **Always pass `--sandbox` for tests**; omission targets the original installation. Existing sandboxes and foreign/externally modified packages are not overwritten or removed. Deployment checks game/editor processes, but cannot prevent a separate external launch between checking and writing. XML syntax checks do not validate every game reference.
+The shared table defines prepare/build/deploy/status/launch/cycle/rollback. Add `--source <checkout-with-mod.json>` for an external recipe; its id must match --mod. Without it, use H5_WORKSPACE/mods/<id>. **Always pass `--sandbox` for tests**; omission targets the original installation. Existing sandboxes and foreign/externally modified packages are not overwritten or removed. Deployment checks game/editor processes, but cannot prevent a separate external launch between checking and writing. XML syntax checks do not validate every game reference.
 
 ### Terminal workflow
 

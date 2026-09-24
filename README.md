@@ -47,6 +47,17 @@ python -X utf8 scripts/mod-dev.py rollback --sandbox --mod menu-marker
 
 Откат удаляет только файл с сохранённым собственным хешем. Если установленный H5U изменён извне, удаление блокируется.
 
+### Мод в отдельном репозитории
+
+Чтобы не копировать исходники мода в рабочую папку, передай `--source` сборщику:
+
+```powershell
+python scripts/mod-dev.py build --sandbox --mod army-reference --source ../heroes5-bank-reference
+python scripts/mod-dev.py deploy --sandbox --mod army-reference --source ../heroes5-bank-reference
+```
+
+Путь указывает на папку с `mod.json`; её имя может отличаться от ID мода. Поле `id` должно совпадать с `--mod`. Выходные файлы и журнал остаются в H5_WORKSPACE. Рецепт окон может содержать свой `object_reference` каталог; старые рецепты с `reference_windows.catalog` продолжают читаться из workspace/mods.
+
 ### Карта и команды игры
 
 ```powershell
@@ -85,7 +96,7 @@ npm ci
 npm run check
 ```
 
-37 тестов проверяют архивы, владение H5U, XML, terrain, командный канал в x86-эмуляторе и размещение рабочей папки вне клона. Они не запускают игру. При выделении проверены сборка полигона из пустой рабочей папки и совместимость команд мастерской; отдельный живой запуск перенесённого комплекта ещё не выполнен. Исторические проверки до переноса описаны в [дневнике](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
+39 тестов проверяют архивы, владение H5U, XML, terrain, командный канал в x86-эмуляторе и размещение рабочей папки вне клона. Они не запускают игру. При выделении проверены сборка полигона из пустой рабочей папки и совместимость команд мастерской; отдельный живой запуск перенесённого комплекта ещё не выполнен. Исторические проверки до переноса описаны в [дневнике](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
 
 Перед push обязательно независимое ревью пяти линз и `npm run review:gate`; порядок — [CONTRIBUTING](CONTRIBUTING.md). Игра, архивы, профили и логи не коммитятся. Модули Python не загружаются из рабочей `.local/native-analysis`; зависимости устанавливаются в выбранную Python-среду. `requirements-dev.txt` добавляет Unicorn для проверок; рабочему командному каналу нужен Keystone из `requirements.txt`.
 
@@ -103,6 +114,10 @@ Run the shared PowerShell setup above in a new clone. Replace `../HeroesV-Univer
 
 Close the game/editor before `prepare --sandbox`. It makes separate file copies of the listed game directories, not hardlinks, so reserve enough disk space. Build/deploy/launch the marker using the shared commands. Verify `[DEV: menu-marker]` visually; successful deployment only proves the file was installed. Exit the game before rollback. Rollback refuses to delete a package modified outside the tool.
 
+### Separate mod repositories
+
+Use `--source <checkout>` with build/deploy to read `mod.json` directly from an external mod checkout, as in the shared commands above. Folder name may differ from the mod ID; recipe `id` must match `--mod`. Outputs/state stay in H5_WORKSPACE. Window recipes may embed their own `object_reference` catalog; legacy `reference_windows.catalog` references still resolve through workspace/mods.
+
 ### Maps, workspace and control
 
 The shared map commands create WorkshopPolygon and start its terminal mailbox. `status` checks the channel; `heroes` confirms the adventure context is ready. Loading may still be in progress immediately after launch. Do not repeat a timed-out attack blindly. See the bilingual [command reference](docs/commands.md).
@@ -115,6 +130,6 @@ Archive inspection produces local research files, not public Git artifacts. `obj
 
 ### Verification and contributions
 
-Run the shared requirements-dev/unittest/npm commands. The 37 tests cover archives, H5U ownership, XML, terrain, emulated x86 control and external-workspace paths without launching a game. Extraction checks also built a polygon in an empty workspace and exercised existing workshop commands. No separate live-game acceptance of this extracted distribution is claimed. Historical checks remain in the linked diary.
+Run the shared requirements-dev/unittest/npm commands. The 39 tests cover archives, H5U ownership, XML, terrain, emulated x86 control and external-workspace paths without launching a game. Extraction checks also built a polygon in an empty workspace and exercised existing workshop commands. No separate live-game acceptance of this extracted distribution is claimed. Historical checks remain in the linked diary.
 
 Independent five-lens review and `npm run review:gate` are mandatory before push; see CONTRIBUTING. Never commit game archives, profiles or logs. Python modules are not loaded from workspace `.local/native-analysis`; install dependencies in the selected Python environment. Runtime control uses Keystone; development requirements add Unicorn for emulation.

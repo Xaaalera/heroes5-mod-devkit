@@ -100,13 +100,14 @@ def patch_xml(original, source_path, patch):
 
 
 class Workshop:
-    def __init__(self, root, mod, sandbox=False):
+    def __init__(self, root, mod, sandbox=False, source=None):
         if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', mod):
             raise ValueError('Mod ID must contain lowercase letters, digits and single hyphens.')
         self.root = root.resolve()
         self.baseline = game_installation(self.root)
         self.game = confined(self.root, '.local/test-game') if sandbox else self.baseline
-        self.source = confined(self.root, 'mods/' + mod)
+        self.mod = mod
+        self.source = Path(source).expanduser().resolve() if source is not None else confined(self.root, 'mods/' + mod)
         self.local = confined(self.root, '.local/test-state' if sandbox else '.local')
         self.local.mkdir(parents=True, exist_ok=True)
         self.artifact = confined(self.local, mod + '.h5u')
@@ -145,8 +146,8 @@ class Workshop:
 
     def build(self):
         recipe = json.loads((self.source / 'mod.json').read_text(encoding='utf-8'))
-        if recipe['id'] != self.source.name:
-            raise ValueError('Recipe ID must match its folder.')
+        if recipe['id'] != self.mod:
+            raise ValueError('Recipe ID must match the selected mod ID.')
         archive_path = confined(self.game / 'data', recipe['source_archive'])
         resource = recipe['source_path']
         confined(self.source, resource)
@@ -163,7 +164,7 @@ class Workshop:
         resources = {} if 'object_reference' in recipe or 'reference_windows' in recipe else {resource: changed}
         templates = []
         if 'object_reference' in recipe or 'reference_windows' in recipe:
-            if 'reference_windows' in recipe:
+            if 'reference_windows' in recipe and 'object_reference' not in recipe:
                 catalog_path = confined(self.root / 'mods', recipe['reference_windows']['catalog'] + '/mod.json')
                 catalog_config = json.loads(catalog_path.read_text(encoding='utf-8'))['object_reference']
             else:
@@ -339,13 +340,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['prepare', 'build', 'deploy', 'launch', 'rollback', 'status', 'cycle'])
     parser.add_argument('--mod', default='menu-marker')
+    parser.add_argument('--source', type=Path, help='Read a mod recipe from this separate source checkout.')
     parser.add_argument('--sandbox', action='store_true', help='Use the separate local test installation.')
     parser.add_argument('--launch', action='store_true', help='Launch the game after cycle deployment.')
     parser.add_argument('--menu', action='store_true', help='Skip automatic map startup in the sandbox.')
     parser.add_argument('--map', help='Experimental -advmap launch; sandbox map filename.')
     args = parser.parse_args()
     started = time.perf_counter()
-    workshop = Workshop(ROOT, args.mod, args.sandbox)
+    workshop = Workshop(ROOT, args.mod, args.sandbox, args.source)
     with exclusive(confined(ROOT, '.local')):
         try:
             if args.command in {'prepare', 'deploy', 'rollback', 'launch', 'cycle'}:

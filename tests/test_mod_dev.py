@@ -6,6 +6,7 @@ acceptance tests; generated invariants and GUI automation are not configured her
 """
 import importlib.util
 import json
+from unittest.mock import patch
 import struct
 from pathlib import Path
 import tempfile
@@ -155,6 +156,33 @@ class ModDevelopmentTests(unittest.TestCase):
             'id': 'menu-marker', 'source_archive': 'Universe_mod.pak',
             'source_path': RESOURCE, 'append': ' [DEV]',
         }), encoding='utf-8')
+
+    def test_external_source_checkout_builds_without_workspace_recipe_copy(self):
+        source = self.root / 'separate-checkout'
+        source.mkdir()
+        (source / 'mod.json').write_text(self.recipe.read_text(encoding='utf-8'), encoding='utf-8')
+        self.recipe.unlink()
+        workshop = mod_dev.Workshop(self.root, 'menu-marker', source=source)
+        workshop.build()
+        with ZipFile(workshop.artifact) as archive:
+            self.assertEqual(archive.read(RESOURCE), self.original + ' [DEV]'.encode('utf-16-le'))
+        mismatched = json.loads((source / 'mod.json').read_text(encoding='utf-8'))
+        mismatched['id'] = 'different-mod'
+        (source / 'mod.json').write_text(json.dumps(mismatched), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'selected mod ID'):
+            workshop.build()
+
+    def test_reference_window_recipe_can_own_its_catalog(self):
+        recipe = json.loads(self.recipe.read_text(encoding='utf-8'))
+        recipe['reference_windows'] = {'labels': {}}
+        recipe['object_reference'] = {'archives': [], 'banks': {}}
+        self.recipe.write_text(json.dumps(recipe), encoding='utf-8')
+        with patch.object(mod_dev, 'compile_windows', return_value={'UI/Owned/reference.txt': b'owned'}) as compile_windows:
+            self.workshop.build()
+        self.assertEqual(compile_windows.call_args.args[2], recipe['object_reference'])
+        with ZipFile(self.workshop.artifact) as archive:
+            self.assertEqual(archive.namelist(), ['UI/Owned/reference.txt'])
+            self.assertEqual(archive.read('UI/Owned/reference.txt'), b'owned')
 
     def test_build_preserves_utf16_and_uses_a_later_zip_timestamp(self):
         # Exercise
