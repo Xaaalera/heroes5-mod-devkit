@@ -1,0 +1,93 @@
+{
+  "diffHash": "5ca685d78d12bf3453877a75ca91bc521118c91c0cdf6adb0a3f886cf296e8b1",
+  "commitSha": "b8e94039cd81f88b740ff9d1d0d860a55658f52f",
+  "perAgent": {
+    "craft": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "architecture": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "tests": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "security": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "docs": {
+      "score": 10,
+      "verdict": "PASS",
+      "findings": [],
+      "claims": [
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "docs",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "The bilingual agent sequence matches devkit dependencies and makes verification limits explicit."
+      },
+      "review": {
+        "reviewer": "/root/review_craft",
+        "files": [
+          "AGENTS.md",
+          "README.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "Read both changed Markdown files. AGENTS.md now gives coding agents a concrete work/verification sequence, and README points them to it in both languages. The instructions remain for the shared devkit, not a predictor or universal game SDK."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "AGENTS adds a six-step sequence before its standing RU and EN constraints; README adds one entry link near each language introduction. Steps progress from source reading and revision capture through dependency setup, isolated tests, bounded game actions and result reporting. Existing repository boundaries remain visible."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "The added commands are executable and match repository files: `git rev-parse HEAD`, `git status --short`, `python -m pip install -r requirements-dev.txt`, `python -c \"import keystone, unicorn\"`, `python -X utf8 -m unittest discover -s tests -v`, and npm ci/check for review-tool changes. The report format requires exit codes and passed/failed/skipped counts. It names 8.3 path aliases, H5_WORKSPACE/H5_GAME_DIR and the fixed rule against mutable-workspace Python imports."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "The dependency-import check comes before tests so missing Keystone/Unicorn cannot masquerade as a fully exercised suite through skips. README's link makes the sequence discoverable. No runtime code changed in this diff and no fresh game run is claimed. The previously reviewed devkit had 37 Python tests; this docs-only change does not claim to extend that coverage."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "The devkit files independently support the instruction: requirements-dev includes requirements.txt plus Unicorn, requirements.txt includes Keystone, workspace.py separates tool checkout/workspace/game, and prior import-path hardening removed .local/native-analysis sys.path insertions. Parent reports primary llmstxt.org/agents.md guidance consulted; I checked those sites' formats directly and found no claim that every coding client auto-loads this file. I did not scan a game/profile or run live input."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "AGENTS scopes tests to isolated checks without launching the game, requires pinned build and authorization for game scenarios, separates dispatched from completed, and warns that reading docs/deploy does not prove in-game outcome. It records root/workspace/game boundaries and avoids claiming full profile isolation or universal API support."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "RU and EN six-step sequences agree on reading order, revision/status capture, dependencies/tests, bounded game actions, resolved path comparisons, no mutable-workspace imports and final report fields. README's two links lead to the same bilingual AGENTS.md. No material divergence found."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "The new steps require agents to report exact revision, scope, commands, exit codes, pass/fail/skip and unverified parts; they complement existing independent review and pre-push rules without replacing them. review:info lists exactly AGENTS.md and README.md for this diff; no code or other Markdown was changed by the reviewer."
+          }
+        },
+        "findings": []
+      }
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-09-24T13:42:53.764Z"
+}
