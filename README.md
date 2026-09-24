@@ -83,9 +83,9 @@ npm ci
 npm run check
 ```
 
-34 теста проверяют архивы, владение H5U, XML, terrain, командный канал в x86-эмуляторе и размещение рабочей папки вне клона. Они не запускают игру. При выделении проверены сборка полигона из пустой рабочей папки и совместимость команд мастерской; отдельный живой запуск перенесённого комплекта ещё не выполнен. Исторические проверки до переноса описаны в [дневнике](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
+37 тестов проверяют архивы, владение H5U, XML, terrain, командный канал в x86-эмуляторе и размещение рабочей папки вне клона. Они не запускают игру. При выделении проверены сборка полигона из пустой рабочей папки и совместимость команд мастерской; отдельный живой запуск перенесённого комплекта ещё не выполнен. Исторические проверки до переноса описаны в [дневнике](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
 
-Перед push обязательно независимое ревью пяти линз и `npm run review:gate`; порядок — [CONTRIBUTING](CONTRIBUTING.md). Игра, архивы, профили и логи не коммитятся. `requirements-dev.txt` добавляет Unicorn для проверок; рабочему командному каналу нужен Keystone из `requirements.txt`.
+Перед push обязательно независимое ревью пяти линз и `npm run review:gate`; порядок — [CONTRIBUTING](CONTRIBUTING.md). Игра, архивы, профили и логи не коммитятся. Модули Python не загружаются из рабочей `.local/native-analysis`; зависимости устанавливаются в выбранную Python-среду. `requirements-dev.txt` добавляет Unicorn для проверок; рабочему командному каналу нужен Keystone из `requirements.txt`.
 
 ## EN
 
@@ -111,6 +111,6 @@ Archive inspection produces local research files, not public Git artifacts. `obj
 
 ### Verification and contributions
 
-Run the shared requirements-dev/unittest/npm commands. The 34 tests cover archives, H5U ownership, XML, terrain, emulated x86 control and external-workspace paths without launching a game. Extraction checks also built a polygon in an empty workspace and exercised existing workshop commands. No separate live-game acceptance of this extracted distribution is claimed. Historical checks remain in the linked diary.
+Run the shared requirements-dev/unittest/npm commands. The 37 tests cover archives, H5U ownership, XML, terrain, emulated x86 control and external-workspace paths without launching a game. Extraction checks also built a polygon in an empty workspace and exercised existing workshop commands. No separate live-game acceptance of this extracted distribution is claimed. Historical checks remain in the linked diary.
 
-Independent five-lens review and `npm run review:gate` are mandatory before push; see CONTRIBUTING. Never commit game archives, profiles or logs. Runtime control uses Keystone; development requirements add Unicorn for emulation.
+Independent five-lens review and `npm run review:gate` are mandatory before push; see CONTRIBUTING. Never commit game archives, profiles or logs. Python modules are not loaded from workspace `.local/native-analysis`; install dependencies in the selected Python environment. Runtime control uses Keystone; development requirements add Unicorn for emulation.

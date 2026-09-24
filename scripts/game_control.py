@@ -285,7 +285,6 @@ def hero_state(probe, name):
 
 
 def main():
-    sys.path.insert(0, str(ROOT / '.local/native-analysis'))
     specification = importlib.util.spec_from_file_location('control_probe', Path(__file__).resolve().with_name('native-probe.py'))
     probe = importlib.util.module_from_spec(specification)
     specification.loader.exec_module(probe)

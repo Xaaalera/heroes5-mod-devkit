@@ -238,7 +238,6 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
     entry, original = (LAYOUT_ENTRY, LAYOUT_ORIGINAL) if army_layout else (ENTRY, ORIGINAL)
     routes = []
     if army_layout:
-        sys.path.insert(0, str(ROOT / '.local/native-analysis'))
         import keystone  # Fail before starting a child if the assembler is unavailable.
         artifact = GAME / 'UserMODs/workshop-army-reference.h5u'
         deployment = json.loads((ROOT / '.local/test-state/army-reference.deployment.json').read_text())
@@ -327,7 +326,6 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
         temporary.write_text(json.dumps(state, indent=2), encoding='utf-8')
         temporary.replace(STATE)
         if control:
-            sys.path.insert(0, str(ROOT / '.local/native-analysis'))
             import game_control
             game_control.install(sys.modules[__name__], kernel, info.process, info.pid, observe=native_loader)
         if loader is not None:
