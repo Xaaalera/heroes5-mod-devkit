@@ -1,0 +1,93 @@
+{
+  "diffHash": "eea2f090484d661d4d3d411c68021d0dc32ad6715dced58816bad95685b2cbca",
+  "commitSha": "ff1baf72ad13c44986ebc1ecb3921c1051d24d5e",
+  "perAgent": {
+    "craft": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "architecture": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "tests": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "security": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "docs": {
+      "score": 10,
+      "verdict": "PASS",
+      "findings": [],
+      "claims": [
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "docs",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "External source builds and existing-package deploy semantics are accurately documented in both languages."
+      },
+      "review": {
+        "reviewer": "/root/review_craft",
+        "files": [
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "Read both changed Markdown paths. README introduces separate mod checkouts, and docs/commands places --source in the existing resource workflow. The feature's purpose—build H5U from a checkout while keeping outputs in H5_WORKSPACE—is clear."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "The new section sits after the first marker cycle and before map/control guidance, with one code example and an EN counterpart. docs/commands adds a concise CLI note near build/deploy/cycle. Existing sandbox and rollback guidance remains in place."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "Inspected Workshop.__init__, build and deploy: --source resolves an external folder, build reads its mod.json and requires recipe id == selected --mod, outputs/state still use H5_WORKSPACE, and embedded object_reference is preferred for a reference_windows recipe. The final external-source test uses a second TemporaryDirectory and asserts the source is outside H5_WORKSPACE. README/commands now say only build/cycle reads the external recipe; deploy installs the already built artifact and does not reread mod.json."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "The final example builds from an external checkout and deploys the owned H5U without a redundant --source flag. It tells readers to rebuild after any recipe edit. Parent reports 39 Python/8 Node tests passing; the new external-source test exercises a directory outside the workspace. No fresh game run or full bank-mod equivalence is claimed by this devkit doc change."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "Compared source and paired docs: self.source is selected from --source or legacy H5_WORKSPACE/mods/<id>; build() reads mod.json and validates selected ID; deploy() uses the saved artifact/build report and rechecks resource/template/binary hashes and target ownership. README/commands now state this accurately in both languages. I did not launch the game or inspect user files."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "The feature is optional and preserves the legacy workspace recipe fallback. README scopes it to a separate checkout, says source directory name need not equal mod ID, and keeps outputs/state in H5_WORKSPACE. Existing --sandbox, installed-game and no-live-acceptance limits remain. The wording finding affects deploy semantics, not the documented existence of separate source builds."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "RU and EN README/commands additions now agree on --source for build/cycle, matching recipe id, embedded catalog, legacy fallback, explicit rebuild after edits and deploy's use of an existing package; both give the 39-test count. No material translation divergence remains."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "The CLI addition is paired with README/commands and two new behavior tests, with the external source test strengthened to run outside H5_WORKSPACE. No mod-specific recipe was copied into the shared devkit. The documented output ownership remains under H5_WORKSPACE, and review:info lists exactly README.md and docs/commands.md for this final diff."
+          }
+        },
+        "findings": []
+      }
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-09-24T19:46:23.855Z"
+}
