@@ -6,6 +6,8 @@
 
 Игра, профили, логи и DLL предиктора не входят в репозиторий. Нативные адреса рассчитаны только на [зафиксированную сборку](https://xaaalera.github.io/heroes5-knowledge/reference/universe-build/); это не универсальный API плагинов.
 
+Для работы через кодинг-агента начни с [AGENTS.md](AGENTS.md): там порядок чтения, команды проверки и состав итогового отчёта.
+
 ### Быстрый старт
 
 Нужны Windows 10/11, Git, Python 3.10+ x64 и установленная игра с Universe. Для работы с исходниками самого devkit и review gate дополнительно нужен Node.js 22+. C++ Build Tools нужны конкретным нативным модам, но не сборщику H5U.
@@ -90,6 +92,8 @@ npm run check
 ## EN
 
 Windows tools for **Heroes V: Tribes of the East with Universe** mod development: H5U packaging, a separate test installation, a polygon generator and control of the tool's own test process. Game files, profiles, logs and the predictor DLL are not included. Native addresses support only the linked pinned build, not a universal plugin API.
+
+For coding-agent work, start with [AGENTS.md](AGENTS.md): reading order, verification commands and reporting requirements.
 
 ### Setup and first mod
 
