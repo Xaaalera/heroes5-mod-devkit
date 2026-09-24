@@ -1,0 +1,16 @@
+.local/
+.venv/
+.env
+.env.*
+research/
+node_modules/
+__pycache__/
+*.pyc
+*.h5u
+*.h5m
+*.pak
+*.dll
+*.exe
+/Heroes of Might and Magic 5 Tribes of the East/
+.review/work/
+/mods/

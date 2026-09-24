@@ -1,0 +1,17 @@
+{
+  "name": "heroes5-mod-devkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "python -X utf8 -m unittest discover -s tests -v",
+    "check": "node --test scripts/review-docs.test.mjs",
+    "prepare": "node scripts/install-hooks.mjs",
+    "review:info": "node scripts/review-check.mjs --info",
+    "review:gate": "node scripts/review-check.mjs",
+    "review:secrets": "review-gate --secrets-only",
+    "review:attest": "node scripts/review-check.mjs --attest"
+  },
+  "devDependencies": { "bladeforge-review-harness": "0.3.0" },
+  "engines": { "node": ">=22" }
+}

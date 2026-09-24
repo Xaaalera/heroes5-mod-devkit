@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+head=$(git rev-parse HEAD)
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) continue ;;
+  esac
+  if [ "$local_sha" != "$head" ]; then
+    echo "Review gate: check out the branch being pushed and review its HEAD first." >&2
+    exit 1
+  fi
+done
+exec npm run review:gate

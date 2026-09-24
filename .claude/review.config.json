@@ -1,0 +1,45 @@
+{
+  "persona": "plain",
+  "base": "95ef64835786f492edc41e944ede9685ad55b517",
+  "secretAllowlist": [],
+  "agents": [
+    {
+      "name": "craft",
+      "threshold": 7,
+      "skills": []
+    },
+    {
+      "name": "architecture",
+      "threshold": 8,
+      "skills": []
+    },
+    {
+      "name": "tests",
+      "threshold": 7,
+      "skills": []
+    },
+    {
+      "name": "docs",
+      "threshold": 8,
+      "skills": [],
+      "rules": [
+        "Read CONTRIBUTING.md mandatory standard and independent review protocol. Assess every Markdown path from review:info; return docs.review with all eight criteria, evidence and findings. Do not certify drafts or invent reviewer identity."
+      ]
+    },
+    {
+      "name": "security",
+      "threshold": 9,
+      "skills": []
+    }
+  ],
+  "gates": [
+    {
+      "name": "unit",
+      "command": "npm test"
+    },
+    {
+      "name": "review-contract",
+      "command": "npm run check"
+    }
+  ]
+}

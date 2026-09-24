@@ -1,0 +1,6 @@
+{
+  "id": "menu-marker",
+  "source_archive": "Universe_mod.pak",
+  "source_path": "UI/MainMenu2/Version.txt",
+  "append": " [DEV: menu-marker]"
+}
