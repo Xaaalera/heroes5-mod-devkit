@@ -133,3 +133,17 @@ Archive inspection produces local research files, not public Git artifacts. `obj
 Run the shared requirements-dev/unittest/npm commands. The 39 tests cover archives, H5U ownership, XML, terrain, emulated x86 control and external-workspace paths without launching a game. Extraction checks also built a polygon in an empty workspace and exercised existing workshop commands. No separate live-game acceptance of this extracted distribution is claimed. Historical checks remain in the linked diary.
 
 Independent five-lens review and `npm run review:gate` are mandatory before push; see CONTRIBUTING. Never commit game archives, profiles or logs. Python modules are not loaded from workspace `.local/native-analysis`; install dependencies in the selected Python environment. Runtime control uses Keystone; development requirements add Unicorn for emulation.
+
+### Нативный запуск для игроков / Native player launch
+
+`native/player_launch.hpp` — общий Windows C++ код для загрузчиков модов: поиск соседнего `bin/H5_Game.exe` или файловый диалог, SHA-256 четырёх бинарников и проверка запущенной игры/редактора. Он не запускает игру, не ставит моды и не меняет игровые файлы сам. Python для собранного загрузчика не нужен. Правила патча и ресурсная установка принадлежат конкретному моду.
+
+`native/player_launch.hpp` provides shared Windows C++ launcher support: discover adjacent `bin/H5_Game.exe` or show a file picker, verify four pinned binary hashes and check for running game/editor processes. It does not launch, install or patch anything by itself. Compiled consumers need no Python. Mod-specific code owns patches and resource installation.
+
+Проверка / Check (Windows, CMake 3.21+, Visual Studio 2022 C++ x86 tools):
+
+```sh
+npm run check:native
+```
+
+Это отдельный тест границ: известный SHA-256, отсутствующий файл, неверное имя/сборка, отсутствие записи при проверке. Диалог и игра не открываются; это не проверка интерфейса или игрового запуска. / Boundary checks cover a known SHA-256, missing files, wrong executable/build and read-only validation. No dialog or game opens; this does not validate interactive UI or gameplay.

@@ -10,8 +10,13 @@
     "review:info": "node scripts/review-check.mjs --info",
     "review:gate": "node scripts/review-check.mjs",
     "review:secrets": "review-gate --secrets-only",
-    "review:attest": "node scripts/review-check.mjs --attest"
+    "review:attest": "node scripts/review-check.mjs --attest",
+    "check:native": "cmake -S native -B .local/native-check -A Win32 && cmake --build .local/native-check --config Release && ctest --test-dir .local/native-check -C Release --output-on-failure"
   },
-  "devDependencies": { "bladeforge-review-harness": "0.3.0" },
-  "engines": { "node": ">=22" }
+  "devDependencies": {
+    "bladeforge-review-harness": "0.3.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

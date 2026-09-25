@@ -1,6 +1,6 @@
 {
   "persona": "plain",
-  "base": "8b6a5e54826b8ca27eadc83e417559591c0dc39e",
+  "base": "1b8934ac084491da460ce8bb145819e41e2cf888",
   "secretAllowlist": [],
   "agents": [
     {
@@ -40,6 +40,10 @@
     {
       "name": "review-contract",
       "command": "npm run check"
+    },
+    {
+      "name": "native-launch",
+      "command": "npm run check:native"
     }
   ]
 }
