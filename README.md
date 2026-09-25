@@ -2,9 +2,9 @@
 
 ## Delivery correction / Поправка к поставке — 2026-09-25
 
-RU: отдельные EXE-загрузчики отклонены владельцем. Пользователь запускает игру через Heroes/Lobby как раньше; моды должны подключаться автоматически через DLL. Текущий прототип использует новый bin/dinput8.dll и bin/Heroes5Mods/*.dll, для справочника также нужен его H5U. Штатные бинарники Universe не заменяются. Обычный запуск до меню и автоматическое подключение двух DLL с показом проекций проверены; новая поставка ещё не выпущена. Приведённые ниже команды со старым EXE — диагностика/история разработки, не инструкция игроку.
+RU: отдельные EXE-загрузчики отклонены владельцем. Пользователь запускает игру через Heroes/Lobby как раньше; моды должны подключаться автоматически через DLL. Текущий прототип использует новый bin/dinput8.dll и bin/Heroes5Mods/*.dll, для справочника также нужен его H5U. Штатные бинарники Universe не заменяются. Обычный запуск до меню и автоматическое подключение двух DLL с показом проекций проверены; актуальные выпуски и ограничения указаны в репозиториях модов. Приведённые ниже команды со старым EXE — диагностика/история разработки, не инструкция игроку.
 
-EN: separate player launcher EXEs were rejected. Players keep ordinary Heroes/Lobby startup with automatic DLL loading. The current prototype uses a new bin/dinput8.dll plus bin/Heroes5Mods/*.dll; bank reference also needs its H5U. Original Universe binaries are not replaced. Ordinary startup to the menu and both DLLs loading with visible projections were checked; the new package is not released yet. Old EXE commands below are developer diagnostics/history, not player installation.
+EN: separate player launcher EXEs were rejected. Players keep ordinary Heroes/Lobby startup with automatic DLL loading. The current prototype uses a new bin/dinput8.dll plus bin/Heroes5Mods/*.dll; bank reference also needs its H5U. Original Universe binaries are not replaced. Ordinary startup to the menu and both DLLs loading with visible projections were checked; current releases and limits are listed in the mod repositories. Old EXE commands below are developer diagnostics/history, not player installation.
 
 
 ## RU
