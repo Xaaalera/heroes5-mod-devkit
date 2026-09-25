@@ -1,0 +1,93 @@
+{
+  "diffHash": "dac9507b20d529e761fb900882f5cd858c078883f198a179ad3a676fc1ae477a",
+  "commitSha": "0609016d98fd1b5467692c30be5ea191c3495050",
+  "perAgent": {
+    "craft": {
+      "verdict": "PASS",
+      "score": 10
+    },
+    "docs": {
+      "score": 10,
+      "verdict": "PASS",
+      "findings": [],
+      "claims": [
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "docs",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "The devkit delivery notes now point to published mod releases without changing runtime instructions."
+      },
+      "review": {
+        "reviewer": "/root/review_craft",
+        "files": [
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "Read README.md and docs/commands.md, the only changed Markdown paths. Their dated delivery notes now direct readers to current mod releases and limits rather than asserting that the DLL packages are unreleased. They retain the owner-required ordinary Heroes/Lobby startup and old EXE commands as developer diagnostics/history."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "Both files change only the matched RU and EN status sentences in their existing delivery-correction blocks. No command, setup step or separate history entry is moved. The mod repositories remain the canonical locations for actual release assets and detailed installation limits."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "README and commands identify current releases in the mod repositories without inventing an SDK download URL or suggesting a separate player EXE. Public GitHub tag pages now show predictor and bank preview.2 DLL-only releases; the wiki gives direct ZIP links and package hashes. The shared devkit remains development tooling, while dinput8 DLL behavior and pinned build checks remain documented unchanged."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "The change is documentation-only. Parent reports both public direct assets downloaded unauthenticated with matching bytes and the wiki build/check passed. The prior devkit 39 Python/8 Node/2 native checks and live startup evidence are unaffected by these sentences; I did not rerun a game or SDK suite for this bounded status edit."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "The old 'not released yet' status would now be stale: GitHub's primary release pages identify v0.1.0-preview.2 for both mod repos. The new wording defers package-specific version/limits to those repos instead of duplicating hashes in devkit. No runtime or native source changed in this diff."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "The corrected text remains scoped to the pinned Universe DLL prototype and ordinary Heroes/Lobby launch; it does not imply universal plugin support, player installation through devkit Python commands, or full game coverage. It says the lower EXE commands remain developer diagnostics/history."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "RU and EN README/commands substitutions agree that current releases and limitations live in the mod repos, while ordinary startup and old diagnostic commands retain their existing roles. No material bilingual mismatch found."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "The status correction removes time-sensitive unreleased claims after publication while keeping the devkit documentation free of duplicated per-mod asset hashes. review:info lists exactly README.md and docs/commands.md for this diff; both are reviewed and no source file was edited by this reviewer."
+          }
+        },
+        "findings": []
+      }
+    },
+    "security": {
+      "verdict": "PASS",
+      "score": 10
+    },
+    "tests": {
+      "verdict": "PASS",
+      "score": 10
+    },
+    "architecture": {
+      "verdict": "PASS",
+      "score": 10
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-09-25T11:13:15.196Z"
+}
