@@ -1,7 +1,9 @@
 #include "player_launch.hpp"
 #include <iostream>
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 
-int main() {
+int wmain(int count, wchar_t* arguments[]) {
     std::filesystem::path directory;
     try {
         std::array<wchar_t, MAX_PATH> temporary{};
@@ -36,6 +38,21 @@ int main() {
         std::filesystem::remove(executable);
         std::filesystem::remove(sample);
         std::filesystem::remove(directory);
+        if (count == 2) {
+            const auto library = LoadLibraryW(arguments[1]);
+            if (!library) { throw std::runtime_error("Cannot load the input forwarder."); }
+            using CreateInput = HRESULT (WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
+            const auto createInput = reinterpret_cast<CreateInput>(GetProcAddress(library, "DirectInput8Create"));
+            const auto state = reinterpret_cast<const LONG*>(GetProcAddress(library, "Heroes5ModsStatus"));
+            IDirectInput8W* input = nullptr;
+            if (!createInput || !state || FAILED(createInput(GetModuleHandleW(nullptr), DIRECTINPUT_VERSION,
+                IID_IDirectInput8W, reinterpret_cast<void**>(&input), nullptr)) || !input) {
+                throw std::runtime_error("Forwarded DirectInput factory failed.");
+            }
+            input->Release();
+            if (*state != 0) { throw std::runtime_error("Mods initialized inside a non-game test host."); }
+            FreeLibrary(library);
+        }
         std::cout << "Native launch boundaries passed; no game or dialogs opened.\n";
         return 0;
     } catch (const std::exception& error) {

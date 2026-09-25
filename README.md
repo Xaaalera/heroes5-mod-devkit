@@ -1,5 +1,12 @@
 # Heroes V Mod Devkit
 
+## Delivery correction / Поправка к поставке — 2026-09-25
+
+RU: отдельные EXE-загрузчики отклонены владельцем. Пользователь запускает игру через Heroes/Lobby как раньше; моды должны подключаться автоматически через DLL. Текущий прототип использует новый bin/dinput8.dll и bin/Heroes5Mods/*.dll, для справочника также нужен его H5U. Штатные бинарники Universe не заменяются. Обычный запуск до меню и автоматическое подключение двух DLL с показом проекций проверены; новая поставка ещё не выпущена. Приведённые ниже команды со старым EXE — диагностика/история разработки, не инструкция игроку.
+
+EN: separate player launcher EXEs were rejected. Players keep ordinary Heroes/Lobby startup with automatic DLL loading. The current prototype uses a new bin/dinput8.dll plus bin/Heroes5Mods/*.dll; bank reference also needs its H5U. Original Universe binaries are not replaced. Ordinary startup to the menu and both DLLs loading with visible projections were checked; the new package is not released yet. Old EXE commands below are developer diagnostics/history, not player installation.
+
+
 ## RU
 
 Инструменты Windows для разработки и проверки модов **Heroes V: Повелители Орды с Universe**. Это выделенный из рабочей мастерской стенд: сборка H5U, отдельная тестовая установка, генератор полигона и команды управления собственным тестовым процессом.
@@ -147,3 +154,17 @@ npm run check:native
 ```
 
 Это отдельный тест границ: известный SHA-256, отсутствующий файл, неверное имя/сборка, отсутствие записи при проверке. Диалог и игра не открываются; это не проверка интерфейса или игрового запуска. / Boundary checks cover a known SHA-256, missing files, wrong executable/build and read-only validation. No dialog or game opens; this does not validate interactive UI or gameplay.
+
+### Автоматическое подключение DLL / Automatic DLL loading
+
+`native/mod_loader.cpp` собирается в `dinput8.dll` для `bin` поддерживаемой игры. Обычный EXE уже импортирует DirectInput8Create: библиотека передаёт вызов системной DLL по полному системному пути, а на первом вызове проверяет сборку и подключает известные DLL из `bin/Heroes5Mods`. Работа не выполняется в DllMain. Модам доступны точки WorkshopDeploymentPreviewInstall и WorkshopBankReferenceInstall; отсутствие необязательной DLL допустимо. Не заменяются оригинальные EXE, d3d9.dll, uni.dll и um.dll.
+
+Ошибка инициализации завершает запуск после сообщения с кодом1114: работа с частично подключёнными модами не продолжается. Сообщение показывается после завершения InitOnce; повторный вход DirectInput во время диалога возвращает E_FAIL. Проверено на поддерживаемой игре с двумя DLL и временно отсутствующим H5U справочника (ресурс затем восстановлен). Проверка хешей игры не является проверкой подлинности DLL модов.
+
+The source builds a bin/dinput8.dll bootstrap for the supported game. The normal EXE already imports DirectInput8Create. Forwarding uses the absolute Windows system library; first-call initialization validates the build and loads the two known DLLs under bin/Heroes5Mods, never from DllMain. Entry points are WorkshopDeploymentPreviewInstall and WorkshopBankReferenceInstall; an absent optional DLL is allowed. Original game EXE/DLL files are not replaced.
+
+A module initialization failure reports the error and exits startup with code1114 instead of continuing partly modded. Reporting occurs after InitOnce completes; reentrant input calls return E_FAIL during the dialog. The missing-bank-H5U case was tested with both DLLs installed, then the resource restored. Game hashes establish compatibility, not plugin authenticity.
+
+`npm run check:native` выполняет две CTest-проверки: границы файловой проверки и настоящую фабрику DirectInput через переходник в неигровом процессе. / Runs two CTest checks: file-validation boundaries and the real forwarded DirectInput factory in a non-game process. No input device or game is opened by these unit checks.
+
+Microsoft: [DirectInput8Create](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ee416756(v=vs.85)) · [DllMain limits](https://learn.microsoft.com/en-us/windows/win32/dlls/dllmain) · [DLL search security](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-security).

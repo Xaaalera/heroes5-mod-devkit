@@ -1,5 +1,12 @@
 # Команды стенда / Test environment commands
 
+## Delivery correction / Поправка к поставке — 2026-09-25
+
+RU: отдельные EXE-загрузчики отклонены владельцем. Пользователь запускает игру через Heroes/Lobby как раньше; моды должны подключаться автоматически через DLL. Текущий прототип использует новый bin/dinput8.dll и bin/Heroes5Mods/*.dll, для справочника также нужен его H5U. Штатные бинарники Universe не заменяются. Обычный запуск до меню и автоматическое подключение двух DLL с показом проекций проверены; новая поставка ещё не выпущена. Приведённые ниже команды со старым EXE — диагностика/история разработки, не инструкция игроку.
+
+EN: separate player launcher EXEs were rejected. Players keep ordinary Heroes/Lobby startup with automatic DLL loading. The current prototype uses a new bin/dinput8.dll plus bin/Heroes5Mods/*.dll; bank reference also needs its H5U. Original Universe binaries are not replaced. Ordinary startup to the menu and both DLLs loading with visible projections were checked; the new package is not released yet. Old EXE commands below are developer diagnostics/history, not player installation.
+
+
 ## RU
 
 Команды выполняются из клона devkit в активной Python-среде. `H5_WORKSPACE` и `H5_GAME_DIR` задаются по [README](../README.md). Управление игрой возможно только после собственного запуска с `--control`; найденный посторонний PID не становится разрешённой целью.
@@ -48,7 +55,7 @@
 
 `completed` означает полученный/проверенный результат; `dispatched` — лишь отправку. Контекст приключений может не отвечать в бою. Успех процесса launch не равен готовности карты. Не отправляй действие повторно, пока не выяснено состояние предыдущего запроса.
 
-`deployment-observation` относится к наблюдателю конкретного native-loader сценария. Он не нужен для сборки H5U и не превращает готовые скрытые позиции в допустимый вход прогноза. Опции level/event и прочие параметры перечисляет `python scripts/game_control.py --help`.
+Для обычного запуска с DLL-модами используй `native-probe.py launch --map WorkshopPolygon --control --observe-deployment`. `deployment-observation` относится к включённому так наблюдателю; прежний диагностический `--native-loader` также включает его. Он не нужен для сборки H5U и не превращает готовые скрытые позиции в допустимый вход прогноза. Опции level/event и прочие параметры перечисляет `python scripts/game_control.py --help`.
 
 ### Изображение и закрытие
 
@@ -79,7 +86,7 @@ The shared table defines prepare/build/deploy/status/launch/cycle/rollback. Add 
 
 The shared command table gives the exact CLI. `heroes` returns Lua identifiers, unlike editor object names. `completed` is a checked result; `dispatched` is only dispatch. Adventure queries can time out during combat, and process startup does not establish map readiness. Investigate a pending command rather than repeating attacks. `finish --winner 0` is a test shortcut, not normal reward simulation. `objects` is an offline generator report.
 
-`deployment-observation` needs its particular native-loader observer setup, not ordinary H5U development. Recorded hidden outcomes must not become prediction inputs. Consult `--help` for level/event and remaining options.
+For normal startup with DLL mods use `native-probe.py launch --map WorkshopPolygon --control --observe-deployment`. `deployment-observation` requires that observer setup; the legacy diagnostic --native-loader also enables it. It is not ordinary H5U development. Recorded hidden outcomes must not become prediction inputs. Consult `--help` for level/event and remaining options.
 
 ### Capture, input and shutdown
 

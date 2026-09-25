@@ -225,7 +225,9 @@ def creation_time(kernel, process):
     return (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
 
 
-def launch(kernel, army_layout=False, map_name=None, control=False, native_loader=False):
+def launch(kernel, army_layout=False, map_name=None, control=False, native_loader=False, observe_deployment=False):
+    if observe_deployment and not control:
+        raise ValueError('Deployment observation requires --control.')
     running = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq H5_Game.exe', '/FO', 'CSV', '/NH'],
                              check=True, capture_output=True)
     if b'h5_game.exe' in running.stdout.lower():
@@ -327,7 +329,8 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
         temporary.replace(STATE)
         if control:
             import game_control
-            game_control.install(sys.modules[__name__], kernel, info.process, info.pid, observe=native_loader)
+            game_control.install(sys.modules[__name__], kernel, info.process, info.pid,
+                                 observe=native_loader or observe_deployment)
         if loader is not None:
             resumed = True
             output, errors = loader.communicate('resume\n', timeout=60)
@@ -386,9 +389,12 @@ if __name__ == '__main__':
     parser.add_argument('--map', help='Start a sandbox map through the final startup command.')
     parser.add_argument('--control', action='store_true', help='Install the terminal command mailbox.')
     parser.add_argument('--native-loader', action='store_true', help='Start through the packaged native launcher.')
+    parser.add_argument('--observe-deployment', action='store_true',
+                        help='Add the after-Start observer to --control without a separate launcher.')
     arguments = parser.parse_args()
     try:
-        result = (launch(api(), arguments.army_layout, None if arguments.menu else arguments.map, arguments.control, arguments.native_loader)
+        result = (launch(api(), arguments.army_layout, None if arguments.menu else arguments.map,
+                         arguments.control, arguments.native_loader, arguments.observe_deployment)
                   if arguments.command == 'launch' else status(api()))
         print(json.dumps(result, indent=2))
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
