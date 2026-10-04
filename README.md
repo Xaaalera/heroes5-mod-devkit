@@ -1,5 +1,18 @@
 # Heroes V Mod Devkit
 
+
+## Author and related projects / Автор и связанные проекты
+
+Автор / Author: [Xaaalera](https://github.com/Xaaalera) · [email](mailto:dampirsimpl@gmail.com) · [личный Telegram / personal Telegram](https://t.me/Victima).
+
+- [Deployment Preview / Предиктор](https://github.com/Xaaalera/heroes5-deployment-preview).
+- [Bank Reference / Справочник армий](https://github.com/Xaaalera/heroes5-bank-reference).
+- [Mod Devkit / Девкит](https://github.com/Xaaalera/heroes5-mod-devkit): shared development and test tools for both DLL mods.
+- [Knowledge source / Исходники базы](https://github.com/Xaaalera/heroes5-knowledge) · [public knowledge / база знаний](https://xaaalera.github.io/heroes5-knowledge/).
+- [Heroes V Universe / Heroes Lobby](https://h5lobby.com/).
+
+RU: личные проекты автора; не официальные продукты Universe. EN: Personal projects by the author, not official Universe products.
+
 RU,2026-10-04: Python-стенд может повторно вызывать `game_control.main(argv)` в одном процессе: структурированный результат без повторного запуска интерпретатора, прежние guards проверяются каждый раз. / EN: reusable Python dispatch preserves ordinary CLI and ownership checks. [Contract](docs/commands.md).
 
 RU, 2026-10-03: `teleport` после подтверждения положения ведёт камеру за героем текущего игрока, сохраняя zoom/rotation; флаг ответа обозначает запрос, не визуальное доказательство. Перед командой вызывающий стенд проверяет destination и владельца. / EN: verified owned-hero teleport follows the camera without changing zoom/rotation; callers must validate destination/ownership. See [commands](docs/commands.md).
