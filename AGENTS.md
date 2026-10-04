@@ -1,6 +1,26 @@
 # Devkit agent instructions
 
+
+## Public projects / Публичные проекты
+
+- [Deployment Preview / Предиктор](https://github.com/Xaaalera/heroes5-deployment-preview): native placement projections.
+- [Bank Reference / Справочник армий](https://github.com/Xaaalera/heroes5-bank-reference): possible bank armies.
+- [Mod Devkit / Девкит](https://github.com/Xaaalera/heroes5-mod-devkit): shared tools used to build and test both DLL mods.
+- [Knowledge / База знаний](https://github.com/Xaaalera/heroes5-knowledge) · [public site / сайт](https://xaaalera.github.io/heroes5-knowledge/).
+- [Author / Автор — Xaaalera](https://github.com/Xaaalera).
+- [Heroes V Universe / Heroes Lobby](https://h5lobby.com/).
+
+RU: эти проекты принадлежат автору; база знаний и моды не являются официальными продуктами Universe. Общие факты и контакты обновлять во всех канонических репозиториях. EN: These are the author's projects, not official Universe products. Keep shared facts and contact links consistent across canonical repositories.
+
+## Owner priority — 2026-10-04 / Приоритет владельца
+
+- RU: текущая задача — ускорить цикл разработки через native hot reload. После фиксации накопленных изменений исследовать и реализовать подхват добавленных/изменённых C++ DLL-функций, exports и hooks в том же работающем процессе игры. Проверять безопасное отключение старых callbacks/hooks, регистрацию новых функций и передачу состояния; сохранять PID/creation/ownership guards. Измерять полный цикл и этапы в JSON по требованиям мастерской. Lua/config reload и перезапуск карты — дополнительные возможности, не основная приёмка.
+- EN: Current task is speeding development through native hot reload. After committing accumulated changes, investigate and implement added/changed DLL functions, exports and hooks in the same live game process. Verify old callback/hook teardown, new registration and state transfer; retain PID/creation/ownership guards. Measure complete cycles and phases in JSON. Lua/config reload and map restart are secondary capabilities, not primary acceptance.
+- RU: один корневой SDK и ссылки потребителей; предиктор временно на паузе. Владелец сам остановил предыдущий прогон, повторять его сейчас не нужно. / EN: One top-level SDK and linked consumers; predictor work is paused. The owner stopped the previous campaign; do not restart it now.
+
 ## RU
+
+- В связанной мастерской использовать один корневой checkout каждого репозитория. Вложенные зависимости модов — ссылки на этот SDK; не создавать независимые копии и не переносить правки вручную. Перед проверками из корня мастерской выполнить `scripts/sync-subrepos.ps1 -Check`. После коммита SDK синхронизировать gitlink потребителей и проверить их. Для самостоятельного клона сохраняется обычный закреплённый submodule.
 
 - Пользователь запускает игру обычным способом через Heroes/Lobby. Наши моды подключаются через DLL; отдельный EXE для игрока запрещён владельцем. Диагностические EXE и Python-команды принадлежат только инструкциям разработчика. При смене поставки синхронизировать README, RU/EN wiki, devkit, инструкции агентам и release notes; прежние EXE-пакеты не публиковать.
 
@@ -23,6 +43,8 @@
 - Сохранять RU/EN, ссылки на публичные исследования и явные границы проверки. Содержимое исходной игры никогда не публиковать.
 
 ## EN
+
+- In a linked workshop, each repository has one top-level checkout and mod dependencies are junctions to this SDK. Never create independent copies or copy edits between consumers. Run the workshop's `scripts/sync-subrepos.ps1 -Check` before verification. After an SDK commit synchronize consumer pins and reverify them. Standalone clones retain ordinary pinned submodules.
 
 - Players keep the ordinary Heroes/Lobby launch. Our mods load through DLLs; the owner rejects separate player launchers. Diagnostic EXEs and Python commands belong only in developer instructions. Delivery changes must update README, RU/EN wiki, devkit, agent instructions and release notes together; never publish the superseded EXE packages.
 

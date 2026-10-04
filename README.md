@@ -1,5 +1,9 @@
 # Heroes V Mod Devkit
 
+RU,2026-10-04: Python-стенд может повторно вызывать `game_control.main(argv)` в одном процессе: структурированный результат без повторного запуска интерпретатора, прежние guards проверяются каждый раз. / EN: reusable Python dispatch preserves ordinary CLI and ownership checks. [Contract](docs/commands.md).
+
+RU, 2026-10-03: `teleport` после подтверждения положения ведёт камеру за героем текущего игрока, сохраняя zoom/rotation; флаг ответа обозначает запрос, не визуальное доказательство. Перед командой вызывающий стенд проверяет destination и владельца. / EN: verified owned-hero teleport follows the camera without changing zoom/rotation; callers must validate destination/ownership. See [commands](docs/commands.md).
+
 ## Delivery correction / Поправка к поставке — 2026-09-25
 
 RU: отдельные EXE-загрузчики отклонены владельцем. Пользователь запускает игру через Heroes/Lobby как раньше; моды должны подключаться автоматически через DLL. Текущий прототип использует новый bin/dinput8.dll и bin/Heroes5Mods/*.dll, для справочника также нужен его H5U. Штатные бинарники Universe не заменяются. Обычный запуск до меню и автоматическое подключение двух DLL с показом проекций проверены; актуальные выпуски и ограничения указаны в репозиториях модов. Приведённые ниже команды со старым EXE — диагностика/история разработки, не инструкция игроку.

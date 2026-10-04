@@ -184,6 +184,7 @@ def api():
         'WriteProcessMemory': (W.BOOL, [W.HANDLE, C.c_void_p, C.c_void_p, C.c_size_t, C.POINTER(C.c_size_t)]),
         'VirtualAllocEx': (C.c_void_p, [W.HANDLE, C.c_void_p, C.c_size_t, W.DWORD, W.DWORD]),
         'VirtualProtectEx': (W.BOOL, [W.HANDLE, C.c_void_p, C.c_size_t, W.DWORD, C.POINTER(W.DWORD)]),
+        'VirtualFreeEx': (W.BOOL, [W.HANDLE, C.c_void_p, C.c_size_t, W.DWORD]),
         'FlushInstructionCache': (W.BOOL, [W.HANDLE, C.c_void_p, C.c_size_t]),
         'ResumeThread': (W.DWORD, [W.HANDLE]), 'CloseHandle': (W.BOOL, [W.HANDLE]),
         'TerminateProcess': (W.BOOL, [W.HANDLE, W.UINT]),
@@ -225,9 +226,12 @@ def creation_time(kernel, process):
     return (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
 
 
-def launch(kernel, army_layout=False, map_name=None, control=False, native_loader=False, observe_deployment=False):
+def launch(kernel, army_layout=False, map_name=None, control=False, native_loader=False,
+           observe_deployment=False, background=False):
     if observe_deployment and not control:
         raise ValueError('Deployment observation requires --control.')
+    if background and native_loader:
+        raise ValueError('Background startup is only supported by the ordinary DLL-loaded launch.')
     running = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq H5_Game.exe', '/FO', 'CSV', '/NH'],
                              check=True, capture_output=True)
     if b'h5_game.exe' in running.stdout.lower():
@@ -255,6 +259,9 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
     info = Process()
     startup = Startup()
     startup.cb = C.sizeof(startup)
+    if background:
+        startup.flags = 0x1  # STARTF_USESHOWWINDOW
+        startup.show = 8     # SW_SHOWNA: show without activating
     executable = str(GAME / 'bin/H5_Game.exe')
     map_options = map_arguments(GAME, map_name) if map_name else []
     command = C.create_unicode_buffer(subprocess.list2cmdline([executable, *map_options]))
@@ -278,6 +285,23 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
             info.process = checked(kernel.OpenProcess(0x1038, False, info.pid))
         if read(kernel, info.process, entry, len(original)) != original:
             raise RuntimeError('Entry bytes/base differ; refusing the probe.')
+        # Reserve Granny's non-ASLR preferred base by loading it before the
+        # ASLR-enabled Universe d3d9 import. Only this suspended sandbox's
+        # import descriptors change; all on-disk game hashes remain intact.
+        graphics_import = bytes.fromhex('80b9b10000000000000000000ccfb10020a5a000')
+        granny_import = bytes.fromhex('b8bab100000000000000000062d5b10058a6a000')
+        if (read(kernel, info.process, 0x11d90f0, 20) != graphics_import or
+                read(kernel, info.process, 0x11d912c, 20) != granny_import):
+            raise RuntimeError('Import descriptors differ; refusing the startup repair.')
+        import_protection = W.DWORD()
+        checked(kernel.VirtualProtectEx(info.process, 0x11d90f0, 80, 4, C.byref(import_protection)))
+        try:
+            write(kernel, info.process, 0x11d90f0, granny_import)
+            write(kernel, info.process, 0x11d912c, graphics_import)
+        finally:
+            ignored_protection = W.DWORD()
+            checked(kernel.VirtualProtectEx(info.process, 0x11d90f0, 80,
+                                            import_protection.value, C.byref(ignored_protection)))
         allocation = checked(kernel.VirtualAllocEx(info.process, None, 65536, 0x3000, 4))
         if allocation + 65536 >= 0x80000000:
             raise RuntimeError('Allocation exceeds supported x86 address range.')
@@ -341,7 +365,7 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
                 raise C.WinError(C.get_last_error())
             resumed = True
         return {'pid': info.pid, 'status': 'probe_started', 'calls': 0, 'map_arguments': map_options,
-                'native_loader': native_loader}
+                'native_loader': native_loader, 'background_requested': background}
     finally:
         # Only terminate our own never-resumed child on setup failure, never a running game.
         if not resumed:
@@ -389,12 +413,15 @@ if __name__ == '__main__':
     parser.add_argument('--map', help='Start a sandbox map through the final startup command.')
     parser.add_argument('--control', action='store_true', help='Install the terminal command mailbox.')
     parser.add_argument('--native-loader', action='store_true', help='Start through the packaged native launcher.')
+    parser.add_argument('--background', action='store_true',
+                        help='Request no-activation startup; verify off-screen position separately.')
     parser.add_argument('--observe-deployment', action='store_true',
                         help='Add the after-Start observer to --control without a separate launcher.')
     arguments = parser.parse_args()
     try:
         result = (launch(api(), arguments.army_layout, None if arguments.menu else arguments.map,
-                         arguments.control, arguments.native_loader, arguments.observe_deployment)
+                         arguments.control, arguments.native_loader, arguments.observe_deployment,
+                         arguments.background)
                   if arguments.command == 'launch' else status(api()))
         print(json.dumps(result, indent=2))
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:

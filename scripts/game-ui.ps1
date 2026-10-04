@@ -6,6 +6,11 @@
     [switch]$SystemInput,
     [switch]$OcrTiles,
     [long]$ReturnFocusWindow = 0,
+    [switch]$RestoreClip,
+    [int]$ReturnClipLeft = 0,
+    [int]$ReturnClipTop = 0,
+    [int]$ReturnClipRight = 0,
+    [int]$ReturnClipBottom = 0,
     [ValidateRange(1, 3000)][int]$HoldMilliseconds = 100
 )
 $ErrorActionPreference = 'Stop'
@@ -22,6 +27,7 @@ public static class WorkshopGameUI {
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr window);
     [DllImport("user32.dll")] public static extern bool GetClipCursor(out Rect rect);
+    [DllImport("user32.dll", SetLastError=true)] public static extern bool ClipCursor(ref Rect rect);
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window, IntPtr processId);
     [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint source, uint target, bool attach);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
@@ -34,6 +40,8 @@ public static class WorkshopGameUI {
     [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr window, out Rect rect);
     [DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr window, out Rect rect);
+    [DllImport("user32.dll", EntryPoint="GetWindowLongPtrW", SetLastError=true)] public static extern IntPtr GetWindowLongPtr(IntPtr window, int index);
+    [DllImport("user32.dll", EntryPoint="SetWindowLongPtrW", SetLastError=true)] public static extern IntPtr SetWindowLongPtr(IntPtr window, int index, IntPtr value);
     [DllImport("user32.dll", SetLastError=true)] public static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr window, IntPtr deviceContext, uint flags);
     [DllImport("user32.dll", SetLastError=true)] public static extern bool PostMessageW(IntPtr window, uint message, UIntPtr wparam, IntPtr lparam);
@@ -154,6 +162,21 @@ function Read-ImageText([string]$ocrPath, [int]$offsetX = 0, [int]$offsetY = 0) 
     } finally { $stream.Dispose() }
 }
 
+function Test-RenderedGameFrame([System.Drawing.Bitmap]$bitmap) {
+    # PrintWindow can succeed while DirectX returns a blank black/white surface.
+    # A game frame needs more than two colours; this does not identify its phase.
+    $colours = New-Object 'System.Collections.Generic.HashSet[int]'
+    for ($row = 0; $row -lt 32; $row++) {
+        for ($column = 0; $column -lt 32; $column++) {
+            $pixelX = [int][Math]::Floor($column * $bitmap.Width / 32)
+            $pixelY = [int][Math]::Floor($row * $bitmap.Height / 32)
+            [void]$colours.Add($bitmap.GetPixel($pixelX, $pixelY).ToArgb())
+            if ($colours.Count -gt 2) { return $true }
+        }
+    }
+    return $false
+}
+
 function Read-GameScreen([switch]$DialogOnly) {
     $bounds = Get-GameBounds
     $path = Join-Path $project '.local/test-state/game-ui.png'
@@ -165,6 +188,9 @@ function Read-GameScreen([switch]$DialogOnly) {
             if (-not [WorkshopGameUI]::PrintWindow($window, $deviceContext, 3)) { throw 'Cannot capture game window.' }
         } finally { $graphics.ReleaseHdc($deviceContext) }
         $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+        if (-not (Test-RenderedGameFrame $bitmap)) {
+            throw "Game capture contains no rendered content; retained at $path"
+        }
         if ($DialogOnly) {
             $offsetX = [int]($bounds.Width * 0.3)
             $offsetY = [int]($bounds.Height * 0.2)
@@ -208,6 +234,18 @@ if ($Action -eq 'click') { Invoke-GameClick $X $Y; return }
 if ($Action -eq 'right-click') { Invoke-GameClick $X $Y -RightButton; return }
 if ($Action -eq 'capture') { Read-GameScreen | ConvertTo-Json -Depth 5; return }
 if ($Action -eq 'background') {
+    if (-not $RestoreClip -or $ReturnClipRight -le $ReturnClipLeft -or $ReturnClipBottom -le $ReturnClipTop) {
+        throw 'Background mode requires a valid pre-launch cursor clip rectangle.'
+    }
+    # The sandbox window must not reactivate after focus is returned.
+    $style = [WorkshopGameUI]::GetWindowLongPtr($window, -20)
+    $noActivateStyle = [IntPtr]::new($style.ToInt64() -bor 0x08000000)
+    if ($style -ne $noActivateStyle) {
+        [WorkshopGameUI]::SetWindowLongPtr($window, -20, $noActivateStyle) | Out-Null
+        if ([WorkshopGameUI]::GetWindowLongPtr($window, -20) -ne $noActivateStyle) {
+            throw 'Cannot set the sandbox window to WS_EX_NOACTIVATE.'
+        }
+    }
     # NOACTIVATE does not deactivate a window that is already foreground.
     # Restore only the pre-launch foreground window, never a guessed app.
     if ([WorkshopGameUI]::GetForegroundWindow() -eq $window) {
@@ -230,17 +268,36 @@ if ($Action -eq 'background') {
     if (-not [WorkshopGameUI]::GetWindowRect($window, [ref]$rect)) { throw 'Cannot read sandbox window position.' }
     $outsideX = [WorkshopGameUI]::GetSystemMetrics(76) - ($rect.Right - $rect.Left) - 64
     # Keep the renderer drawable, but unreachable by the shared physical mouse.
-    # SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE: never activate or resize it.
-    if (-not [WorkshopGameUI]::SetWindowPos($window, [IntPtr]::Zero, $outsideX, $rect.Top, 0, 0, 0x15)) {
+    # SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED.
+    if (-not [WorkshopGameUI]::SetWindowPos($window, [IntPtr]::Zero, $outsideX, $rect.Top, 0, 0, 0x35)) {
         throw 'Cannot position the sandbox window outside the desktop.'
     }
     if (-not [WorkshopGameUI]::GetWindowRect($window, [ref]$rect) -or
         $rect.Right -gt [WorkshopGameUI]::GetSystemMetrics(76)) { throw 'Sandbox window remains on the shared desktop.' }
     Start-Sleep -Milliseconds 150
+    $foreground = [WorkshopGameUI]::GetForegroundWindow()
+    if ($foreground -eq $window) { throw 'Game reclaimed foreground; background check refused.' }
+    if ($foreground -ne [IntPtr]::new($ReturnFocusWindow)) {
+        throw 'Foreground changed after launch; cursor clip restoration refused.'
+    }
+    $expectedClip = New-Object WorkshopGameUI+Rect
+    $expectedClip.Left = $ReturnClipLeft
+    $expectedClip.Top = $ReturnClipTop
+    $expectedClip.Right = $ReturnClipRight
+    $expectedClip.Bottom = $ReturnClipBottom
     $clip = New-Object WorkshopGameUI+Rect
-    if ([WorkshopGameUI]::GetForegroundWindow() -eq $window -or
-        -not [WorkshopGameUI]::GetClipCursor([ref]$clip) -or $clip.Right -le [WorkshopGameUI]::GetSystemMetrics(76)) {
-        throw 'Game reclaimed foreground/cursor clipping; background check refused.'
+    if (-not [WorkshopGameUI]::GetClipCursor([ref]$clip)) { throw 'Cannot read cursor clipping after background placement.' }
+    if ($clip.Left -ne $expectedClip.Left -or $clip.Top -ne $expectedClip.Top -or
+        $clip.Right -ne $expectedClip.Right -or $clip.Bottom -ne $expectedClip.Bottom) {
+        if (-not [WorkshopGameUI]::ClipCursor([ref]$expectedClip)) {
+            throw 'Cannot restore the pre-launch cursor clipping rectangle.'
+        }
+        Start-Sleep -Milliseconds 150
+        if (-not [WorkshopGameUI]::GetClipCursor([ref]$clip) -or
+            $clip.Left -ne $expectedClip.Left -or $clip.Top -ne $expectedClip.Top -or
+            $clip.Right -ne $expectedClip.Right -or $clip.Bottom -ne $expectedClip.Bottom) {
+            throw 'Game reclaimed cursor clipping; background check refused.'
+        }
     }
     @{ Status='background_window'; Pid=$GameProcessId; X=$rect.Left; Y=$rect.Top } | ConvertTo-Json
     return
