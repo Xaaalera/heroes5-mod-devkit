@@ -149,6 +149,7 @@ def build(arena_smoke=None, confirm_placement=False, solo_smoke=None, stage=Fals
             raise RuntimeError('No regular hero for ' + race)
         hero_item, hero = place('AdvMapHero', heroes[0], x + 1, y - 7, 'hero_' + faction, 'PLAYER_1')
         set_value(hero, 'Experience', 0)
+        set_value(hero, 'AllowQuickCombat', 'false')
         hero.find('armySlots').clear()
         candidates = [(n, e) for n, e in catalog.items() if e.tag == 'Creature' and e.findtext('CreatureTown') == race]
         tier = max(int(e.findtext('CreatureTier', '0')) for _, e in candidates)
@@ -227,15 +228,48 @@ def build(arena_smoke=None, confirm_placement=False, solo_smoke=None, stage=Fals
         [('CREATURE_FAMILIAR', 50), ('CREATURE_CERBERI', 30), ('CREATURE_INFERNAL_SUCCUBUS', 20), ('CREATURE_PIT_FIEND', 8),
          ('CREATURE_PEASANT', 40), ('CREATURE_ARCHER', 25), ('CREATURE_GRAND_ELF', 20)],
     ])
+    # Targeted placement controls. Keep pack_0..15 and their coordinates intact.
+    # pack_16..19: singleton quantity limits and a much stronger solo source.
+    # pack_20..26: footprint roles, grades, shooter guards, Shield Other and aura.
+    # pack_27..30: goblin links, missing goblins, and a different goblin grade.
+    # pack_31..35: input permutation, capacity, ability exceptions, duplicates,
+    # and quantity-weighted sorting. Threshold edges need calibrated hero armies.
+    packs.extend([
+        [('CREATURE_PEASANT', 1)],
+        [('CREATURE_PEASANT', 4)],
+        [('CREATURE_PEASANT', 5)],
+        [('CREATURE_PEASANT', 1000)],
+        [('CREATURE_FOOTMAN', 40), ('CREATURE_IRON_GOLEM', 20)],
+        [('CREATURE_HYDRA', 10), ('CREATURE_BLACK_DRAGON', 3)],
+        [('CREATURE_ARCHER', 30), ('CREATURE_MARKSMAN', 30)],
+        [('CREATURE_ARCHER', 40), ('CREATURE_FOOTMAN', 40)],
+        [('CREATURE_ARCHER', 40), ('CREATURE_HYDRA', 10)],
+        [('CREATURE_ARCHER', 40), ('CREATURE_SWORDSMAN', 15)],
+        [('CREATURE_GRAND_ELF', 30), ('CREATURE_UNICORN', 8)],
+        [('CREATURE_GOBLIN', 40), ('CREATURE_SHAMAN_WITCH', 8)],
+        [('CREATURE_GOBLIN', 40), ('CREATURE_CYCLOP_UNTAMED', 3)],
+        [('CREATURE_SHAMAN_WITCH', 8), ('CREATURE_CYCLOP_UNTAMED', 3)],
+        [('CREATURE_GOBLIN_TRAPPER', 40), ('CREATURE_CYCLOP_UNTAMED', 3)],
+        list(reversed(packs[15])),
+        [('CREATURE_BLACK_DRAGON', 3), ('CREATURE_ARCHANGEL', 3), ('CREATURE_SHADOW_DRAGON', 3),
+         ('CREATURE_HYDRA', 5), ('CREATURE_GENIE', 8), ('CREATURE_CYCLOP', 4), ('CREATURE_PIT_FIEND', 6)],
+        [('CREATURE_BLOOD_WITCH', 30), ('CREATURE_ARCHER', 40)],
+        [('CREATURE_PEASANT', 10), ('CREATURE_PEASANT', 20)],
+        [('CREATURE_MARKSMAN', 5), ('CREATURE_GRAND_ELF', 50), ('CREATURE_SKELETON_ARCHER', 80)],
+    ])
     for index, army in enumerate(packs):
         creature, count = army[0]
-        _, obj = place('AdvMapMonster', creature_models[creature], 14 + index % 4 * 22,
-                       [28, 48, 51, 54][index // 4], 'pack_' + str(index))
+        if index < 16:
+            x, y = 14 + index % 4 * 22, [28, 48, 51, 54][index // 4]
+        else:
+            x, y = [19, 24, 29, 41, 46][(index - 16) % 5], [28, 48, 51, 54][(index - 16) // 5]
+        _, obj = place('AdvMapMonster', creature_models[creature], x, y, 'pack_' + str(index))
         for tag, value in [('Custom', 'true'), ('Amount', count), ('Amount2', 0), ('DoesNotGrow', 'true'),
                            ('DoesNotDependOnDifficulty', 'true'), ('MoveType', 'MOVE_STAND'),
                            ('Courage', 'MONSTER_COURAGE_ALWAYS_FIGHT')]:
             set_value(obj, tag, value)
         obj.find('AdditionalStacks').clear()
+        set_value(obj, 'AllowQuickCombat', 'false')
         obj.find('CombatScript').set('href', '/' + PREFIX + 'CombatScript.xdb#xpointer(/Script)')
         for creature, amount in army[1:]:
             if creature not in creature_models:
@@ -342,12 +376,14 @@ def build(arena_smoke=None, confirm_placement=False, solo_smoke=None, stage=Fals
                      ' for _, creature in expected do\n'
                      ' for index, unit in units do\n'
                      ' if GetCreatureType(unit) == creature then\n'
+                     '  local count = GetCreatureNumber(unit);\n'
                      '  local x, y = GetUnitPosition(unit);\n'
                      '  print("WORKSHOP_DEPLOYMENT", unit, GetCreatureType(unit), x, y);\n'
                      ' end;\n end;\n end;\nend;\n')
     if solo_smoke is not None or arena_smoke is None:
         combat_script = ('function Start()\n'
                          ' for index, unit in GetDefenderCreatures() do\n'
+                         '  local count = GetCreatureNumber(unit);\n'
                          '  local x, y = GetUnitPosition(unit);\n'
                          '  print("WORKSHOP_SOLO", unit, GetCreatureType(unit), x, y);\n'
                          ' end;\nend;\n')
@@ -388,6 +424,7 @@ def build(arena_smoke=None, confirm_placement=False, solo_smoke=None, stage=Fals
               'arena_cases': arena_cases, 'arena_smoke': arena_smoke,
               'solo_smoke': solo_smoke,
               'test_movement_refill': 9999999,
+              'quick_combat_allowed': False,
               'confirm_placement': confirm_placement,
               'template_sha256': hashlib.sha256(template_bytes).hexdigest(),
               'unmapped_banks': ['BUILDING_ORC_DEPOSIT'], 'in_game': 'not_verified'}
