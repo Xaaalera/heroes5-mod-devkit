@@ -165,9 +165,9 @@ RU: SDK может храниться отдельно от папки прое�
 
 EN: A fresh isolated environment passed setup, doctor, new, build, release and diagnostics using a frozen current-source export with a complete independent Game API directory. Both a resource H5U and a separate native plugin ZIP were produced. All 111 exported source hashes remained unchanged. This verifies the local candidate workflow, not availability of uncommitted changes in a public clone, nor visible runtime effects.
 
-RU: визуальные проверки подтвердили число от выпущенной DLL и полную метку H5U в меню. Управляемый `xkit start` также прошёл обновление 42 → 43 → 42 и штатное закрытие после отрисовки. Ошибка обычного запуска вне SDK остаётся открытой. [Результаты проверок](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
+Historical snapshot before ordinary-player acceptance: RU: визуальные проверки подтвердили число от выпущенной DLL и полную метку H5U в меню. Управляемый `xkit start` также прошёл обновление 42 → 43 → 42 и штатное закрытие после отрисовки. Ошибка обычного запуска вне SDK остаётся открытой. [Результаты проверок](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
 
-EN: If the SDK moves, its build cache automatically uses a separate directory when the earlier CMake cache belongs to another source location. Existing cache files are preserved; manual deletion is unnecessary.
+Historical snapshot before ordinary-player acceptance: EN: If the SDK moves, its build cache automatically uses a separate directory when the earlier CMake cache belongs to another source location. Existing cache files are preserved; manual deletion is unnecessary.
 
 ## Готовность сеанса / Session readiness
 
