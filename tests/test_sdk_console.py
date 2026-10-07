@@ -132,7 +132,7 @@ class ConsoleBrokerTests(unittest.TestCase):
                     self.assertEqual(response['error'], expected)
                 else:
                     self.assertEqual(response['error']['details'][0]['reason'], 'SDK_GAME_COMMAND_FAILED')
-                    self.assertIn(str(Path(directory) / '.local/xalkit/logs'), response['error']['message'])
+                    self.assertIn(str(broker.workspace / '.local/xalkit/logs'), response['error']['message'])
                     self.assertNotIn('private cause', response['error']['message'])
 
     def test_registered_screenshot_callback_preserves_public_error_through_async_poll(self):
@@ -156,7 +156,7 @@ class ConsoleBrokerTests(unittest.TestCase):
                     time.sleep(0.01)
             self.assertFalse(response['ok'])
             self.assertEqual(response['error']['details'][0]['reason'], 'SDK_GAME_CAPTURE_FAILED')
-            self.assertIn(str(Path(directory) / '.local/xalkit/logs'), response['error']['message'])
+            self.assertIn(str(Path(directory).resolve() / '.local/xalkit/logs'), response['error']['message'])
             self.assertNotIn('private capture failure', response['error']['message'])
             backend.main.assert_called_once_with(['screenshot'])
 

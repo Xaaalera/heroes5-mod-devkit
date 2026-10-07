@@ -200,7 +200,7 @@ class XalKitTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name).resolve()
         self.environment = patch.dict(os.environ, {'H5_WORKSPACE': str(self.root),
             'XALKIT_CONFIG': str(self.root / 'settings.json'), 'XALKIT_LANG': 'en'})
         self.environment.start(); self.addCleanup(self.environment.stop)

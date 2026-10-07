@@ -19,7 +19,7 @@ from sdk_storage import GameAssets, unlink_readonly
 class SharedGameStorage(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         self.installation = self.root / 'original-game'
         (self.installation / 'bin').mkdir(parents=True)
         (self.installation / 'bin/H5_Game.exe').write_bytes(b'fixture game')
