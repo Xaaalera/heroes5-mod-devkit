@@ -153,6 +153,8 @@ def supervise_plugins(options):
                     emit({'status': 'plugin_stopped' if returncode == 0 else 'plugin_failed',
                           'plugin': name, 'instance': child['instance'], 'exit_code': returncode})
                     child['reported_exit'] = True
+                    if returncode != 0:
+                        raise RuntimeError('Plugin worker failed; game cleanup is unconfirmed. Close the owned game before restarting.')
                     if core_transaction and core_transaction['waiting'] and core_transaction['waiting'][0] == name:
                         raise RuntimeError('Core update lost a worker; game cleanup is unconfirmed. Close the owned game before restarting.')
                 if returncode is not None and name not in discovered and core_transaction is None:
@@ -162,6 +164,7 @@ def supervise_plugins(options):
                     # claim unload or restart a possibly still-owned hook.
                     child['process'].terminate()
                     emit({'status': 'plugin_cleanup_unconfirmed', 'plugin': name})
+                    raise RuntimeError('Plugin retirement timed out; game cleanup is unconfirmed. Close the owned game before restarting.')
             for name, source in sorted(discovered.items()):
                 if core_transaction:
                     break

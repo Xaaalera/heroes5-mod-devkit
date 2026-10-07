@@ -769,6 +769,10 @@ For a background test, `native-probe.py launch --map <map> --control --backgroun
 Native launch validates four game hashes and original bytes before modifying its owned suspended process. On-disk EXE/DLL files remain unchanged. Complete profile-write isolation is unproven. Do not replace Universe DLLs with a generic loader. Ordinary neutral attacks and supplied StartCombat armies test different paths. The generic devkit does not bypass the daily movement cap; that was a separate predictor experiment.
 ## 2026-10-04 — reusable Python dispatcher / повторное использование диспетчера
 
+RU: прямой supervisor прекращает работу при ошибке worker или тайм-ауте его отключения. Пока очистка не подтверждена, слот не используется заново и новый экземпляр не подключается. Перед следующим запуском закрой собственную тестовую игру.
+
+EN: The direct supervisor stops on worker failure or retirement timeout. Unconfirmed cleanup prevents slot reuse and admission of a new instance. Close the owned test game before restarting.
+
 RU: `game_control.main(argv)` принимает список CLI-аргументов и возвращает тот же структурированный результат без stdout. Импорт native-probe переиспользуется в этом процессе; каждый вызов по-прежнему проверяет текущий PID/creation time/patches. Не хранить открытый game handle между загрузками. `main()` без argv сохраняет обычный CLI JSON stdout и существующий serve. EN: Caller must set its workspace before importing the SDK. Reuse changes client startup overhead, not game readiness; all ownership/signature/readback guards remain. Full SDK46/46 and owned three-battle consumer control PASS; ordinary game DLL behavior unchanged.
 ## Команды: сохранение вывода / Commands: retained output
 

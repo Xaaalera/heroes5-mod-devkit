@@ -458,6 +458,47 @@ class PluginWatchBoundaries(unittest.TestCase):
         self.assertEqual(events[0]['status'], 'supervising')
         self.assertGreaterEqual(events[0]['compiler_setup_seconds'], 0)
 
+    def test_uncertain_retirement_stops_supervisor_before_admitting_another_plugin(self):
+        for scenario in ('failed_worker', 'stop_timeout'):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                plugins = root / 'plugins'
+                source = plugins / 'alpha'
+                source.mkdir(parents=True)
+                source_file = source / 'plugin.cpp'
+                source_file.write_text('fixture', encoding='utf-8')
+                bridge = root / 'bridge.dll'
+                bridge.write_bytes(b'fixture')
+                options = SimpleNamespace(plugins=plugins, output=root / 'supervised',
+                    toolchain=root / 'vcvarsall.bat', client=root / 'client.exe', bridge=bridge,
+                    owned_game=False, main_thread=False, control_stdin=False, core_source=None,
+                    log_format='json', log_session=None, managed_projects=False,
+                    console_build=None, console_project=None)
+                process = Mock()
+                process.poll.return_value = 1 if scenario == 'failed_worker' else None
+                process.wait.return_value = 1
+                def spawn_worker(*arguments, **keywords):
+                    source_file.unlink()  # Removal while its game teardown is unconfirmed.
+                    other = plugins / 'beta'
+                    other.mkdir()
+                    (other / 'plugin.cpp').write_text('fixture', encoding='utf-8')
+                    return process
+                clock = iter(range(0, 1000, 60))
+                with patch.object(watch_module, 'compiler_environment', return_value=(root/'cl.exe', {})), \
+                        patch.object(watch_module.subprocess, 'Popen', side_effect=spawn_worker) as spawn, \
+                        patch.object(watch_module.threading, 'Thread'), \
+                        patch.object(watch_module.time, 'sleep'), \
+                        patch.object(watch_module.time, 'monotonic', side_effect=lambda: next(clock)), \
+                        patch.object(watch_module, 'EventLog') as event_log:
+                    with self.assertRaisesRegex(RuntimeError, 'game cleanup is unconfirmed'):
+                        watch_module.supervise_plugins(options)
+                spawn.assert_called_once()  # No beta bridge or reused slot is admitted.
+                statuses = [call.args[0]['status'] for call in event_log.return_value.emit.call_args_list]
+                self.assertIn('runtime_failed', statuses)
+                if scenario == 'stop_timeout':
+                    self.assertIn('plugin_cleanup_unconfirmed', statuses)
+                    process.terminate.assert_called_once()
+
     def test_core_transaction_retains_membership_and_requires_live_matching_instances(self):
         for scenario in ('accepted', 'rejected', 'lost_queued', 'lost_applied', 'stale_reply'):
             with self.subTest(scenario=scenario):
