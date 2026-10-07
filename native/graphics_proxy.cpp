@@ -51,7 +51,7 @@ BOOL CALLBACK Resolve(PINIT_ONCE, PVOID, PVOID*) {
         originalFile = CreateFileW(original.c_str(), GENERIC_READ, FILE_SHARE_READ,
             nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (originalFile == INVALID_HANDLE_VALUE ||
-            h5::Sha256(originalFile) != "5eb152357f99d53397b764384d5cf9a0f6aece733ced30a34186ac57fb15be25") {
+            h5::Sha256(originalFile) != h5::UniverseGraphicsSha256) {
             Record("original_identity_rejected\n"); return TRUE;
         }
         if (GetModuleHandleW(L"d3d9.universe.dll")) { Record("original_loaded_too_early\n"); return TRUE; }
