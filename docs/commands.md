@@ -105,9 +105,9 @@ RU: Когда читаешь старый вывод, поступающие о
 
 EN: Input is at the bottom; submitted commands and responses append to the output above it. Scroll upward for earlier responses. Incoming responses preserve your position while reading older output; submitting a new command returns to the latest output. Console updates preserve panel geometry and history.
 
-RU: Проверены выполнение, выбор подсказки, история и изменение размера. Отдельная проверка остаётся для изоляции колесика: прокрутка консоли работает, но автоматический тест не подтвердил зум камеры даже при скрытой панели. Поэтому он пока не доказывает, что колесико полностью отделено от камеры.
+Historical snapshot (superseded where current acceptance is listed above): RU: Проверены выполнение, выбор подсказки, история и изменение размера. Отдельная проверка остаётся для изоляции колесика: прокрутка консоли работает, но автоматический тест не подтвердил зум камеры даже при скрытой панели. Поэтому он пока не доказывает, что колесико полностью отделено от камеры.
 
-EN: Submission, completion selection, history and resizing have been checked. Wheel isolation remains open: console scrolling works, but the automated test could not establish camera zoom with the panel hidden, so it cannot prove full isolation.
+Historical snapshot (superseded where current acceptance is listed above): EN: Submission, completion selection, history and resizing have been checked. Wheel isolation remains open: console scrolling works, but the automated test could not establish camera zoom with the panel hidden, so it cannot prove full isolation.
 
 ## Автообновление консоли / Automatic console updates — 2026-10-05
 
@@ -123,13 +123,13 @@ RU: Брокер сохраняет непрочитанный результа�
 
 EN: Unread results stay protected until UI delivery acknowledgement. Lost polling replies neither replay commands nor discard pending IDs. Queue/state checks and live completed-but-unread result handoff passed without replay. A long command still executing during DLL replacement remains unverified.
 
-RU: В коде подготовлено сохранение прокрутки журналов и результатов при HMR. Если читаешь старые строки, новый результат не должен автоматически возвращать вниз. Передача состояния и сборка проверены; поведение прокрутки в живом интерфейсе ещё требует приёмки.
+Historical snapshot (superseded where current acceptance is listed above): RU: В коде подготовлено сохранение прокрутки журналов и результатов при HMR. Если читаешь старые строки, новый результат не должен автоматически возвращать вниз. Передача состояния и сборка проверены; поведение прокрутки в живом интерфейсе ещё требует приёмки.
 
-EN: Log/result scroll and bottom-follow state can checkpoint; new output respects reading older lines. Build/transport checks passed; live scrolling behavior remains unaccepted.
+Historical snapshot (superseded where current acceptance is listed above): EN: Log/result scroll and bottom-follow state can checkpoint; new output respects reading older lines. Build/transport checks passed; live scrolling behavior remains unaccepted.
 
-RU: Положение и размер панели сохраняются при HMR. В живой игре проверены размеры 600×400 и 920×600, обновление графического буфера и точное восстановление геометрии после замены DLL. Перетаскивание границы физической мышью и перенос между мониторами ещё не проверены.
+RU: Положение и размер панели сохраняются при HMR. В живой игре проверены размеры 600×400 и 920×600, обновление графического буфера и точное восстановление геометрии после замены DLL. Перетаскивание границы мышью проверено 2026-10-07; перенос между мониторами ещё не проверен.
 
-EN: Panel position and size survive HMR. Live checks verify 600×400 and 920×600 Win32 resizing, graphics-buffer reset and exact rectangle restoration after DLL replacement. Physical edge dragging and cross-monitor migration remain unverified.
+EN: Panel position and size survive HMR. Live checks verify 600×400 and 920×600 Win32 resizing, graphics-buffer reset and exact rectangle restoration after DLL replacement. Physical edge dragging was verified on 2026-10-07; cross-monitor migration remains unverified.
 
 RU: Рядом с каждым новым поколением `XalKitConsole.dll` сборщик сохраняет `XalKitConsole.LICENSES.txt` с полными уведомлениями Dear ImGui, ImTerm, ImGuiColorTextEdit и nlohmann JSON. При распространении консоли сохраняй этот файл рядом с DLL. Готовое поколение без уведомлений не выдаётся. Версии библиотек закреплены в `native/console_module.cmake`.
 
@@ -175,7 +175,7 @@ RU: после `xkit start` сначала появляется «Собираю
 
 EN: `xkit start` first reports that plugins are being built and connected. The HMR-ready message appears only after the selected plugin is applied. A different plugin or an active file watcher does not establish readiness. Build errors retain plugin identity and diagnostics; fix and save the source to retry.
 
-RU/EN, 2026-10-05: fresh current-source `xkit check --player` passed in65.2s from a separate workspace: added functions/headers, core export, HMR/rollback, independent plugin removal/readd and two released DLLs. Both games exited0, callbacks removed and files restored. A missing test map is now prepared automatically; an existing map is preserved. This check does not establish map transitions, scene rendering or public availability of the candidate.
+Historical snapshot (superseded where current acceptance is listed above): RU/EN, 2026-10-05: fresh current-source `xkit check --player` passed in65.2s from a separate workspace: added functions/headers, core export, HMR/rollback, independent plugin removal/readd and two released DLLs. Both games exited0, callbacks removed and files restored. A missing test map is now prepared automatically; an existing map is preserved. This check does not establish map transitions, scene rendering or public availability of the candidate.
 
 ## Проверка запуска нативного проекта / Native project startup check
 
@@ -231,7 +231,7 @@ RU: `--player` после успешного HMR собирает два пак�
 
 EN: The player phase now uses ordinary CreateProcessW with no developer import or startup-script memory patches. The stock -advmap argument requests a map; the request alone is not proof that the map loaded. It still checks two released plugins, callbacks, independent shutdown and cleanup.
 
-RU/EN, 2026-10-06 correction: Earlier combined PASS reports used native-probe.launch, which repaired import ordering even with control=False. They prove released DLL execution after developer preparation, not unmodified ordinary startup. The corrected checker has targeted launch tests; a fresh live pass remains required. Recent preload-only ordinary controls failed or stayed alive without a game window; startup reliability remains open.
+Historical snapshot (superseded where current acceptance is listed above): RU/EN, 2026-10-06 correction: Earlier combined PASS reports used native-probe.launch, which repaired import ordering even with control=False. They prove released DLL execution after developer preparation, not unmodified ordinary startup. The corrected checker has targeted launch tests; a fresh live pass remains required. Recent preload-only ordinary controls failed or stayed alive without a game window; startup reliability remains open.
 
 EN: Canonical `plugin-player-check.py` has explicit live/report/toolchain/binary inputs and no hardcoded historical journal path. Cleanup attempts game, monitor and every staged file independently; errors remain in the final report. Changed external files are retained. If the local Microsoft ProcDump tool is present, the CLI passes its path; this optional lookup is not automatic installation or proof that every crash is captured.
 
@@ -246,7 +246,7 @@ RU/EN, 2026-10-06: added stock-console export now has explicit HMR proof. A froz
 RU: `restart <имя>` повторно загружает указанную карту и сбрасывает её игровой прогресс. Имя обязательно: команда не угадывает текущую карту. `menu` запрашивает главное меню. Оба действия сохраняют SDK и плагины; стартовый скрипт карты может завершиться позже возврата обработчика. В консоли SDK те же команды: `restart WorkshopPolygon` и `menu`.
 EN: restart requires an explicit map name and reloads its game state. menu requests the main menu. SDK/plugins remain active; map startup scripts may finish after dispatch returns. The embedded console uses the same commands.
 
-RU/EN, 2026-10-06 follow-up: one-process live flow reset the modified resource, observed the map startup script, captured the actual menu, returned to the map and read all8 heroes. Payloadcounter7/gen1 retained; game/controller0/full15.973s. These CLI flows are verified; physical console entry/new-export HMR/ordinary startup remain open. Supersedes restart/menu-pending below.
+Historical snapshot (superseded where current acceptance is listed above): RU/EN, 2026-10-06 follow-up: one-process live flow reset the modified resource, observed the map startup script, captured the actual menu, returned to the map and read all8 heroes. Payloadcounter7/gen1 retained; game/controller0/full15.973s. These CLI flows are verified; physical console entry/new-export HMR/ordinary startup remain open. Supersedes restart/menu-pending below.
 
 В открытом сеансе SDK:
 
@@ -357,13 +357,13 @@ RU: Если закрыть тестовую игру раньше термин�
 
 EN: Fresh installed start verified the local crash monitor, source saves88→89→88 in one owned process and normal game-first exit. A second fresh run verified final cleanup without duplicate quit or false warning. Python83 PASS; private xkit-start-monitor-verification.json. First run predates the terminal-process cleanup correction. Scene rendering and fatal game capture remain unverified.
 
-Primary command: `xkit`; XalKit is the product name in its annotation. `xal-kit` and `xalKit` are installed aliases. Typer owns parsing/help/completion; standard project.scripts + uv editable tool installation owns executable/environment discovery. [Install and daily commands](../README.md#xalkit-команда-xkit--command-xkit). There is no custom shell/parser/translation engine.
+Primary command: `xkit`; XalKit is the product name in its annotation. `xal-kit` and `xalKit` are installed aliases. Typer owns parsing/help/completion; standard project.scripts + uv editable tool installation owns executable/environment discovery. [Install and daily commands](../README.md#xkit-команда-xkit--command-xkit). There is no custom shell/parser/translation engine.
 
 RU: `xkit setup` сохраняет папки один раз; `new NAME` создаёт C++ проект в workspace/plugins, `new NAME --resources` создаёт H5U в workspace/mods. Выбранный проект сохраняется, поэтому `start`, `build`, `release` вызываются без длинных путей. Native start сначала собирает canonical ядро/загрузчик, затем запускает собственную видимую игру и supervisor, применяет passive display event только к нашему starter и закрывает свой процесс при завершении. Managed discovery исключает старые немигрированные плагины из общей папки. Стандартная очередь между reader thread/main thread устраняет ожидание stdout при Ctrl+C; supervisor process group защищён от преждевременного сигнала.
 
 EN: Installed xkit executed from outside the checkout, settings/new/doctor and CMake build passed. Typer/Gettext tests and full Python65 PASS. Human-entry live session showed numeric42 then77 in the same owned PID51040 and closed normally. Rendered pixel gate was not established in this entry test: its standalone screenshot helper lacked H5_WORKSPACE and correctly refused the mismatched sandbox path. Prior full202146/205158 controls retain their own verified rendering/release scopes. Latest start now enables the game-control mailbox; that addition needs a fresh live check. Do not promote the initial entry test into full product acceptance.
 
-RU/EN: `xkit game` exposes status/heroes/army/resource/teleport/level/interact over existing guarded game_control. Restarts/new map loading in the same process and hero/creature completion remain unfinished. Typer supplies command/option completion plus managed project names for start/build/release and map names for start --map. Run `xkit --install-completion powershell`, then open a new terminal. Actual fresh PowerShell with its installed profile completed `xkit release reso` to resource-check; isolated TabExpansion2 also covered start/build. Private proof: installed-completion-verification.json. Project enumeration filters incomplete/unmanaged directories and sorts/deduplicates results; Python82 PASS. Languages use standard GNU gettext with locale/{ru,en}/LC_MESSAGES/xalkit.po/.mo; Babel tooling belongs to requirements-dev, no Babel runtime dependency is required. `xkit language en|ru` persists the choice; XALKIT_LANG is the explicit environment override.
+Historical snapshot (superseded where current acceptance is listed above): RU/EN: `xkit game` exposes status/heroes/army/resource/teleport/level/interact over existing guarded game_control. Restarts/new map loading in the same process and hero/creature completion remain unfinished. Typer supplies command/option completion plus managed project names for start/build/release and map names for start --map. Run `xkit --install-completion powershell`, then open a new terminal. Actual fresh PowerShell with its installed profile completed `xkit release reso` to resource-check; isolated TabExpansion2 also covered start/build. Private proof: installed-completion-verification.json. Project enumeration filters incomplete/unmanaged directories and sorts/deduplicates results; Python82 PASS. Languages use standard GNU gettext with locale/{ru,en}/LC_MESSAGES/xalkit.po/.mo; Babel tooling belongs to requirements-dev, no Babel runtime dependency is required. `xkit language en|ru` persists the choice; XALKIT_LANG is the explicit environment override.
 
 ## Extended core in player releases / Расширенное ядро в выпуске
 
