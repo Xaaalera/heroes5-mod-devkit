@@ -9,50 +9,51 @@ import time
 import uuid
 import structlog
 from concurrent_log_handler import ConcurrentRotatingFileHandler
+from xalkit_ui import text
 
 
 MESSAGES = {
-    'game_initializing': 'Ожидание инициализации игры',
-    'game_loop_ready': 'Игра готова к подключению SDK',
-    'sdk_runtime_applied': 'SDK обновлён',
-    'sdk_runtime_rejected': 'Обновление SDK отклонено; предыдущая версия сохранена',
-    'background_budget_unavailable': 'Фоновый лимит нагрузки недоступен; причина записана в журнал',
-    'console_built': 'Новая консоль собрана',
-    'console_applied': 'Консоль обновлена',
-    'console_rejected': 'Новая консоль отклонена; проверь журнал операции',
-    'console_build_failed': 'Консоль не собралась; рабочая версия сохранена',
-    'console_build_superseded': 'Исходники консоли изменились во время сборки; готовлю новую версию',
-    'supervising': 'Слежение за плагинами запущено',
-    'watching': 'Слежение за исходниками запущено',
-    'plugin_discovered': 'Найден новый плагин',
-    'applied': 'Плагин обновлён',
-    'core_built': 'Ядро собрано',
-    'core_applied': 'Ядро плагина обновлено',
-    'core_update_completed': 'Обновление ядра завершено',
-    'core_update_rejected': 'Обновление ядра отклонено; предыдущие версии восстановлены',
-    'core_rejected': 'Новое ядро отклонено',
-    'build_failed': 'Сборка плагина не удалась',
-    'core_build_failed': 'Сборка ядра не удалась; рабочая версия сохранена',
-    'plugin_stopped': 'Плагин остановлен',
-    'plugin_failed': 'Плагин завершился с ошибкой',
-    'plugin_cleanup_unconfirmed': 'Остановка плагина не подтверждена',
-    'reload_rejected': 'Обновление плагина отклонено',
-    'released': 'Выпуск собран',
-    'command_rejected': 'Команда отклонена',
-    'runtime_failed': 'Сбой SDK; проверь причину и журнал операции',
-    'game_started': 'Тестовая игра запущена',
-    'game_owned_before_resume': 'Владелец тестовой игры сохранён до продолжения запуска',
-    'game_launch_cancelled': 'Запуск отменён; созданный тестовый процесс закрыт',
-    'resource_deployed': 'H5U установлен в тестовую копию',
-    'session_report_saved': 'Итог сеанса сохранён',
-    'session_report_unavailable': 'Итоговый отчёт не сохранён; причина записана в журнал',
-    'windows_events_saved': 'Системные события собственной игры сохранены',
-    'windows_events_unavailable': 'Системные события недоступны; причина записана в журнал',
-    'session_stop_requested': 'Запрошена остановка сеанса SDK',
-    'game_close_requested': 'SDK запросил закрытие тестовой игры',
-    'game_closed': 'Тестовая игра закрыта; код завершения записан в журнал',
-    'game_exited': 'Игра завершилась до запроса SDK; проверь код завершения и события Windows',
-    'sandbox_background_enabled': 'Фоновое обновление включено только в тестовом профиле',
+    'game_initializing': 'log_game_initializing',
+    'game_loop_ready': 'log_game_loop_ready',
+    'sdk_runtime_applied': 'log_sdk_runtime_applied',
+    'sdk_runtime_rejected': 'log_sdk_runtime_rejected',
+    'background_budget_unavailable': 'log_background_budget_unavailable',
+    'console_built': 'log_console_built',
+    'console_applied': 'log_console_applied',
+    'console_rejected': 'log_console_rejected',
+    'console_build_failed': 'log_console_build_failed',
+    'console_build_superseded': 'log_console_build_superseded',
+    'supervising': 'log_supervising',
+    'watching': 'log_watching',
+    'plugin_discovered': 'log_plugin_discovered',
+    'applied': 'log_applied',
+    'core_built': 'log_core_built',
+    'core_applied': 'log_core_applied',
+    'core_update_completed': 'log_core_update_completed',
+    'core_update_rejected': 'log_core_update_rejected',
+    'core_rejected': 'log_core_rejected',
+    'build_failed': 'log_build_failed',
+    'core_build_failed': 'log_core_build_failed',
+    'plugin_stopped': 'log_plugin_stopped',
+    'plugin_failed': 'log_plugin_failed',
+    'plugin_cleanup_unconfirmed': 'log_plugin_cleanup_unconfirmed',
+    'reload_rejected': 'log_reload_rejected',
+    'released': 'log_released',
+    'command_rejected': 'log_command_rejected',
+    'runtime_failed': 'log_runtime_failed',
+    'game_started': 'log_game_started',
+    'game_owned_before_resume': 'log_game_owned_before_resume',
+    'game_launch_cancelled': 'log_game_launch_cancelled',
+    'resource_deployed': 'log_resource_deployed',
+    'session_report_saved': 'log_session_report_saved',
+    'session_report_unavailable': 'log_session_report_unavailable',
+    'windows_events_saved': 'log_windows_events_saved',
+    'windows_events_unavailable': 'log_windows_events_unavailable',
+    'session_stop_requested': 'log_session_stop_requested',
+    'game_close_requested': 'log_game_close_requested',
+    'game_closed': 'log_game_closed',
+    'game_exited': 'log_game_exited',
+    'sandbox_background_enabled': 'log_sandbox_background_enabled',
 }
 COMPILER_LOCATION = re.compile(
     r'^(.+?)\((\d+)(?:,(\d+))?\)\s*:\s*(fatal error|error|warning)\s+([A-Z]+\d+):\s*(.*)$')
@@ -139,7 +140,8 @@ class EventLog:
             path = self.directory / (event['event_id'] + '.log')
             path.write_text(raw, encoding='utf-8')
             event['diagnostic_log'] = str(path)
-        message = event.pop('event', event.pop('message', MESSAGES.get(status, status)))
+        heading = text(MESSAGES[status]) if status in MESSAGES else status
+        message = event.pop('event', event.pop('message', heading))
         selected_level = event.pop('level')
         self.bound.log(getattr(logging, selected_level.upper()), message, **event)
 

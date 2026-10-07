@@ -17,6 +17,18 @@ from sdk_logging import EventLog
 
 
 class SdkLoggingTests(unittest.TestCase):
+    def test_public_progress_headings_follow_selected_language_in_journal_and_terminal(self):
+        for language, expected in (('en', 'Waiting for game initialization'), ('ru', 'Ожидание инициализации игры')):
+            with self.subTest(language=language), tempfile.TemporaryDirectory() as directory, \
+                    patch.dict(os.environ, {'XALKIT_LANG': language}):
+                stream = io.StringIO()
+                log = EventLog(Path(directory), console=True, stream=stream)
+                log.emit({'status': 'game_initializing'})
+                log.close()
+                event = json.loads((Path(directory) / 'events.jsonl').read_text(encoding='utf-8'))
+                self.assertEqual(event['event'], expected)
+                self.assertIn(expected, stream.getvalue())
+
     def test_rotation_compresses_and_prunes_only_old_event_archives(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

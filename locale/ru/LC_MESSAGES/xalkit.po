@@ -1,5 +1,17 @@
 # Russian translations for xkit.
 
+msgid "xalkit.recover_bank_failed"
+msgstr "Восстановление справочника не завершено. Закрой тестовую игру, проверь файл восстановления {manifest} и журнал сеанса, затем повтори команду."
+
+msgid "xalkit.recover_bank_help"
+msgstr "Восстановить прежние файлы справочника после ошибки очистки. Укажи путь recovery.json из журнала сеанса; сначала закрой тестовую игру."
+
+msgid "xalkit.recover_bank_done"
+msgstr "Прежние файлы сеанса справочника восстановлены. Сохранённые файлы восстановления удалены."
+
+msgid "xalkit.native_adapter_unknown"
+msgstr "Проект требует неподдерживаемый нативный адаптер: {adapter}. Проверь mod.json и используй соответствующую версию SDK. Пакет не собран."
+
 msgid "xalkit.game_restart"
 msgstr "Загрузить указанную карту заново, сбросив её игровое состояние."
 
@@ -585,3 +597,126 @@ msgid "xalkit.storage_low_space"
 msgstr "Не хватает места для тестовой установки в {path}. Нужно {needed} ГиБ, доступно {available} ГиБ. Выполни xkit storage clean или выбери другой диск для проектов."
 msgid "xalkit.storage_restore_dump_help"
 msgstr "Распаковать архивный дамп сбоя с проверкой исходной контрольной суммы."
+
+msgid "xalkit.log_game_initializing"
+msgstr "Ожидание инициализации игры"
+
+msgid "xalkit.log_game_loop_ready"
+msgstr "Игра готова к подключению SDK"
+
+msgid "xalkit.log_sdk_runtime_applied"
+msgstr "SDK обновлён"
+
+msgid "xalkit.log_sdk_runtime_rejected"
+msgstr "Обновление SDK отклонено; предыдущая версия сохранена"
+
+msgid "xalkit.log_background_budget_unavailable"
+msgstr "Фоновый лимит нагрузки недоступен; причина записана в журнал"
+
+msgid "xalkit.log_console_built"
+msgstr "Новая консоль собрана"
+
+msgid "xalkit.log_console_applied"
+msgstr "Консоль обновлена"
+
+msgid "xalkit.log_console_rejected"
+msgstr "Новая консоль отклонена; проверь журнал операции"
+
+msgid "xalkit.log_console_build_failed"
+msgstr "Консоль не собралась; рабочая версия сохранена"
+
+msgid "xalkit.log_console_build_superseded"
+msgstr "Исходники консоли изменились во время сборки; готовлю новую версию"
+
+msgid "xalkit.log_supervising"
+msgstr "Слежение за плагинами запущено"
+
+msgid "xalkit.log_watching"
+msgstr "Слежение за исходниками запущено"
+
+msgid "xalkit.log_plugin_discovered"
+msgstr "Найден новый плагин"
+
+msgid "xalkit.log_applied"
+msgstr "Плагин обновлён"
+
+msgid "xalkit.log_core_built"
+msgstr "Ядро собрано"
+
+msgid "xalkit.log_core_applied"
+msgstr "Ядро плагина обновлено"
+
+msgid "xalkit.log_core_update_completed"
+msgstr "Обновление ядра завершено"
+
+msgid "xalkit.log_core_update_rejected"
+msgstr "Обновление ядра отклонено; предыдущие версии восстановлены"
+
+msgid "xalkit.log_core_rejected"
+msgstr "Новое ядро отклонено"
+
+msgid "xalkit.log_build_failed"
+msgstr "Сборка плагина не удалась"
+
+msgid "xalkit.log_core_build_failed"
+msgstr "Сборка ядра не удалась; рабочая версия сохранена"
+
+msgid "xalkit.log_plugin_stopped"
+msgstr "Плагин остановлен"
+
+msgid "xalkit.log_plugin_failed"
+msgstr "Плагин завершился с ошибкой"
+
+msgid "xalkit.log_plugin_cleanup_unconfirmed"
+msgstr "Остановка плагина не подтверждена"
+
+msgid "xalkit.log_reload_rejected"
+msgstr "Обновление плагина отклонено"
+
+msgid "xalkit.log_released"
+msgstr "Выпуск собран"
+
+msgid "xalkit.log_command_rejected"
+msgstr "Команда отклонена"
+
+msgid "xalkit.log_runtime_failed"
+msgstr "Сбой SDK; проверь причину и журнал операции"
+
+msgid "xalkit.log_game_started"
+msgstr "Тестовая игра запущена"
+
+msgid "xalkit.log_game_owned_before_resume"
+msgstr "Владелец тестовой игры сохранён до продолжения запуска"
+
+msgid "xalkit.log_game_launch_cancelled"
+msgstr "Запуск отменён; созданный тестовый процесс закрыт"
+
+msgid "xalkit.log_resource_deployed"
+msgstr "H5U установлен в тестовую копию"
+
+msgid "xalkit.log_session_report_saved"
+msgstr "Итог сеанса сохранён"
+
+msgid "xalkit.log_session_report_unavailable"
+msgstr "Итоговый отчёт не сохранён; причина записана в журнал"
+
+msgid "xalkit.log_windows_events_saved"
+msgstr "Системные события собственной игры сохранены"
+
+msgid "xalkit.log_windows_events_unavailable"
+msgstr "Системные события недоступны; причина записана в журнал"
+
+msgid "xalkit.log_session_stop_requested"
+msgstr "Запрошена остановка сеанса SDK"
+
+msgid "xalkit.log_game_close_requested"
+msgstr "SDK запросил закрытие тестовой игры"
+
+msgid "xalkit.log_game_closed"
+msgstr "Тестовая игра закрыта; код завершения записан в журнал"
+
+msgid "xalkit.log_game_exited"
+msgstr "Игра завершилась до запроса SDK; проверь код завершения и события Windows"
+
+msgid "xalkit.log_sandbox_background_enabled"
+msgstr "Фоновое обновление включено только в тестовом профиле"

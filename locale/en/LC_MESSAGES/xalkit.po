@@ -1,5 +1,17 @@
 # English translations for xkit.
 
+msgid "xalkit.recover_bank_failed"
+msgstr "Bank recovery could not finish. Close the test game, check the recovery file {manifest} and the session log, then retry."
+
+msgid "xalkit.recover_bank_help"
+msgstr "Restore retained bank session files after a failed cleanup. Pass the recovery.json path from the session log; close the test game first."
+
+msgid "xalkit.recover_bank_done"
+msgstr "Previous bank session files restored. Retained recovery files removed."
+
+msgid "xalkit.native_adapter_unknown"
+msgstr "This project needs an unsupported native adapter: {adapter}. Check its mod.json and use the matching SDK version. No package was built."
+
 msgid "xalkit.game_restart"
 msgstr "Load the named map again, resetting its game state."
 
@@ -584,3 +596,126 @@ msgid "xalkit.storage_low_space"
 msgstr "Not enough space for a test installation in {path}. Need {needed} GiB, available {available} GiB. Run xkit storage clean or choose another project drive."
 msgid "xalkit.storage_restore_dump_help"
 msgstr "Restore an archived crash dump and verify its original checksum."
+
+msgid "xalkit.log_game_initializing"
+msgstr "Waiting for game initialization"
+
+msgid "xalkit.log_game_loop_ready"
+msgstr "Game is ready for SDK connection"
+
+msgid "xalkit.log_sdk_runtime_applied"
+msgstr "SDK updated"
+
+msgid "xalkit.log_sdk_runtime_rejected"
+msgstr "SDK update rejected; previous version retained"
+
+msgid "xalkit.log_background_budget_unavailable"
+msgstr "Background CPU limit unavailable; see the log for details"
+
+msgid "xalkit.log_console_built"
+msgstr "New console built"
+
+msgid "xalkit.log_console_applied"
+msgstr "Console updated"
+
+msgid "xalkit.log_console_rejected"
+msgstr "New console rejected; inspect the operation log"
+
+msgid "xalkit.log_console_build_failed"
+msgstr "Console build failed; working version retained"
+
+msgid "xalkit.log_console_build_superseded"
+msgstr "Console sources changed during build; preparing another version"
+
+msgid "xalkit.log_supervising"
+msgstr "Watching plugins"
+
+msgid "xalkit.log_watching"
+msgstr "Watching source files"
+
+msgid "xalkit.log_plugin_discovered"
+msgstr "New plugin found"
+
+msgid "xalkit.log_applied"
+msgstr "Plugin updated"
+
+msgid "xalkit.log_core_built"
+msgstr "Core built"
+
+msgid "xalkit.log_core_applied"
+msgstr "Plugin core updated"
+
+msgid "xalkit.log_core_update_completed"
+msgstr "Core update completed"
+
+msgid "xalkit.log_core_update_rejected"
+msgstr "Core update rejected; previous versions restored"
+
+msgid "xalkit.log_core_rejected"
+msgstr "New core rejected"
+
+msgid "xalkit.log_build_failed"
+msgstr "Plugin build failed"
+
+msgid "xalkit.log_core_build_failed"
+msgstr "Core build failed; working version retained"
+
+msgid "xalkit.log_plugin_stopped"
+msgstr "Plugin stopped"
+
+msgid "xalkit.log_plugin_failed"
+msgstr "Plugin exited with an error"
+
+msgid "xalkit.log_plugin_cleanup_unconfirmed"
+msgstr "Plugin stop not confirmed"
+
+msgid "xalkit.log_reload_rejected"
+msgstr "Plugin update rejected"
+
+msgid "xalkit.log_released"
+msgstr "Release built"
+
+msgid "xalkit.log_command_rejected"
+msgstr "Command rejected"
+
+msgid "xalkit.log_runtime_failed"
+msgstr "SDK failure; inspect the reason and operation log"
+
+msgid "xalkit.log_game_started"
+msgstr "Test game started"
+
+msgid "xalkit.log_game_owned_before_resume"
+msgstr "Test process ownership recorded before startup resumes"
+
+msgid "xalkit.log_game_launch_cancelled"
+msgstr "Launch cancelled; created test process closed"
+
+msgid "xalkit.log_resource_deployed"
+msgstr "H5U installed in the test copy"
+
+msgid "xalkit.log_session_report_saved"
+msgstr "Session report saved"
+
+msgid "xalkit.log_session_report_unavailable"
+msgstr "Session report not saved; see the log for details"
+
+msgid "xalkit.log_windows_events_saved"
+msgstr "Owned game system events saved"
+
+msgid "xalkit.log_windows_events_unavailable"
+msgstr "System events unavailable; see the log for details"
+
+msgid "xalkit.log_session_stop_requested"
+msgstr "Stopping the development session"
+
+msgid "xalkit.log_game_close_requested"
+msgstr "SDK requested test game shutdown"
+
+msgid "xalkit.log_game_closed"
+msgstr "Test game closed; exit code recorded"
+
+msgid "xalkit.log_game_exited"
+msgstr "Game exited before SDK requested shutdown; inspect exit code and Windows events"
+
+msgid "xalkit.log_sandbox_background_enabled"
+msgstr "Background updates enabled only in the test profile"
