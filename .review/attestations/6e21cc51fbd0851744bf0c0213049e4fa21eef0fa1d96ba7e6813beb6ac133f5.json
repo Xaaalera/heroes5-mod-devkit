@@ -1,6 +1,6 @@
 {
-  "diffHash": "04b9b3faa0fc91b55a6daaecbe4890ae2540a75cbee67bfc5e2fddce10f007a4",
-  "commitSha": "1dcd6a473e06916bcc1f2648cfcf62c1b206fa39",
+  "diffHash": "6e21cc51fbd0851744bf0c0213049e4fa21eef0fa1d96ba7e6813beb6ac133f5",
+  "commitSha": "520058ee3c3b762e1ca2e7ae4ab97205b180bd9c",
   "perAgent": {
     "craft": {
       "score": 10,
@@ -56,7 +56,7 @@
           },
           "maintenance": {
             "verdict": "PASS",
-            "evidence": "AGENTS.md: Canonical dependency synchronization and review renewal rules identify upkeep. CONTRIBUTING.md: Script/documentation pairing and renewed review after source edits are explicit. README.md: Canonical editable SDK and pinned standalone submodule avoid duplicate tool copies. docs/commands.md: Direct supervisor guidance requires owned game closure after worker/retirement failure; current code raises on failure/timeout and retains slots while child records exist."
+            "evidence": "AGENTS.md: Canonical dependency synchronization and review renewal rules identify upkeep. CONTRIBUTING.md: Script/documentation pairing and renewed review after source edits are explicit. README.md: Canonical editable SDK and pinned standalone submodule avoid duplicate tool copies. docs/commands.md: Direct supervisor guidance requires owned game closure after worker/retirement failure; current code raises on failure/timeout and retains slots while child records exist. Maintenance delta follows existing AGENTS resolved-path rule and does not change a documented contract."
           }
         },
         "findings": []
@@ -68,5 +68,5 @@
     }
   },
   "overall": "PASS",
-  "timestamp": "2026-10-07T10:46:13.368Z"
+  "timestamp": "2026-10-07T11:16:59.778Z"
 }
