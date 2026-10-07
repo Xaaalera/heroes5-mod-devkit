@@ -1,5 +1,9 @@
 # xkit
 
+Работаем с исходниками: сохраняем C++ код, xkit автоматически собирает служебный результат и применяет поддерживаемые изменения в тестовой игре. Промежуточные DLL находятся в кеше SDK; вручную переносить их не нужно. `xkit release <проект>` создаёт отдельный пакет DLL/H5U для игроков. Автоматическая компиляция C++ уже была частью HMR; текущая работа расширяет поддержку ядра SDK и существующих модов.
+
+Develop against source files. xkit automatically compiles C++ changes and applies supported updates in the test game; intermediate DLLs belong to its build cache. Use `xkit release <project>` for a separate player package.
+
 RU, 2026-10-07: проверены замена ядра и двух плагинов в одном процессе, новые функции и экспорт ядра, сохранение состояния, отключение старых callbacks и откат. Два отдельных DLL-пакета из тех же исходников автоматически подключаются при обычном запуске игры. В консоли проверены Ctrl+Enter, история, Tab, изменение размера мышью и прокрутка логов без зума камеры. Причины ошибок подключения сохраняются; публикация текущей версии ещё не завершена.
 EN: Live checks verify core/two-plugin replacement, added functions/core export, state transfer, callback teardown and rollback. Separate same-source DLL packages initialize during ordinary startup. Console checks cover Ctrl+Enter, history, Tab, mouse resizing and log scrolling without camera zoom. Startup failure reasons are retained; publication of the current version remains open.
 
@@ -369,7 +373,7 @@ The bootstrap forwards DirectInput8Create to the absolute system library and val
 
 A module initialization failure reports the error and exits startup with code1114 instead of continuing partly modded. Reporting occurs after InitOnce completes; reentrant input calls return E_FAIL during the dialog. The missing-bank-H5U case was tested with both DLLs installed, then the resource restored. Game hashes establish compatibility, not plugin authenticity.
 
-`npm run check:native` выполняет две CTest-проверки: границы файловой проверки и настоящую фабрику DirectInput через переходник в неигровом процессе. / Runs two CTest checks: file-validation boundaries and the real forwarded DirectInput factory in a non-game process. No input device or game is opened by these unit checks.
+`npm run check:native` выполняет семь CTest-проверок: графические и файловые границы, переходники DirectInput/анимации, жизненный цикл плагинов, шину диагностики и состояние bridge. / Runs seven CTest checks covering graphics/file guards, DirectInput/animation forwarding, plugin lifecycle, diagnostics and bridge state. These checks use test programs, not the installed game.
 
 Microsoft: [DirectInput8Create](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ee416756(v=vs.85)) · [DllMain limits](https://learn.microsoft.com/en-us/windows/win32/dlls/dllmain) · [DLL search security](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-security).
 

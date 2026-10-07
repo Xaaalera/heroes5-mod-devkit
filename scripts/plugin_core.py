@@ -196,6 +196,21 @@ def package_sdk_runtime(sdk, built, archive):
     return archive
 
 
+def validate_player_archive(archive, name):
+    plugin = 'bin/Heroes5Mods/Plugins/' + name + '.dll'
+    expected = {plugin, 'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt', 'NOTICE.txt'}
+    if len(archive.namelist()) != len(expected) or set(archive.namelist()) != expected or archive.testzip() is not None:
+        raise ValueError('Native player archive contents or CRC differ')
+    manifest = json.loads(archive.read('release.json'))
+    if not isinstance(manifest, dict) or manifest.get('abi') != 3:
+        raise ValueError('Native player archive ABI differs')
+    for member, key in ((plugin, 'plugin_sha256'), ('bin/dinput8.dll', 'loader_sha256'),
+                        ('bin/d3d9.dll', 'graphics_facade_sha256')):
+        if hashlib.sha256(archive.read(member)).hexdigest() != manifest.get(key):
+            raise ValueError('Native player archive checksum differs: ' + member)
+    return manifest
+
+
 def package_sdk_release(sdk, runtime_archive, archive):
     """Ship the current canonical sources, Game API and ready runtime together."""
     sdk = sdk.resolve()
@@ -576,15 +591,19 @@ class CoreClient:
             # Only confirmed native status failures reach this path. Timeout or
             # disconnection is uncertain and must never trigger unsafe unloading.
             self.close(candidate)
-            if self.send(old, prepare_command)['status'] != 0 or \
-               self.send(old, 'restore ' + state['snapshot'])['status'] != 0 or \
-               self.send(old, activate_command)['status'] != 0:
-                raise RuntimeError('core_rollback_failed')
+            for rollback_stage, rollback_command in (('prepare', prepare_command),
+                    ('restore', 'restore ' + state['snapshot']), ('activate', activate_command)):
+                rollback_response = self.send(old, rollback_command)
+                if rollback_response['status'] != 0:
+                    raise RuntimeError('core_rollback_failed: candidate_stage=' + stage
+                        + ', candidate_status=' + str(observed['status']) + ', rollback_stage=' + rollback_stage
+                        + ', rollback_status=' + str(rollback_response['status']))
             self.arguments[0] = previous_controller
             return core_error('CORE_TRANSFER_FAILED', stage)
         self.process = candidate
         self.arguments[-1] = str(bridge)
         self.close(old)
         return {'status': 'core_applied', 'from_version': old_version,
+                'core_bridge': str(self.arguments[-1]), 'core_controller': str(self.arguments[0]),
                 'core_version': self.request('core')['result'],
                 'observation': observed, 'state_preserved': True}

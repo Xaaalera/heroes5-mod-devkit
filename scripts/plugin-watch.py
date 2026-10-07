@@ -328,8 +328,164 @@ class PluginWatch:
             snapshot[name] = hashlib.sha256(path.read_bytes()).hexdigest()
         return snapshot
 
+    def reload_bank_core(self, bridge, controller=None):
+        """Keep the resident selector out of the replaceable core's payload slot."""
+        detached = self.request('bank-detach')
+        if detached.get('status') != 0:
+            raise RuntimeError('Bank hook quiescence unconfirmed; core replacement refused')
+        before = [self.request('bank-stat ' + str(index)) for index in range(4)]
+        if any(record.get('status') != 0 or type(record.get('result')) is not int for record in before):
+            raise RuntimeError('Bank state observation failed after detachment')
+        # Transport exceptions leave lifetime uncertain. Do not attach or replay.
+        result = self.client.reload_core(bridge, None, 0, 'main', controller=controller)
+        if result.get('status') not in ('core_applied', 'core_rejected'):
+            raise RuntimeError('Bank core recovery unconfirmed')
+        bound = self.request('bank-bind')
+        if bound.get('status') != 0:
+            raise RuntimeError('Bank owner binding failed after core replacement')
+        after = [self.request('bank-stat ' + str(index)) for index in range(4)]
+        if (any(record.get('status') != 0 for record in after)
+                or [record.get('result') for record in before] != [record.get('result') for record in after]):
+            raise RuntimeError('Resident bank state changed across core replacement')
+        attached = self.request('bank-attach')
+        if attached.get('status') != 0:
+            raise RuntimeError('Bank hook reactivation unconfirmed')
+        return {**result, 'bank_state_observed': True, 'bank_hook_restored': True,
+                'bank_state_before': [record['result'] for record in before],
+                'bank_state_after': [record['result'] for record in after],
+                'core_bridge': str(self.client.arguments[-1]),
+                'core_controller': str(self.client.arguments[0])}
+
+    def bank_snapshot(self, project):
+        project = Path(project).resolve(strict=True)
+        paths = [project / 'CMakeLists.txt', project / 'mod.json', project / 'scripts/build-player.py']
+        paths.extend(path for path in (project / 'src').rglob('*')
+                     if path.is_file() and path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.def'))
+        snapshot = {'@bank/' + path.relative_to(project).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in paths}
+        snapshot.update(self.snapshot())
+        snapshot['@sdk-generator/native-probe.py'] = hashlib.sha256((DEVKIT / 'scripts/native-probe.py').read_bytes()).hexdigest()
+        return snapshot
+
+    def build_bank_payload(self, project, package, graphics, cmake, observed_at, managed=True):
+        """Build this existing CMake bank consumer without rewriting its sources."""
+        project = Path(project).resolve(strict=True)
+        package = Path(package).resolve(strict=True)
+        graphics = Path(graphics).resolve(strict=True)
+        snapshot = self.bank_snapshot(project)
+        identity = (snapshot, hashlib.sha256(package.read_bytes()).hexdigest(),
+                    hashlib.sha256(graphics.read_bytes()).hexdigest(), managed)
+        if self.last_attempt == identity:
+            return None
+        self.last_attempt = identity
+        generated = self.intermediates / 'bank-generated'
+        cache = self.intermediates / ('bank-cmake' if managed else 'bank-player-cmake')
+        commands = [
+            [sys.executable, '-X', 'utf8', str(project / 'scripts/build-player.py'), str(package),
+             '--output', str(generated / 'bank_payload.hpp')],
+            [str(cmake), '-S', str(project), '-B', str(cache), '-A', 'Win32',
+             '-DBANK_PAYLOAD_DIR=' + str(generated), '-DXKIT_GRAPHICS_FILE=' + str(graphics),
+             '-DBANK_MANAGED_SELECTOR=' + ('ON' if managed else 'OFF'), '-DBUILD_TESTING=OFF'],
+            [str(cmake), '--build', str(cache), '--config', 'Release', '--target', 'workshop_bank_plugin'],
+        ]
+        started = time.perf_counter()
+        for command in commands:
+            result = subprocess.run(command, env=self.environment or None, stdin=subprocess.DEVNULL, capture_output=True,
+                                    text=True, encoding='utf-8', errors='replace', timeout=120)
+            if result.returncode:
+                return {'status': 'build_failed', 'exit_code': result.returncode,
+                        'diagnostic': result.stdout + result.stderr,
+                        'build_seconds': time.perf_counter() - started}
+        if (self.bank_snapshot(project) != snapshot or hashlib.sha256(package.read_bytes()).hexdigest() != identity[1]
+                or hashlib.sha256(graphics.read_bytes()).hexdigest() != identity[2]):
+            return {'status': 'superseded', 'build_seconds': time.perf_counter() - started}
+        payload = cache / 'Release/WorkshopBankReference.dll'
+        if not payload.is_file():
+            raise RuntimeError('Managed bank build succeeded without its DLL')
+        payload_digest = hashlib.sha256(payload.read_bytes()).hexdigest()
+        sealed = self.intermediates / ('bank-' + payload_digest + '.dll')
+        if sealed.exists():
+            if hashlib.sha256(sealed.read_bytes()).hexdigest() != payload_digest:
+                raise ValueError('Sealed bank build artifact changed')
+        else:
+            shutil.copyfile(payload, sealed)
+        return {'status': 'bank_built', 'payload': str(sealed), 'source_hashes': snapshot,
+                'payload_sha256': payload_digest,
+                'package_sha256': identity[1], 'graphics_sha256': identity[2],
+                'build_seconds': time.perf_counter() - started,
+                'observed_to_build_seconds': time.perf_counter() - observed_at}
+
     def request(self, command):
         return self.client.request(command)
+
+    def update_bank_payload(self, project, package, graphics, cmake, game, observed_at):
+        built = self.build_bank_payload(project, package, graphics, cmake, observed_at)
+        if built is None or built['status'] != 'bank_built':
+            return built
+        # Recheck at the application boundary, including changes between build
+        # completion and dispatch. Stale source output must never reach the game.
+        if (self.bank_snapshot(project) != built['source_hashes']
+                or hashlib.sha256(Path(package).read_bytes()).hexdigest() != built['package_sha256']
+                or hashlib.sha256(Path(graphics).read_bytes()).hexdigest() != built['graphics_sha256']):
+            return {'status': 'superseded', 'build_seconds': built['build_seconds']}
+        applied = self.apply_bank_payload(built['payload'], game, observed_at)
+        if applied['status'] == 'applied':
+            attached = self.request('bank-attach')
+            if attached.get('status') != 0:
+                raise RuntimeError('Bank watcher activation hook is unconfirmed')
+            applied['bank_hook_restored'] = True
+        return {**built, **applied}
+
+    def apply_bank_payload(self, payload, game, observed_at):
+        """Apply a built bank descriptor; never replay an uncertain activation."""
+        game = Path(game).resolve(strict=True)
+        if game.name.lower() != 'h5_game.exe':
+            raise ValueError('Bank payload staging requires the owned game executable')
+        arguments = getattr(self.client, 'arguments', None)
+        if (not isinstance(arguments, list) or len(arguments) < 6 or arguments[1] != '--owned'
+                or Path(arguments[-2]).resolve() != game or self.client.poll() is not None):
+            raise ValueError('Bank staging owner does not match the live SDK controller')
+        workspace = game.parents[3]
+        marker = workspace / '.local/test-state/prepared.json'
+        metadata = json.loads(marker.read_text(encoding='utf-8'))
+        if (marker.resolve() != marker or game != workspace / '.local/test-game/bin/H5_Game.exe'
+                or metadata.get('status') != 'complete' or metadata.get('profile') != 'WorkshopDev'
+                or metadata.get('game') != str(game.parent.parent)):
+            raise ValueError('Bank staging requires the prepared private test game')
+        directory = game.parent / 'Heroes5Mods/BankUpdates'
+        if directory.resolve() != directory:
+            raise ValueError('Bank update directory is redirected')
+        directory.mkdir(parents=True, exist_ok=True)
+        contents = Path(payload).read_bytes()
+        digest = hashlib.sha256(contents).hexdigest()
+        staged = directory / (digest + '.dll')
+        if staged.resolve() != staged:
+            raise ValueError('Bank candidate path is redirected')
+        if staged.exists():
+            if staged.read_bytes() != contents:
+                raise ValueError('Sealed bank candidate bytes changed')
+        else:
+            temporary = staged.with_name(staged.name + '.' + uuid.uuid4().hex + '.tmp')
+            try:
+                temporary.write_bytes(contents)
+                os.replace(temporary, staged)
+            finally:
+                temporary.unlink(missing_ok=True)
+        receipt = self.request('bank-reload ' + str(staged))
+        if receipt.get('applied') and (receipt.get('status') != 0 or not receipt.get('module_released')):
+            raise RuntimeError('Bank code activated but module retirement is unconfirmed; do not replay')
+        if receipt.get('status') != 0:
+            return {'status': 'reload_rejected', 'bridge_status': receipt.get('status'),
+                    'receipt': receipt, 'payload_sha256': digest}
+        if not receipt.get('applied') or not receipt.get('module_released'):
+            raise RuntimeError('Bank replacement success receipt is incomplete; do not replay')
+        observation = self.request('bank-stat 0')
+        if observation.get('status') != 0:
+            raise RuntimeError('Bank code activated but state observation is unconfirmed; do not replay')
+        self.ready = staged
+        return {'status': 'applied', 'payload': str(staged), 'payload_sha256': digest,
+                'receipt': receipt, 'observation': observation,
+                'observed_to_call_seconds': time.perf_counter() - observed_at}
 
     def build(self, sources, snapshot, generation, payload, release):
         """Cache translation units; conservatively invalidate all on header edits."""
@@ -419,6 +575,7 @@ class PluginWatch:
                 archive.write(payload, 'bin/Heroes5Mods/Plugins/' + release_name + '.dll')
                 archive.write(loader, 'bin/dinput8.dll')
                 archive.write(graphics, 'bin/d3d9.dll')
+                archive.write(DEVKIT / 'NOTICE.md', 'NOTICE.txt')
                 archive.writestr('release.json', json.dumps(manifest, indent=2))
                 archive.writestr('README.txt', '\n'.join([
                     release_name + ' — Heroes V Universe',
@@ -506,6 +663,10 @@ def main():
     parser.add_argument('--owned-game', action='store_true')
     parser.add_argument('--main-thread', action='store_true',
                         help='Observe payload command0 through the owned window-thread hook')
+    parser.add_argument('--bank-project', type=Path, help=argparse.SUPPRESS)
+    parser.add_argument('--bank-package', type=Path, help=argparse.SUPPRESS)
+    parser.add_argument('--bank-graphics', type=Path, help=argparse.SUPPRESS)
+    parser.add_argument('--bank-cmake', type=Path, help=argparse.SUPPRESS)
     parser.add_argument('--control-stdin', action='store_true',
                         help='Accept JSONL invoke/main/event/stop commands on stdin while watching')
     parser.add_argument('--max-updates', type=int, default=0,
@@ -524,6 +685,10 @@ def main():
     parser.add_argument('--instance', help=argparse.SUPPRESS)
     parser.add_argument('--managed-projects', action='store_true', help=argparse.SUPPRESS)
     options = parser.parse_args()
+    bank_mode = options.bank_project is not None
+    if bank_mode and (not options.source or not options.owned_game or options.release
+            or not options.bank_package or not options.bank_graphics or not options.bank_cmake):
+        parser.error('Bank watch requires one owned source/project/package/graphics/CMake and no release mode')
     if options.max_updates < 0:
         parser.error('--max-updates must be nonnegative')
     if not 0 <= options.slot < 64:
@@ -572,9 +737,13 @@ def main():
         console_builder = CoreBuild(DEVKIT / 'native', options.console_build, environment, console=True) if options.console_build else None
         watcher = PluginWatch(options.source, options.output, compiler, environment, client,
                               options.main_thread)
-        configured = watcher.request(f'slot {options.slot} 0')
+        configured = watcher.request('connect' if bank_mode else f'slot {options.slot} 0')
         if configured['status'] != 0:
             raise RuntimeError('Plugin UI slot configuration failed')
+        if bank_mode:
+            bound = watcher.request('bank-bind')
+            if bound['status'] != 0:
+                raise RuntimeError('Bank watcher could not bind the owned game window')
         updates = 0
         commands = queue.Queue()
         if options.control_stdin:
@@ -607,10 +776,17 @@ def main():
                         bridge = watcher.output / ('core-' + uuid.uuid4().hex + '.dll')
                         shutil.copyfile(bridge_source, bridge)
                         started = time.perf_counter()
-                        result = client.reload_core(bridge, watcher.ready, options.slot, watcher.invoke_command,
-                                                    request.get('controller'))
+                        result = (watcher.reload_bank_core(bridge, request.get('controller')) if bank_mode else
+                                  client.reload_core(bridge, watcher.ready, options.slot, watcher.invoke_command,
+                                                     request.get('controller')))
                         events.emit({'id': request_id, 'core_reload_seconds': time.perf_counter() - started,
                                      **result})
+                        continue
+                    if bank_mode and command == 'bank-status':
+                        statistics = {name: watcher.request('bank-stat ' + str(index))
+                                      for index, name in enumerate(('calls', 'matched_titles', 'selected_roots',
+                                                                    'execution_marker', 'cached_windows', 'cache_fingerprint'))}
+                        events.emit({'status': 'command_result', 'id': request_id, 'response': statistics})
                         continue
                     if command in ('core', 'feature'):
                         response = watcher.request(command)
@@ -636,8 +812,9 @@ def main():
                         bridge = watcher.output / ('core-' + uuid.uuid4().hex + '.dll')
                         shutil.copyfile(record['bridge'], bridge)
                         started = time.perf_counter()
-                        result = client.reload_core(bridge, watcher.ready, options.slot, watcher.invoke_command,
-                                                    record['controller'])
+                        result = (watcher.reload_bank_core(bridge, record['controller']) if bank_mode else
+                                  client.reload_core(bridge, watcher.ready, options.slot, watcher.invoke_command,
+                                                     record['controller']))
                         events.emit({'core_reload_seconds': time.perf_counter() - started, **result})
             if console_builder and watcher.ready is not None:
                 record = console_builder.update()
@@ -649,6 +826,19 @@ def main():
                         events.emit({'status': 'console_applied' if response['status'] == 0 else 'console_rejected',
                                      'console': record['console'], 'response': response,
                                      'console_reload_seconds': time.perf_counter() - started})
+            if bank_mode:
+                try:
+                    record = watcher.update_bank_payload(options.bank_project, options.bank_package,
+                        options.bank_graphics, options.bank_cmake, executable, time.perf_counter())
+                except subprocess.TimeoutExpired:
+                    record = {'status': 'build_failed', 'reason': 'compiler_timeout'}
+                if record:
+                    events.emit(record)
+                    updates += 1
+                    if options.max_updates and updates >= options.max_updates:
+                        break
+                time.sleep(0.25)
+                continue
             snapshot = watcher.snapshot()
             if snapshot != watcher.last_attempt:
                 observed_at = time.perf_counter()
@@ -670,9 +860,15 @@ def main():
         raise
     finally:
         try:
-            client.close()
+            if bank_mode:
+                detached = client.request('bank-detach')
+                if detached.get('status') != 0:
+                    raise RuntimeError('Bank watcher hook retirement unconfirmed')
         finally:
-            events.close()
+            try:
+                client.close()
+            finally:
+                events.close()
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ import signal
 import subprocess
 import sys
 import time
+from zipfile import ZipFile, ZIP_DEFLATED
 from typing import Annotated, Optional
 
 import typer
@@ -152,10 +153,49 @@ def resource_operation(saved, name, source, action):
 def build_project(saved, name, source, native, events):
     events.emit({'status': 'building', 'message': text('building', name=name), 'plugin': name})
     if not native:
+        adapter = json.loads((source / 'mod.json').read_text(encoding='utf-8')).get('native_adapter')
+        if adapter and adapter != 'bank-selector':
+            raise ValueError(text('native_adapter_unknown', adapter=str(adapter)))
         result = resource_operation(saved, name, source, 'build')
         artifact = Path(result.get('artifact') or Path(saved['workspace']) / '.local/test-state' / (name + '.h5u'))
         output = Path(saved['workspace']) / '.local/xalkit/releases' / name
         output.mkdir(parents=True, exist_ok=True)
+        if adapter:
+            toolchain, compiler, environment, built, loader = native_tools(saved, events)
+            module = load_backend('plugin-watch.py')
+            watcher = module.PluginWatch(source / 'src', output / 'build', compiler, environment, None)
+            from plugin_core import CoreBuild
+            cmake = CoreBuild(DEVKIT / 'native', output / 'tools', environment).cmake
+            candidate = watcher.build_bank_payload(source, artifact, Path(built['graphics']), cmake,
+                                                    time.perf_counter(), managed=False)
+            events.emit(candidate)
+            if not candidate or candidate['status'] != 'bank_built':
+                raise RuntimeError(text('native_build_failed', diagnostic=events.directory))
+            archive = output / (name + '.zip')
+            temporary = output / (name + '.zip.tmp')
+            try:
+                with ZipFile(temporary, 'w', ZIP_DEFLATED) as package:
+                    member_hashes = {}
+                    for filename, member in ((Path(candidate['payload']), 'bin/Heroes5Mods/WorkshopBankReference.dll'),
+                            (artifact, 'UserMODs/workshop-army-reference.h5u'), (loader, 'bin/dinput8.dll'),
+                            (Path(built['graphics']), 'bin/d3d9.dll'), (DEVKIT / 'NOTICE.md', 'NOTICE.txt'),
+                            (source / 'README.md', 'README.md')):
+                        content = filename.read_bytes()
+                        digest = hashlib.sha256(content).hexdigest()
+                        expected = {'bin/Heroes5Mods/WorkshopBankReference.dll': candidate['payload_sha256'],
+                                    'UserMODs/workshop-army-reference.h5u': candidate['package_sha256'],
+                                    'bin/d3d9.dll': candidate['graphics_sha256']}.get(member)
+                        if expected is not None and digest != expected:
+                            raise ValueError(text('native_build_failed', diagnostic=events.directory))
+                        package.writestr(member, content)
+                        member_hashes[member] = digest
+                    package.writestr('build.json', json.dumps({'native_adapter': adapter, 'mode': 'player',
+                        'source_hashes': candidate['source_hashes'], 'files': member_hashes}, indent=2) + '\n')
+                os.replace(temporary, archive)
+            finally:
+                temporary.unlink(missing_ok=True)
+            events.emit({'status': 'released', 'archive': str(archive), 'native_adapter': adapter})
+            return str(archive)
         released = output / (name + '.h5u')
         shutil.copyfile(artifact, released)
         shutil.copyfile(artifact.with_suffix('.build.json'), released.with_suffix('.build.json'))
@@ -174,6 +214,29 @@ def build_project(saved, name, source, native, events):
 
 sdk_app = typer.Typer(help=text('sdk_tools'))
 app.add_typer(sdk_app, name='sdk')
+
+
+@sdk_app.command(name='recover-bank', help=text('recover_bank_help'))
+@logged_command('sdk recover-bank')
+def recover_bank(manifest: Path = typer.Argument(..., exists=True, dir_okay=False)):
+    from xalkit_runtime import recover_bank_runtime
+    root = Path(settings()['workspace'])
+    try:
+        if (root / '.local').resolve() != root / '.local':
+            raise ValueError('Workspace mutation directory is redirected')
+        module = load_backend('mod-dev.py')
+        with module.exclusive(root / '.local', process_lease=True):
+            result = recover_bank_runtime(root, manifest)
+    except (OSError, ValueError, KeyError, TypeError) as recovery_error:
+        events = EventLog(root / '.local/xalkit/logs', console=False)
+        try:
+            events.emit({'status': 'bank_recovery_refused', 'reason': str(recovery_error),
+                         'recovery_manifest': str(manifest)})
+        finally:
+            events.close()
+        raise CommandFailure(error('SDK_BANK_RECOVERY_REFUSED', manifest=str(manifest))) from recovery_error
+    console.print(text('recover_bank_done'), markup=False)
+    return result
 
 storage_app = typer.Typer(help=text('storage_help'))
 app.add_typer(storage_app, name='storage')
@@ -777,6 +840,12 @@ def start(name: Annotated[Optional[str], typer.Argument(help=text('project_argum
                                                                      autocompletion=complete_maps)):
     saved = settings(); name, source, native = select_project(saved, name)
     from xalkit_runtime import start_session
+    if not native:
+        adapter = json.loads((source / 'mod.json').read_text(encoding='utf-8')).get('native_adapter')
+        if adapter:
+            if adapter != 'bank-selector':
+                raise ValueError(text('native_adapter_unknown', adapter=str(adapter)))
+            return start_session(saved, name, source, map, background=background, native_adapter=adapter)
     start_session(saved, name, source, map, resources=not native, background=background)
 
 

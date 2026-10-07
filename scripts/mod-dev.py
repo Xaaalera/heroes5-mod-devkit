@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from zipfile import BadZipFile, ZipFile, ZipInfo, ZIP_DEFLATED
 from object_reference import compile_reference, compile_windows
 from game_launch import map_arguments
-from sdk_storage import GameAssets, MAX_SANDBOXES
+from sdk_storage import GameAssets, MAX_SANDBOXES, workspace_mutation
 
 
 from workspace import workspace_root, game_installation
@@ -45,8 +45,12 @@ def confined(root, relative):
 
 
 @contextmanager
-def exclusive(directory):
+def exclusive(directory, process_lease=False):
     directory.mkdir(parents=True, exist_ok=True)
+    if process_lease:
+        with workspace_mutation(directory):
+            yield
+        return
     lock = directory / 'mod-dev.lock'
     with lock.open('x', encoding='ascii') as handle:
         handle.write(str(os.getpid()))

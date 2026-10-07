@@ -79,15 +79,11 @@ function Get-GameBounds {
 }
 
 function Move-SystemCursor([int]$CursorX, [int]$CursorY) {
-    $source = [WorkshopGameUI]::GetCurrentThreadId()
-    $target = [WorkshopGameUI]::GetWindowThreadProcessId([WorkshopGameUI]::GetForegroundWindow(), [IntPtr]::Zero)
-    $attached = $target -ne 0 -and $target -ne $source -and [WorkshopGameUI]::AttachThreadInput($source, $target, $true)
-    try {
-        [WorkshopGameUI]::ShowWindow($window, 9) | Out-Null
-        [WorkshopGameUI]::BringWindowToTop($window) | Out-Null
-        [WorkshopGameUI]::SetForegroundWindow($window) | Out-Null
-    }
-    finally { if ($attached) { [WorkshopGameUI]::AttachThreadInput($source, $target, $false) | Out-Null } }
+    # Request focus only for our game. Never merge input queues with whichever
+    # unrelated application currently owns the foreground.
+    [WorkshopGameUI]::ShowWindow($window, 9) | Out-Null
+    [WorkshopGameUI]::BringWindowToTop($window) | Out-Null
+    [WorkshopGameUI]::SetForegroundWindow($window) | Out-Null
     if ([WorkshopGameUI]::GetForegroundWindow() -ne $window) { throw 'Sandbox game did not gain focus; system input was not sent.' }
     $point = New-Object WorkshopGameUI+Point
     $point.X = $CursorX

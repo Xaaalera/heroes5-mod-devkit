@@ -2,6 +2,7 @@
 import importlib.util
 import io
 import json
+import hashlib
 from pathlib import Path
 import sys
 import struct
@@ -326,6 +327,166 @@ class PluginWatchBoundaries(unittest.TestCase):
         self.assertEqual(self.watcher.ready, previous)
         self.watcher.request.assert_not_called()
 
+    def test_bank_core_replacement_keeps_resident_state_and_restores_hook_on_confirmed_rejection(self):
+        for status in ('core_applied', 'core_rejected'):
+            with self.subTest(status=status):
+                self.watcher.request.reset_mock()
+                state = [{'status': 0, 'result': value} for value in (12, 3, 2, 7)]
+                self.watcher.request.side_effect = [{'status': 0}, *state, {'status': 0}, *state, {'status': 0}]
+                self.watcher.client = Mock()
+                self.watcher.client.arguments = ['next-controller.exe', '--owned', '1', '2', 'game.exe', 'next.dll']
+                self.watcher.client.reload_core.return_value = {'status': status}
+                result = self.watcher.reload_bank_core(Path('next.dll'), 'next-controller.exe')
+                self.assertEqual(result['status'], status)
+                self.assertTrue(result['bank_hook_restored'])
+                self.watcher.client.reload_core.assert_called_once_with(
+                    Path('next.dll'), None, 0, 'main', controller='next-controller.exe')
+                self.assertEqual(self.watcher.request.call_args_list[-1].args, ('bank-attach',))
+
+    def test_bank_core_uncertain_transport_never_reactivates_or_replays(self):
+        self.watcher.client = Mock()
+        self.watcher.client.reload_core.side_effect = RuntimeError('timeout')
+        self.watcher.request.side_effect = [{'status': 0}] + [{'status': 0, 'result': 2}] * 4
+        with self.assertRaisesRegex(RuntimeError, 'timeout'):
+            self.watcher.reload_bank_core(Path('next.dll'))
+        self.assertNotIn(('bank-attach',), [call.args for call in self.watcher.request.call_args_list])
+        self.watcher.client.reload_core.assert_called_once()
+
+    def test_bank_core_changed_state_never_reactivates_hook(self):
+        self.watcher.client = Mock()
+        self.watcher.client.reload_core.return_value = {'status': 'core_applied'}
+        self.watcher.request.side_effect = ([{'status': 0}] + [{'status': 0, 'result': 2}] * 4
+            + [{'status': 0}] + [{'status': 0, 'result': 3}] * 4)
+        with self.assertRaisesRegex(RuntimeError, 'state changed'):
+            self.watcher.reload_bank_core(Path('next.dll'))
+        self.assertNotIn(('bank-attach',), [call.args for call in self.watcher.request.call_args_list])
+
+    def test_bank_core_unconfirmed_detach_never_replaces_core(self):
+        self.watcher.client = Mock()
+        self.watcher.request.side_effect = [{'status': 170}]
+        with self.assertRaisesRegex(RuntimeError, 'quiescence unconfirmed'):
+            self.watcher.reload_bank_core(Path('next.dll'))
+        self.watcher.client.reload_core.assert_not_called()
+
+    def test_bank_staging_refusal_and_uncertain_activation_preserve_previous(self):
+        game = self.root / '.local/test-game/bin/H5_Game.exe'
+        game.parent.mkdir(parents=True)
+        game.write_bytes(b'owned synthetic executable')
+        marker = self.root / '.local/test-state/prepared.json'
+        marker.parent.mkdir(parents=True)
+        marker.write_text(json.dumps({'status': 'complete', 'profile': 'WorkshopDev',
+            'game': str(game.parent.parent)}), encoding='utf-8')
+        payload = self.root / 'candidate.dll'
+        payload.write_bytes(b'candidate descriptor fixture')
+        previous = self.root / 'previous.dll'
+        self.watcher.ready = previous
+        self.watcher.client.arguments = ['controller.exe', '--owned', '1', '2', str(game), 'bridge.dll']
+        self.watcher.client.poll.return_value = None
+        self.watcher.request.return_value = {'status': 13, 'applied': False, 'module_released': True}
+        rejected = self.watcher.apply_bank_payload(payload, game, time.perf_counter())
+        self.assertEqual(rejected['status'], 'reload_rejected')
+        self.assertEqual(self.watcher.ready, previous)
+        self.watcher.request.assert_called_once()
+        self.watcher.request.reset_mock()
+        self.watcher.request.return_value = {'status': 170, 'applied': True, 'module_released': False}
+        with self.assertRaisesRegex(RuntimeError, 'do not replay'):
+            self.watcher.apply_bank_payload(payload, game, time.perf_counter())
+        self.assertEqual(self.watcher.ready, previous)
+        self.watcher.request.assert_called_once()
+
+    def test_bank_staging_confirms_receipt_and_state_before_accepting_candidate(self):
+        game = self.root / '.local/test-game/bin/H5_Game.exe'
+        game.parent.mkdir(parents=True)
+        game.write_bytes(b'owned synthetic executable')
+        marker = self.root / '.local/test-state/prepared.json'
+        marker.parent.mkdir(parents=True)
+        marker.write_text(json.dumps({'status': 'complete', 'profile': 'WorkshopDev',
+            'game': str(game.parent.parent)}), encoding='utf-8')
+        payload = self.root / 'candidate.dll'
+        payload.write_bytes(b'candidate descriptor fixture')
+        self.watcher.client.arguments = ['controller.exe', '--owned', '1', '2', str(game), 'bridge.dll']
+        self.watcher.client.poll.return_value = None
+        self.watcher.request.side_effect = [
+            {'status': 0, 'applied': True, 'module_released': True}, {'status': 0, 'result': 7}]
+        accepted = self.watcher.apply_bank_payload(payload, game, time.perf_counter())
+        self.assertEqual(accepted['status'], 'applied')
+        self.assertEqual(self.watcher.ready.read_bytes(), payload.read_bytes())
+        self.assertEqual(self.watcher.request.call_count, 2)
+        self.assertEqual(accepted['observation']['result'], 7)
+
+    def test_bank_generator_edit_is_observed_and_mid_build_edit_is_superseded(self):
+        project = self.root / 'bank-project'
+        (project / 'scripts').mkdir(parents=True)
+        (project / 'src').mkdir()
+        for name in ('CMakeLists.txt', 'mod.json', 'scripts/build-player.py'):
+            (project / name).write_text('fixture')
+        sdk = self.root / 'sdk'
+        (sdk / 'scripts').mkdir(parents=True)
+        generator = sdk / 'scripts/native-probe.py'
+        generator.write_text('generator v1')
+        package = self.root / 'bank.h5u'
+        graphics = self.root / 'graphics.dll'
+        package.write_bytes(b'package')
+        graphics.write_bytes(b'graphics')
+        def compile_with_generator_edit(command, **arguments):
+            if '--build' in command:
+                generator.write_text('generator v3')
+            return SimpleNamespace(returncode=0, stdout='', stderr='')
+        with patch.object(watch_module, 'DEVKIT', sdk):
+            before = self.watcher.bank_snapshot(project)
+            generator.write_text('generator v2')
+            self.assertNotEqual(before, self.watcher.bank_snapshot(project))
+            with patch.object(watch_module.subprocess, 'run', side_effect=compile_with_generator_edit):
+                result = self.watcher.build_bank_payload(project, package, graphics, self.root / 'cmake.exe', time.perf_counter())
+        self.assertEqual(result['status'], 'superseded')
+
+    def test_bank_update_does_not_return_applied_before_hook_activation(self):
+        package = self.root / 'bank.h5u'
+        graphics = self.root / 'graphics.dll'
+        package.write_bytes(b'package')
+        graphics.write_bytes(b'graphics')
+        built = {'status': 'bank_built', 'payload': 'bank.dll', 'source_hashes': {'source': 'same'},
+                 'package_sha256': hashlib.sha256(package.read_bytes()).hexdigest(),
+                 'graphics_sha256': hashlib.sha256(graphics.read_bytes()).hexdigest()}
+        with patch.object(self.watcher, 'build_bank_payload', return_value=built), \
+                patch.object(self.watcher, 'bank_snapshot', return_value=built['source_hashes']), \
+                patch.object(self.watcher, 'apply_bank_payload', return_value={'status': 'applied'}):
+            self.watcher.request.return_value = {'status': 170}
+            with self.assertRaisesRegex(RuntimeError, 'hook is unconfirmed'):
+                self.watcher.update_bank_payload(self.source, package, graphics, self.root / 'cmake.exe', self.root / 'H5_Game.exe', time.perf_counter())
+            self.watcher.request.return_value = {'status': 0}
+            result = self.watcher.update_bank_payload(self.source, package, graphics, self.root / 'cmake.exe', self.root / 'H5_Game.exe', time.perf_counter())
+            self.assertTrue(result['bank_hook_restored'])
+
+    def test_bank_build_failures_and_superseded_sources_never_reach_game(self):
+        inputs = (self.source, self.root / 'package.h5u', self.root / 'graphics.dll',
+                  self.root / 'cmake.exe', self.root / 'H5_Game.exe', time.perf_counter())
+        with patch.object(self.watcher, 'build_bank_payload', return_value={'status': 'build_failed'}), \
+                patch.object(self.watcher, 'apply_bank_payload') as apply:
+            self.assertEqual(self.watcher.update_bank_payload(*inputs)['status'], 'build_failed')
+            apply.assert_not_called()
+        with patch.object(self.watcher, 'build_bank_payload', return_value={
+                'status': 'bank_built', 'source_hashes': {'version': 'old'}, 'build_seconds': 1}), \
+                patch.object(self.watcher, 'bank_snapshot', return_value={'version': 'new'}), \
+                patch.object(self.watcher, 'apply_bank_payload') as apply:
+            self.assertEqual(self.watcher.update_bank_payload(*inputs)['status'], 'superseded')
+            apply.assert_not_called()
+
+    def test_bank_changed_resource_between_build_and_apply_is_not_dispatched(self):
+        package = self.root / 'package.h5u'
+        graphics = self.root / 'graphics.dll'
+        package.write_bytes(b'changed resource')
+        graphics.write_bytes(b'graphics')
+        built = {'status': 'bank_built', 'source_hashes': {'source': 'same'},
+                 'package_sha256': hashlib.sha256(b'old resource').hexdigest(),
+                 'graphics_sha256': hashlib.sha256(graphics.read_bytes()).hexdigest(), 'build_seconds': 1}
+        with patch.object(self.watcher, 'build_bank_payload', return_value=built), \
+                patch.object(self.watcher, 'bank_snapshot', return_value={'source': 'same'}), \
+                patch.object(self.watcher, 'apply_bank_payload') as apply:
+            result = self.watcher.update_bank_payload(self.source, package, graphics, self.root / 'cmake.exe',
+                                                      self.root / 'H5_Game.exe', time.perf_counter())
+            self.assertEqual(result['status'], 'superseded')
+            apply.assert_not_called()
     def test_compiler_uses_short_output_names_and_resolvable_cached_objects(self):
         definition = self.source / 'plugin.def'
         definition.write_text('EXPORTS\nAddedFunction\n', encoding='utf-8')
@@ -757,9 +918,29 @@ class PluginWatchBoundaries(unittest.TestCase):
             result = self.watcher.update(self.watcher.snapshot(), time.perf_counter(), 'one-plugin', loader)
         self.assertEqual(result['status'], 'released')
         with ZipFile(result['archive']) as archive:
+            from plugin_core import validate_player_archive
+            validated = validate_player_archive(archive, 'one-plugin')
             self.assertEqual(set(archive.namelist()), {'bin/Heroes5Mods/Plugins/one-plugin.dll',
-                'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt'})
+                'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt', 'NOTICE.txt'})
+            self.assertEqual(archive.read('NOTICE.txt'), (watch_module.DEVKIT / 'NOTICE.md').read_bytes())
             manifest = json.loads(archive.read('release.json'))
+            self.assertEqual(validated, manifest)
             self.assertEqual(manifest['graphics_facade_sha256'], hashlib.sha256(archive.read('bin/d3d9.dll')).hexdigest())
             self.assertNotIn('bin/d3d9.universe.dll', archive.namelist())
+            members = {name: archive.read(name) for name in archive.namelist()}
+        for scenario in ('missing_notice', 'changed_graphics'):
+            with self.subTest(scenario=scenario):
+                modified = dict(members)
+                if scenario == 'missing_notice':
+                    del modified['NOTICE.txt']
+                else:
+                    modified['bin/d3d9.dll'] = b'changed graphics'
+                data = io.BytesIO()
+                with ZipFile(data, 'w') as altered:
+                    for name, content in modified.items():
+                        altered.writestr(name, content)
+                data.seek(0)
+                with ZipFile(data) as altered:
+                    with self.assertRaises(ValueError):
+                        validate_player_archive(altered, 'one-plugin')
         self.watcher.request.assert_not_called()

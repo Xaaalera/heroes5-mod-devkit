@@ -155,6 +155,28 @@ RU/EN: Live source edit→build→apply, compiler failure and recovery passed in
 
 ## Готовые нативные пакеты / Native player packages
 
+### В разработке: владелец callback справочника / In development: bank callback owner
+
+RU, 2026-10-07: `native/selector_runtime.hpp` предоставляет `SelectorRuntime` для доверенного сгенерированного x86-кода. `Initialize` создаёт сохраняемые данные, `Replace` подготавливает и проверяет новую область кода, `Invoke` вызывает callback, `Stop` убирает код, оставляя данные для повторного подключения. Методы выполняются последовательно: замена ждёт завершения текущего вызова. Повреждённые поправки адресов отклоняются до переключения, рабочий код сохраняется. Callback принимает публичную модель объекта и возвращает выбранное окно через обычный C++ контракт.
+
+EN: `SelectorRuntime` owns trusted generated x86 callback memory and retained data. Initialize data once, prepare a replacement with `Replace`, call through `Invoke`, and remove code with `Stop`. Stop preserves data for readdition. Operations serialize; replacement waits for an active callback. Invalid relocation bounds reject a candidate before activation and keep the previous code. The callback uses an ordinary C++ argument/result contract.
+
+RU: локальный прототип `Heroes5BankSelectorControl` в общем загрузчике владеет одним контекстом справочника на время процесса. Запросы `SelectorRequest` имеют проверяемые размер и версию; входные буферы копируются. После инициализации загрузчик закреплён до завершения процесса, поэтому освобождение ссылки потребителя на DLL не уничтожает контекст. `Stop` освобождает код, а данные сохраняются для следующего подключения. Это внутренний контракт доверенного кода SDK, не команда игрока и не проверка прав на чужой процесс.
+
+EN: The local `Heroes5BankSelectorControl` prototype in the shared loader owns one bank selector context for the process lifetime. Versioned `SelectorRequest` buffers are copied; no caller buffer is retained. Initialization pins the loader until process exit, so consumer DLL-reference release does not destroy state. Stop retires code while retaining data. This is a trusted in-process SDK contract, not a player command or foreign-process authorization. The native forwarding fixture verifies code/data copies, consumer reference release/reacquisition, new code, retained data and stop.
+
+RU: `Status` возвращает текущее поколение. Остальные запросы передают его как `expectedGeneration`; несовпадение отклоняет запрос до действия. Успешные инициализация, замена и остановка повышают поколение, отказ кандидата оставляет его прежним. Это защита от устаревшего контроллера, а не авторизация кода внутри процесса. Нативный тест проверяет отказы старых Stop/Invoke/Replace и сохранение рабочей версии после повреждённого кандидата.
+
+EN: Read the current generation through Status and supply it as `expectedGeneration` for other requests. Stale requests fail before action. Successful initialization, replacement and stop advance the generation; a rejected candidate does not. This prevents stale-controller operations, not unauthorized code inside the same process. Native tests cover stale stop/invoke/replace and candidate rejection preserving current code and generation.
+
+RU/EN: Invoke refuses an unclassified startup and a foreign thread without changing output or generation. For the game it uses the thread recorded after build verification in DirectInput startup; the synthetic non-game forwarding host uses the state-initialization thread. `BindWindow` checks the window's process, game class, visibility and thread, then advances generation on first binding. Game invocation rechecks that binding. Native tests verify non-game binding refusal and foreign-thread invocation refusal. The 2026-10-07 owned-game test confirmed the startup/window thread match through the resident service and normal exit0. No bank hook or callback swap was exercised by that test.
+
+RU/EN: Native fixtures verify eight replacements, rejection rollback, stop/readd and active-call serialization. This is local development work, not part of the published SDK release. BankLayout AttachHook/DetachHook now use statically linked MinHook from a hash-pinned source revision; manual instruction writes were removed. A synthetic worker calls its target during eight queued enable/disable cycles; original bytes and results are checked. Stop refuses an active hook; uncertain library application blocks further mutation and retains memory. Positive game-hook execution remains unverified. Resident owner/core integration and game UI reference cleanup are still incomplete. Do not place game pointers in the portable plugin snapshot or enable legacy plugin HMR from these fixtures alone.
+
+RU: первая сборка исходников SDK скачивает небольшой закреплённый архив MinHook; повторные сборки используют кеш CMake. Игроку этот шаг не нужен: библиотека включена в общий загрузчик. Нативный пакет содержит `NOTICE.txt` с полными уведомлениями MinHook и его дизассемблера. Исходная ревизия и хеш архива закреплены в CMake; сборка не выбирает текущую ветку библиотеки.
+
+EN: The first SDK source build downloads a small pinned MinHook archive; subsequent builds reuse CMake's cache. Players receive it inside the shared loader and need no separate library installation. Native ZIPs include NOTICE.txt with complete MinHook/disassembler notices. CMake pins both source revision and archive digest, not a moving branch.
+
 RU: `xkit release NAME` создаёт ZIP с одной DLL плагина и общими `bin/dinput8.dll`, `bin/d3d9.dll`. Распакуй архив в отдельную папку. Перед первой установкой переименуй исходный `bin/d3d9.dll` игры в `d3d9.universe.dll`, затем скопируй папку `bin` из пакета в игру. Уже сохранённый оригинал не заменяй. Сохрани резервную копию существующего `dinput8.dll`. У каждого мода своя DLL; общие файлы пакетов должны принадлежать одной версии SDK. Точный порядок установки и удаления есть в README.txt пакета.
 
 EN: Release includes the shared input bootstrap and graphics facade with matching hashes. Extract separately; on first installation retain the game original as d3d9.universe.dll before copying package bin files. Preserve an existing retained original and back up the previous input bootstrap. Same-version packages share infrastructure and keep independent plugin DLLs. No original game DLL is redistributed. Players need neither a developer launcher nor a compiler; follow the package README.txt.
@@ -855,3 +877,46 @@ EN: Idle background games have a CPU cap. Owned commands temporarily release it 
 RU: Сеанс SDK сохраняет оригинальную графическую DLL в своей тестовой копии и восстанавливает её после подтверждённого выхода игры. Если файлы изменены извне или выход не подтверждён, они сохраняются для восстановления; журнал сообщает об ошибке. Работа этого пути проверена вместе с ядром, консолью и HMR на текущей Windows.
 
 EN: SDK sessions retain the original graphics DLL in their private test copy and restore it after confirmed game exit. External file changes or unconfirmed exit preserve the recovery files and report a failure. This path is verified with core, console and HMR on the current Windows build.
+## Bank adapter development status / Статус адаптера справочника
+
+### Восстановление файлов после ошибки / File recovery
+
+Перед установкой в тестовую копию SDK сохраняет прежние DLL/H5U на диске. Если завершение или восстановление не подтвердились, журнал указывает путь `recovery.json`. После закрытия тестовой игры выполни:
+
+```powershell
+xkit sdk recover-bank <путь-к-recovery.json>
+```
+
+Команда проверяет рабочую папку, назначения и контрольные суммы; изменённые извне файлы не перезаписывает. Успешное восстановление удаляет сохранённые копии. Блокировка установки и восстановления освобождается ОС при завершении процесса; оставшийся файл блокировки сам по себе не означает активную операцию. Перенос тестовой копии в другую рабочую папку этим восстановлением не поддержан.
+
+EN: SDK retains previous bank DLL/H5U files and recovery.json on disk before installation. If cleanup fails, close the test game and run the command above using the manifest path from the log. Recovery validates the workspace, allowed destinations and checksums, refuses external edits, and removes retained backups after success. OS leases exclude simultaneous mutation and release on process exit; the remaining lease file is not an active-lock indicator. Moving a sandbox to another workspace is outside this recovery contract.
+
+Developer evidence: a subprocess staged files under an OS lease, a concurrent acquisition was refused, then the child exited without finally cleanup. Normal named recovery restored all originals from disk. This is process-termination verification, not sudden-power-loss durability. [Windows lock lifetime](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex) · [Python file locking](https://docs.python.org/3.13/library/msvcrt.html).
+
+RU: установка, восстановление и очистка копий используют одну блокировку через уже подключённую библиотеку portalocker. Занятую копию очистка пропускает; ресурсы в ней не заменяются и архив не создаётся. После получения блокировки состояние игры проверяется повторно. Любой `xkit start` удерживает блокировку от подготовки до создания процесса игры, чтобы очистка не попала в этот промежуток.
+
+EN: Staging, recovery, resource sharing and retirement use the same workspace lease through the existing portalocker dependency. Busy copies are skipped. Storage rechecks closed-game state after acquisition, before sharing or archiving. Every named start retains the lease through preparation and owned game creation.
+
+RU: обычный `xkit start army-reference --map WorkshopPolygon` теперь запускает нативный сеанс справочника: собирает managed DLL и H5U, устанавливает их только в подготовленную тестовую копию, подключает watcher и восстанавливает прежние файлы после закрытия игры. В живом прогоне подтверждены применение DLL и штатное завершение. Также проверены завершённая автоматическая замена ядра и дополнительный export после правки исходника. Сохранение заполненной карточки склепа проверено при обновлении DLL справочника и ядра SDK. При завершении сначала останавливается watcher, затем сервис консоли, чтобы текущие операции не теряли свой host.
+
+EN: Named bank start prepares the managed native DLL/H5U and runs the owned watcher. First application, automatic core replacement and a newly available core export are live verified in the same game process. Stop waits for the watcher before closing console host services. Actual crypt-card rendering and populated cache continuity across automatic bank payload replacement are verified. Populated crypt-card cache continuity through core replacement is also live verified.
+
+RU: карточка склепа проверена физическим вводом и снимками. После автоматической сборки/применения обратимой правки исходника справочника сохранены одно кешированное окно и наблюдаемые счётчики; карточка снова отображается. Правка была комментарием, поэтому эта проверка подтверждает цепочку обновления и сохранение окна, а не изменение поведения функции. Заполненный кеш карточки склепа также сохранён при автоматической замене ядра; нативный снимок подтвердил повторное отображение.
+
+RU: также проверен отказ несовместимого ядра при восстановлении состояния. После автоматического отката прежняя функция продолжила возвращать ожидаемый результат, hook справочника восстановлен. Счётчики в этом сценарии были нулевыми; сохранение заполненного кеша карточки остаётся отдельной проверкой.
+
+EN: A core candidate that refuses state restore was rejected in the live named session; rollback restored the previous exported behavior and bank hook. The observed counters were zero, so populated cache retention remains unverified.
+
+RU: `xkit build army-reference` и `xkit release army-reference` учитывают `native_adapter: bank-selector` в рецепте. Результат — ZIP с отдельной WorkshopBankReference.dll, соответствующим H5U, общими dinput8.dll/d3d9.dll, уведомлениями о лицензиях и инструкцией установки. Для выпуска используется обычный контракт запуска справочника, не вариант, требующий активного контроллера разработки. Самостоятельный checkout подключается как проект мастерской согласно разделу настройки. Нативный сеанс разработки запускается через xkit start; границы его проверки указаны выше.
+
+EN: Bank build/release honors the recipe's bank-selector native adapter and packages the player DLL, matching H5U, shared input/graphics infrastructure, licenses and installation instructions. Player compilation uses ordinary startup, not the controller-dependent managed development variant. Named native start is available with the verification limits above.
+
+RU: `build.json` внутри ZIP содержит контрольные суммы файлов и относительные имена исходников. Перед упаковкой DLL, H5U и графическая библиотека повторно сверяются с результатом нативной сборки. Изменённый H5U не выпускается со старой DLL; прежний ZIP сохраняется при отказе. Служебный путь к промежуточной DLL в пакет не записывается.
+
+EN: Package provenance contains member digests and relative source names. DLL/H5U/graphics bytes must still match the native build before sealing; changed resources are refused without replacing the previous ZIP. Private intermediate DLL paths are omitted.
+
+The internal bank watcher can replace the SDK core while keeping its resident selector in the shared loader. It detaches the bank hook, observes four state counters, uses the existing core transfer/rollback transaction without loading the bank DLL into a generic plugin slot, then verifies the counters and restores the hook. An uncertain transport or state mismatch stops reactivation. This preserves the owned controller checks.
+
+Live verification includes an ordinary named session with automatic core replacement, followed by a reversible native source edit that enables an additional export. The export was initially unavailable, then returned42 after automatic build/replace in the same game. Observed bank counters were zero before and after both replacements; this is not populated UI-cache retention. Historical resource-only runs do not prove bank HMR.
+
+RU: в обычном нативном сеансе проверены автоматическая замена ядра и появление дополнительного export после обратимой правки исходника. Функция сначала отсутствовала, затем вернула42 в той же игре. Hook восстановлен, наблюдаемые счётчики остались нулевыми. Сохранение заполненного кеша карточки склепа проверено при обновлении DLL справочника и ядра SDK.

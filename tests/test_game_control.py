@@ -291,6 +291,38 @@ class GameControlCommandTests(unittest.TestCase):
         self.assertIn('print(', script)
         self.assertTrue(script.isascii())
 
+    def test_player_staging_and_restoration_refuse_redirected_directory(self):
+        import os
+        import subprocess
+        from tempfile import TemporaryDirectory
+        import hashlib
+        specification = importlib.util.spec_from_file_location('redirected_player_stage_test',
+            Path(__file__).resolve().parents[1] / 'scripts/plugin-player-check.py')
+        checker = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(checker)
+        with TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            outside = root / 'outside'
+            outside.mkdir()
+            redirected = root / 'plugins'
+            if os.name == 'nt':
+                subprocess.run(['cmd', '/c', 'mklink', '/J', str(redirected), str(outside)],
+                               capture_output=True, check=True)
+            else:
+                redirected.symlink_to(outside, target_is_directory=True)
+            target = redirected / 'plugin.dll'
+            installed = {}
+            with self.assertRaisesRegex(ValueError, 'redirected'):
+                checker.stage_player_file(target, b'plugin', installed)
+            self.assertEqual(installed, {})
+            self.assertFalse((outside / 'plugin.dll').exists())
+            (outside / 'plugin.dll').write_bytes(b'owned')
+            errors = []
+            checker.restore_player_files({target: hashlib.sha256(b'owned').hexdigest()},
+                                         root / 'loader.dll', None, None, errors)
+            self.assertTrue(errors)
+            self.assertEqual((outside / 'plugin.dll').read_bytes(), b'owned')
+
     def test_player_stage_failure_preserves_previous_file_and_removes_partial_temporary(self):
         from tempfile import TemporaryDirectory
         specification = importlib.util.spec_from_file_location('atomic_stage_test',

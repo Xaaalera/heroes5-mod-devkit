@@ -98,6 +98,7 @@ def main():
     cleanup_spec = importlib.util.spec_from_file_location('legacy_player_cleanup', DEVKIT / 'scripts/plugin-player-check.py')
     cleanup_module = importlib.util.module_from_spec(cleanup_spec)
     cleanup_spec.loader.exec_module(cleanup_module)
+    cleanup_module.validate_player_workspace(root)
     owned_loader_digest = None
     owned_preload_digest = None
     saved_loader = None
@@ -412,6 +413,8 @@ def main():
                 require(not target.exists(), 'Refuse to overwrite existing release test plugin')
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with ZipFile(package['archive']) as archive:
+                    from plugin_core import validate_player_archive
+                    validate_player_archive(archive, release_name)
                     installed = True
                     installed_plugins.append(target)
                     cleanup_module.stage_player_file(target, archive.read('bin/Heroes5Mods/Plugins/' + release_name + '.dll'), installed_digests)
@@ -539,15 +542,19 @@ def main():
         saved_loader = loader_path.read_bytes() if loader_path.exists() else None
         release_plugin.parent.mkdir(parents=True, exist_ok=True)
         with ZipFile(package['archive']) as archive:
-            require(set(archive.namelist()) == {'bin/Heroes5Mods/Plugins/sdk-acceptance.dll',
-                                                'bin/dinput8.dll', 'bin/wsock32.dll', 'release.json'}, 'Unexpected release contents')
+            from plugin_core import validate_player_archive
+            validate_player_archive(archive, 'sdk-acceptance')
             installed = True
             installed_plugins.append(release_plugin)
             shared_staged = {}
             cleanup_module.stage_player_file(loader_path, archive.read('bin/dinput8.dll'), shared_staged)
             owned_loader_digest = shared_staged[loader_path]
-            cleanup_module.stage_player_file(preload_path, archive.read('bin/wsock32.dll'), shared_staged)
-            owned_preload_digest = shared_staged[preload_path]
+            if staged_graphics is None:
+                from xalkit_runtime import stage_owned_graphics
+                candidate = output / 'd3d9.dll'
+                candidate.write_bytes(archive.read('bin/d3d9.dll'))
+                staged_graphics = {}
+                stage_owned_graphics(root, candidate, receipt=staged_graphics)
             cleanup_module.stage_player_file(release_plugin, archive.read('bin/Heroes5Mods/Plugins/sdk-acceptance.dll'), installed_digests)
         state = launch(); record('release_launch', pid=state['pid'], created=state['created'])
         wait_label('0'); post(1); wait_label('3001')

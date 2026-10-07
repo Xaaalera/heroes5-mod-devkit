@@ -80,7 +80,25 @@ def verify_accepted_core(history, snapshot):
         raise RuntimeError('Core source changed after the last accepted core update')
 
 
+def validate_player_workspace(root):
+    root = Path(root).resolve()
+    game = root / '.local/test-game'
+    marker = root / '.local/test-state/prepared.json'
+    metadata = json.loads(marker.read_text(encoding='utf-8'))
+    if (game.resolve() != game or marker.resolve() != marker or metadata.get('status') != 'complete'
+            or metadata.get('profile') != 'WorkshopDev' or metadata.get('game') != str(game)):
+        raise ValueError('Player staging requires the unredirected prepared private game')
+    return game
+
+
+def validate_player_path(path):
+    path = Path(path).absolute()
+    if path.resolve() != path or (path.exists() and path.stat().st_nlink != 1):
+        raise ValueError('Player file mutation refuses redirected or linked paths')
+
+
 def stage_player_file(path, contents, installed):
+    validate_player_path(path)
     temporary = path.with_name(path.name + '.' + uuid.uuid4().hex + '.tmp')
     try:
         temporary.write_bytes(contents)
@@ -94,6 +112,7 @@ def restore_player_files(installed, loader_path, owned_loader_digest, saved_load
                          preload_path=None, owned_preload_digest=None, saved_preload=None):
     for path, digest in installed.items():
         try:
+            validate_player_path(path)
             if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == digest:
                 path.unlink()
             else:
@@ -106,6 +125,7 @@ def restore_player_files(installed, loader_path, owned_loader_digest, saved_load
         if not digest:
             continue
         try:
+            validate_player_path(path)
             if not path.exists() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                 raise RuntimeError('Bootstrap changed; not overwriting it')
             if saved is None:
@@ -129,6 +149,7 @@ def main(argv=None):
     parser.add_argument('--crash-monitor', type=Path)
     options = parser.parse_args(argv)
     root = workspace_root()
+    validate_player_workspace(root)
     sdk = DEVKIT
     os.environ['H5_WORKSPACE'] = str(root)
     sys.path.insert(0, str(sdk / 'scripts'))
@@ -211,10 +232,10 @@ def main(argv=None):
             package = watcher.update(snapshot, record_before, 'sdk-native-owner-' + name, loader_binary, core)
             assert package['status'] == 'released', package
             with ZipFile(package['archive']) as archive:
-                manifest = json.loads(archive.read('release.json'))
+                from plugin_core import validate_player_archive
+                manifest = validate_player_archive(archive, 'sdk-native-owner-' + name)
                 assert manifest['source_hashes'] == snapshot
                 expected = 'bin/Heroes5Mods/Plugins/sdk-native-owner-' + name + '.dll'
-                assert set(archive.namelist()) == {expected, 'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt'}
                 assert name + '.dll' in archive.read('README.txt').decode('utf-8')
                 target = destination / ('sdk-native-owner-' + name + '.dll')
                 assert not target.exists()

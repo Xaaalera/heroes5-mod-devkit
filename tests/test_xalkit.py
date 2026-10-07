@@ -16,6 +16,25 @@ from xalkit_ui import text, translations
 
 
 class XalKitTests(unittest.TestCase):
+    def test_selected_generic_command_endpoint_follows_core_application_and_rollback(self):
+        import xalkit_runtime
+        owner = {'pid': 12, 'created': 34}
+        active = {'bridge': 'initial.dll', 'controller': 'initial.exe', 'graphics': 'graphics.dll'}
+        event = {'status': 'core_applied', 'plugin': 'alpha', 'instance': 'current',
+                 'core_bridge': 'updated.dll', 'core_controller': 'updated.exe'}
+        with patch.object(xalkit_runtime, 'publish_resource_endpoint') as publish:
+            for foreign in ({**event, 'plugin': 'beta'}, {**event, 'instance': 'expired'},
+                            {**event, 'status': 'core_rejected'}):
+                self.assertIs(xalkit_runtime.refresh_command_endpoint(self.root, owner, active, foreign, 'alpha', 'current'), active)
+            publish.assert_not_called()
+            updated = xalkit_runtime.refresh_command_endpoint(self.root, owner, active, event, 'alpha', 'current')
+            self.assertEqual(updated['bridge'], 'updated.dll')
+            self.assertEqual(updated['graphics'], 'graphics.dll')
+            rollback = {**event, 'core_bridge': 'rollback-copy.dll', 'core_controller': 'previous.exe'}
+            restored = xalkit_runtime.refresh_command_endpoint(self.root, owner, updated, rollback, 'alpha', 'current')
+            self.assertEqual(restored['bridge'], 'rollback-copy.dll')
+            self.assertEqual(publish.call_args.args, (self.root, owner, restored))
+
     def test_resource_pointer_validation_retries_unchanged_pointer_until_files_are_ready(self):
         import xalkit_runtime
         with tempfile.TemporaryDirectory() as directory:
@@ -281,6 +300,181 @@ class XalKitTests(unittest.TestCase):
                 self.assertEqual(result.exit_code, 0, result.output)
                 self.assertEqual(build.call_args.args[1:4], ('first', self.root / 'mods/first', False))
 
+    def test_bank_build_produces_independent_native_and_resource_package(self):
+        from zipfile import ZipFile
+        source = self.root / 'mods/bank'
+        source.mkdir(parents=True)
+        (source / 'src').mkdir()
+        (source / 'mod.json').write_text(json.dumps({'native_adapter': 'bank-selector'}))
+        (source / 'README.md').write_text('Installation instructions')
+        artifacts = {}
+        for name in ('bank.h5u', 'bank.dll', 'dinput8.dll', 'd3d9.dll'):
+            artifacts[name] = self.root / name
+            artifacts[name].write_bytes(name.encode())
+        backend = Mock()
+        candidate = {'status': 'bank_built', 'payload': str(artifacts['bank.dll']), 'source_hashes': {'source': 'fixture'},
+                     'payload_sha256': hashlib.sha256(artifacts['bank.dll'].read_bytes()).hexdigest(),
+                     'package_sha256': hashlib.sha256(artifacts['bank.h5u'].read_bytes()).hexdigest(),
+                     'graphics_sha256': hashlib.sha256(artifacts['d3d9.dll'].read_bytes()).hexdigest()}
+        backend.PluginWatch.return_value.build_bank_payload.return_value = candidate
+        with patch.object(xalkit, 'resource_operation', return_value={'artifact': str(artifacts['bank.h5u'])}), \
+                patch.object(xalkit, 'native_tools', return_value=(None, None, {},
+                    {'graphics': str(artifacts['d3d9.dll'])}, artifacts['dinput8.dll'])), \
+                patch.object(xalkit, 'load_backend', return_value=backend), \
+                patch('plugin_core.CoreBuild'):
+            archive = xalkit.build_project({'workspace': str(self.root)}, 'bank', source, False, Mock())
+        with ZipFile(archive) as package:
+            self.assertEqual(package.read('bin/Heroes5Mods/WorkshopBankReference.dll'), b'bank.dll')
+            self.assertEqual(package.read('UserMODs/workshop-army-reference.h5u'), b'bank.h5u')
+            self.assertEqual(package.read('bin/d3d9.dll'), b'd3d9.dll')
+            self.assertIn('NOTICE.txt', package.namelist())
+            self.assertFalse(any(name.endswith('.exe') for name in package.namelist()))
+            provenance = json.loads(package.read('build.json'))
+            self.assertNotIn('payload', provenance)
+            self.assertEqual(provenance['files']['bin/Heroes5Mods/WorkshopBankReference.dll'], candidate['payload_sha256'])
+        self.assertFalse(backend.PluginWatch.return_value.build_bank_payload.call_args.kwargs['managed'])
+        original_archive = Path(archive).read_bytes()
+        artifacts['bank.h5u'].write_bytes(b'changed after native compilation')
+        with patch.object(xalkit, 'resource_operation', return_value={'artifact': str(artifacts['bank.h5u'])}), \
+                patch.object(xalkit, 'native_tools', return_value=(None, None, {},
+                    {'graphics': str(artifacts['d3d9.dll'])}, artifacts['dinput8.dll'])), \
+                patch.object(xalkit, 'load_backend', return_value=backend), \
+                patch('plugin_core.CoreBuild'):
+            with self.assertRaises(ValueError):
+                xalkit.build_project({'workspace': str(self.root)}, 'bank', source, False, Mock())
+        self.assertEqual(Path(archive).read_bytes(), original_archive)
+        backend.PluginWatch.return_value.build_bank_payload.return_value = {'status': 'build_failed'}
+        with patch.object(xalkit, 'resource_operation', return_value={'artifact': str(artifacts['bank.h5u'])}), \
+                patch.object(xalkit, 'native_tools', return_value=(None, None, {},
+                    {'graphics': str(artifacts['d3d9.dll'])}, artifacts['dinput8.dll'])), \
+                patch.object(xalkit, 'load_backend', return_value=backend), \
+                patch('plugin_core.CoreBuild'):
+            with self.assertRaises(RuntimeError):
+                xalkit.build_project({'workspace': str(self.root)}, 'bank', source, False, Mock())
+        self.assertEqual(Path(archive).read_bytes(), original_archive)
+
+    def test_unknown_native_adapter_is_refused_before_resource_build(self):
+        source = self.root / 'mods/unknown'
+        source.mkdir(parents=True)
+        (source / 'mod.json').write_text('{"native_adapter": "unknown"}')
+        with patch.object(xalkit, 'resource_operation') as resource:
+            with self.assertRaises(ValueError):
+                xalkit.build_project({'workspace': str(self.root)}, 'unknown', source, False, Mock())
+        resource.assert_not_called()
+
+    def test_bank_start_uses_native_adapter_instead_of_resource_session(self):
+        source = self.root / 'mods/bank'
+        source.mkdir(parents=True)
+        (source / 'mod.json').write_text('{"native_adapter": "bank-selector"}')
+        with patch('xalkit_runtime.start_session') as start:
+            result = self.runner.invoke(xalkit.app, ['start', 'bank'])
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(start.call_args.kwargs['native_adapter'], 'bank-selector')
+        self.assertNotIn('resources', start.call_args.kwargs)
+
+    def test_bank_staging_restores_private_files_and_refuses_foreign_edits(self):
+        import xalkit_runtime
+        game = self.root / '.local/test-game'
+        marker = self.root / '.local/test-state/prepared.json'
+        marker.parent.mkdir(parents=True)
+        game.mkdir(parents=True)
+        marker.write_text(json.dumps({'status': 'complete', 'profile': 'WorkshopDev', 'game': str(game)}))
+        files = {}
+        for index, member in enumerate(('bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll',
+                                        'UserMODs/workshop-army-reference.h5u')):
+            source = self.root / ('candidate-' + str(index))
+            source.write_bytes(b'candidate')
+            files[member] = source
+        old = game / 'bin/dinput8.dll'
+        old.parent.mkdir()
+        old.write_bytes(b'original')
+        receipt = {}
+        with patch('sdk_storage.require_games_closed'):
+            with patch.object(xalkit_runtime.os, 'replace', side_effect=OSError('replacement denied')):
+                with self.assertRaisesRegex(OSError, 'replacement denied'):
+                    xalkit_runtime.stage_bank_runtime(self.root, files, receipt)
+            self.assertEqual(old.read_bytes(), b'original')
+            self.assertFalse(list(game.rglob('xkit-runtime-*.tmp')))
+            xalkit_runtime.restore_bank_runtime(receipt)
+            xalkit_runtime.stage_bank_runtime(self.root, files, receipt)
+            with patch.object(xalkit_runtime.os, 'replace', side_effect=OSError('recovery replacement denied')):
+                with self.assertRaisesRegex(OSError, 'recovery replacement denied'):
+                    xalkit_runtime.restore_bank_runtime(receipt)
+            self.assertEqual(old.read_bytes(), b'candidate')
+            self.assertFalse(list(game.rglob('xkit-runtime-*.tmp')))
+            old.write_bytes(b'foreign edit')
+            with self.assertRaisesRegex(ValueError, 'changed'):
+                xalkit_runtime.restore_bank_runtime(receipt)
+            self.assertEqual(old.read_bytes(), b'foreign edit')
+            old.write_bytes(b'candidate')
+            manifest = next(iter(receipt.values()))['recovery_manifest']
+            receipt.clear()  # Simulate losing the original process's Python state.
+            xalkit_runtime.recover_bank_runtime(self.root, manifest)
+            self.assertFalse(manifest.exists())
+        self.assertEqual(old.read_bytes(), b'original')
+        self.assertFalse((game / 'bin/Heroes5Mods/WorkshopBankReference.dll').exists())
+        self.assertFalse((game / 'UserMODs/workshop-army-reference.h5u').exists())
+
+    def test_disk_bank_recovery_after_owner_process_exits_without_cleanup(self):
+        import queue
+        import subprocess
+        import threading
+        import xalkit_runtime
+        game = self.root / '.local/test-game'
+        marker = self.root / '.local/test-state/prepared.json'
+        marker.parent.mkdir(parents=True)
+        game.mkdir(parents=True)
+        marker.write_text(json.dumps({'status': 'complete', 'profile': 'WorkshopDev', 'game': str(game)}))
+        candidate = self.root / 'candidate.bin'
+        candidate.write_bytes(b'candidate')
+        members = ('bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll', 'UserMODs/workshop-army-reference.h5u')
+        for member in members:
+            target = game / member
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(('original:' + member).encode())
+        scripts = Path(xalkit.__file__).parent
+        child_code = '''import os, sys
+from pathlib import Path
+from unittest.mock import patch
+sys.path.insert(0, sys.argv[1])
+import xalkit
+from xalkit_runtime import stage_bank_runtime
+root = Path(sys.argv[2])
+module = xalkit.load_backend('mod-dev.py')
+members = ('bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll', 'UserMODs/workshop-army-reference.h5u')
+with module.exclusive(root / '.local', process_lease=True):
+    with patch('sdk_storage.require_games_closed'):
+        stage_bank_runtime(root, {member: root / 'candidate.bin' for member in members}, {})
+    print('staged-and-locked', flush=True)
+    sys.stdin.readline()
+    os._exit(17)
+'''
+        process = subprocess.Popen([sys.executable, '-X', 'utf8', '-c', child_code, str(scripts), str(self.root)],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        ready = queue.Queue()
+        threading.Thread(target=lambda: ready.put(process.stdout.readline()), daemon=True).start()
+        try:
+            self.assertEqual(ready.get(timeout=10).strip(), 'staged-and-locked')
+            module = xalkit.load_backend('mod-dev.py')
+            with self.assertRaises(OSError):
+                with module.exclusive(self.root / '.local', process_lease=True):
+                    pass
+            process.stdin.write('exit-without-finally\n')
+            process.stdin.flush()
+            self.assertEqual(process.wait(timeout=10), 17)
+            manifest = next((self.root / '.local/xalkit/recovery').glob('bank-*/recovery.json'))
+            with patch('sdk_storage.require_games_closed'):
+                result = self.runner.invoke(xalkit.app, ['sdk', 'recover-bank', str(manifest)])
+            self.assertEqual(result.exit_code, 0, result.output)
+            for member in members:
+                self.assertEqual((game / member).read_bytes(), ('original:' + member).encode())
+            self.assertFalse(manifest.exists())
+        finally:
+            process.stdin.close()
+            process.wait(timeout=10)
+            process.stdout.close()
+            process.stderr.close()
+
     def test_resource_build_prepares_missing_sandbox_without_launching(self):
         backend = Mock()
         workshop = backend.Workshop.return_value
@@ -368,16 +562,23 @@ class XalKitTests(unittest.TestCase):
         def wait_after_stop(**arguments):
             self.assertIn('"command":"stop"', process.stdin.write.call_args.args[0])
             self.assertEqual(xalkit_runtime.signal.getsignal(xalkit_runtime.signal.SIGINT), xalkit_runtime.signal.SIG_IGN)
+            cleanup_order.append('watcher')
             return 0
         process.wait.side_effect = wait_after_stop
         tools = (self.root / 'vcvarsall.bat', None, {},
                  {'controller': 'controller.exe', 'bridge': 'bridge.dll', 'launch_gate': 'gate.exe'}, None)
         previous_interrupt = xalkit_runtime.signal.getsignal(xalkit_runtime.signal.SIGINT)
+        cleanup_order = []
+        broker = Mock(port=1234, token='fixture-token')
+        broker.close.side_effect = lambda: cleanup_order.append('console')
+        console_tools = (*tools[:3], {**tools[3], 'console': 'fixture-console.dll'}, tools[4])
         with patch.object(xalkit, 'load_backend', side_effect=lambda filename: probe if filename == 'native-probe.py' else Mock()), \
-                patch.object(xalkit, 'native_tools', return_value=tools), \
+                patch.object(xalkit, 'native_tools', return_value=console_tools), \
+                patch('sdk_console.ConsoleBroker', return_value=broker), \
                 patch.object(xalkit_runtime, 'EventLog') as event_log, \
                 patch.object(xalkit_runtime.subprocess, 'Popen', return_value=process):
             xalkit_runtime.start_native({'workspace': str(self.root)}, 'native-demo', self.root)
+        self.assertEqual(cleanup_order, ['watcher', 'console'])
         self.assertEqual(probe.launch.call_args.kwargs['launch_gate'], 'gate.exe')
         statuses = [call.args[0]['status'] for call in event_log.return_value.emit.call_args_list]
         self.assertIn('plugins_starting', statuses)

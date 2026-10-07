@@ -20,6 +20,7 @@ from workspace import DEVKIT
 from sdk_logging import EventLog
 from xalkit_ui import text, error as sdk_error
 from sdk_diagnostics import OwnedCrashMonitor, OwnedBackgroundBudget, read_owned_windows_events
+from sdk_storage import workspace_mutation
 
 
 def stage_owned_graphics(root, facade, receipt=None):
@@ -129,6 +130,15 @@ def publish_resource_endpoint(root, owned, built):
     temporary.replace(watch / 'diagnostic-owner.json')
 
 
+def refresh_command_endpoint(root, owned, active, event, name, instance, bank_mode=False):
+    if event.get('status') != 'core_applied' or not (bank_mode or
+            (instance is not None and event.get('plugin') == name and event.get('instance') == instance)):
+        return active
+    updated = {**active, 'bridge': event['core_bridge'], 'controller': event['core_controller']}
+    publish_resource_endpoint(root, owned, updated)
+    return updated
+
+
 def resource_runtime_candidate(root, previous_pointer, active):
     from plugin_core import load_sdk_runtime
     pointer_bytes = (DEVKIT / 'runtime/current.json').read_bytes()
@@ -159,7 +169,142 @@ def replace_resource_runtime(client, previous, candidate):
     return {'status': 'sdk_runtime_rejected', 'stage': 'console', 'result': console, 'rollback': rollback}
 
 
-def start_session(saved, name, source, map_name=None, resources=False, background=False, console_check=False):
+def _replace_runtime_file(path, contents):
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix='xkit-runtime-', suffix='.tmp', delete=False) as output:
+            temporary = Path(output.name)
+            output.write(contents)
+            output.flush()
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def stage_bank_runtime(root, files, receipt):
+    """Retain private-game files before mutation and refuse redirected targets."""
+    from sdk_storage import require_games_closed
+    require_games_closed()
+    if receipt:
+        raise ValueError('Restore the previous bank staging receipt before retrying')
+    root = Path(root).resolve()
+    game = root / '.local/test-game'
+    marker = root / '.local/test-state/prepared.json'
+    metadata = json.loads(marker.read_text(encoding='utf-8'))
+    if (marker.resolve() != marker or game.resolve() != game or metadata.get('status') != 'complete'
+            or metadata.get('profile') != 'WorkshopDev' or metadata.get('game') != str(game)):
+        raise ValueError('Bank staging requires a prepared private game')
+    if set(files) != {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll',
+                      'UserMODs/workshop-army-reference.h5u'}:
+        raise ValueError('Bank staging contains unexpected destinations')
+    for member, source_file in files.items():
+        target = game / member
+        if target.resolve() != target or (target.exists() and target.stat().st_nlink != 1):
+            raise ValueError('Bank staging refuses linked game files')
+        contents = Path(source_file).read_bytes()
+        receipt[target] = {'previous': target.read_bytes() if target.exists() else None,
+                           'sha256': hashlib.sha256(contents).hexdigest(), 'contents': contents}
+    recovery = root / '.local/xalkit/recovery'
+    if recovery.resolve() != recovery:
+        raise ValueError('Bank recovery directory is redirected')
+    recovery.mkdir(parents=True, exist_ok=True)
+    directory = Path(tempfile.mkdtemp(prefix='bank-', dir=recovery))
+    manifest = directory / 'recovery.json'
+    records = []
+    for index, (target, record) in enumerate(receipt.items()):
+        backup = directory / ('original-' + str(index) + '.bin') if record['previous'] is not None else None
+        if backup:
+            _replace_runtime_file(backup, record['previous'])
+        record['recovery_manifest'] = manifest
+        record['backup'] = backup
+        records.append({'member': target.relative_to(game).as_posix(),
+                        'original_sha256': hashlib.sha256(record['previous']).hexdigest() if backup else None,
+                        'backup': backup.name if backup else None, 'staged_sha256': record['sha256']})
+    _replace_runtime_file(manifest, (json.dumps({'version': 1, 'workspace': str(root), 'files': records}, indent=2) + '\n').encode('utf-8'))
+    for target, record in receipt.items():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        _replace_runtime_file(target, record['contents'])
+
+
+def restore_bank_runtime(receipt):
+    from sdk_storage import require_games_closed
+    require_games_closed()
+    for target, record in receipt.items():
+        if target.resolve() != target or (target.exists() and target.stat().st_nlink != 1):
+            raise ValueError('Bank recovery refuses linked game files')
+        current = target.read_bytes() if target.exists() else None
+        if current != record['previous'] and (current is None or hashlib.sha256(current).hexdigest() != record['sha256']):
+            raise ValueError('Staged bank file changed; original retained for recovery')
+    for target, record in receipt.items():
+        if record['previous'] is None:
+            target.unlink(missing_ok=True)
+        else:
+            _replace_runtime_file(target, record['previous'])
+    manifests = {record['recovery_manifest'] for record in receipt.values() if 'recovery_manifest' in record}
+    for record in receipt.values():
+        backup = record.get('backup')
+        if backup:
+            if backup.resolve() != backup or backup.stat().st_nlink != 1 or backup.read_bytes() != record['previous']:
+                raise ValueError('Bank recovery backup changed; recovery files retained')
+    for record in receipt.values():
+        backup = record.get('backup')
+        if backup:
+            backup.unlink()
+    for manifest in manifests:
+        manifest.unlink()
+        manifest.parent.rmdir()
+    receipt.clear()
+
+
+def recover_bank_runtime(root, manifest):
+    root = Path(root).resolve()
+    manifest = Path(manifest).absolute()
+    recovery = root / '.local/xalkit/recovery'
+    if manifest.resolve() != manifest or not manifest.is_relative_to(recovery) or manifest.name != 'recovery.json':
+        raise ValueError('Recovery manifest must belong to this workspace recovery directory')
+    if manifest.stat().st_nlink != 1:
+        raise ValueError('Linked recovery manifests are refused')
+    data = json.loads(manifest.read_text(encoding='utf-8'))
+    if not isinstance(data, dict):
+        raise ValueError('Recovery manifest must contain an object')
+    if data.get('version') != 1 or data.get('workspace') != str(root):
+        raise ValueError('Recovery manifest belongs to another workspace')
+    game = root / '.local/test-game'
+    marker = root / '.local/test-state/prepared.json'
+    metadata = json.loads(marker.read_text(encoding='utf-8'))
+    if (game.resolve() != game or marker.resolve() != marker or metadata.get('status') != 'complete'
+            or metadata.get('profile') != 'WorkshopDev' or metadata.get('game') != str(game)):
+        raise ValueError('Bank recovery requires the prepared private game')
+    allowed = {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll', 'UserMODs/workshop-army-reference.h5u'}
+    records = data.get('files', [])
+    if not isinstance(records, list) or any(not isinstance(record, dict) for record in records):
+        raise ValueError('Recovery file records must be objects')
+    if len(records) != 3 or {record.get('member') for record in records} != allowed:
+        raise ValueError('Recovery destinations differ from bank runtime files')
+    receipt = {}
+    for index, record in enumerate(records):
+        backup = None
+        previous = None
+        if record.get('backup') is not None:
+            if record['backup'] != 'original-' + str(index) + '.bin':
+                raise ValueError('Unexpected recovery backup filename')
+            backup = manifest.parent / record['backup']
+            if backup.resolve() != backup or backup.stat().st_nlink != 1:
+                raise ValueError('Linked recovery backup refused')
+            previous = backup.read_bytes()
+            if hashlib.sha256(previous).hexdigest() != record.get('original_sha256'):
+                raise ValueError('Recovery backup checksum differs')
+        elif record.get('original_sha256') is not None:
+            raise ValueError('Missing original recovery backup')
+        receipt[game / record['member']] = {'previous': previous, 'sha256': record['staged_sha256'],
+                                           'backup': backup, 'recovery_manifest': manifest}
+    restore_bank_runtime(receipt)
+    return {'status': 'bank_recovered', 'manifest': str(manifest)}
+
+
+def start_session(saved, name, source, map_name=None, resources=False, background=False, console_check=False,
+                  native_adapter=None):
     from xalkit import load_backend, native_tools, resource_operation
     root = Path(saved['workspace'])
     events = EventLog(root / '.local/xalkit/logs', console=True, plugin=name)
@@ -185,7 +330,13 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
     background_budget = None
     plugin_ready = False
     console_validation = None
+    staged_bank = {}
+    bank_mode = native_adapter == 'bank-selector'
+    startup_mutation_lease = ExitStack()
+    startup_mutation_locked = False
     try:
+        startup_mutation_lease.enter_context(workspace_mutation(root / '.local'))
+        startup_mutation_locked = True
         if resources:
             from plugin_core import load_sdk_runtime
             try:
@@ -199,6 +350,21 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 events.emit({'status': 'resource_deployed', 'result': deployment})
         else:
             toolchain, compiler, environment, built, loader = native_tools(saved, events, with_console=True)
+            if bank_mode:
+                result = resource_operation(saved, name, source, 'build')
+                bank_package = Path(result.get('artifact') or root / '.local/test-state' / (name + '.h5u'))
+                module = load_backend('plugin-watch.py')
+                from plugin_core import CoreBuild
+                bank_cmake = CoreBuild(DEVKIT / 'native', root / '.local/xalkit/bank-tools', environment).cmake
+                builder = module.PluginWatch(source / 'src', root / '.local/xalkit/bank-prepare', compiler, environment, None)
+                candidate = builder.build_bank_payload(source, bank_package, Path(built['graphics']), bank_cmake,
+                                                       time.perf_counter())
+                events.emit(candidate)
+                if not candidate or candidate['status'] != 'bank_built':
+                    raise RuntimeError(text('native_build_failed', diagnostic=events.directory))
+                stage_bank_runtime(root, {'bin/dinput8.dll': loader,
+                    'bin/Heroes5Mods/WorkshopBankReference.dll': candidate['payload'],
+                    'UserMODs/workshop-army-reference.h5u': bank_package}, staged_bank)
         if built.get('console'):
             from sdk_console import ConsoleBroker
             console_broker = ConsoleBroker(root, str(events.session))
@@ -228,7 +394,7 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 events.emit({'status': 'sandbox_background_enabled', 'profile': profile.name})
         if built.get('graphics'):
             staged_graphics = {}
-            with workshop_module.exclusive(root / '.local'):
+            with (ExitStack() if startup_mutation_locked else workshop_module.exclusive(root / '.local', process_lease=True)):
                 stage_owned_graphics(root, built['graphics'], receipt=staged_graphics)
         probe = load_backend('native-probe.py')
         events.emit({'status': 'launching', 'message': text('launching')})
@@ -271,6 +437,8 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                                     graphics_facade_hash=staged_graphics['facade_sha256'] if staged_graphics else None) or {}
         owned['image_placement_verified'] = launched.get('image_placement_verified', False)
         game_started = True
+        startup_mutation_lease.close()
+        startup_mutation_locked = False
         events.emit({'status': 'game_started', 'game_pid': owned['pid'], 'game_created': owned['created']})
         monitor_path = root / '.local/tools/procdump/procdump.exe'
         if monitor_path.is_file():
@@ -323,6 +491,14 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 '--toolchain', str(toolchain), '--client', built['controller'], '--bridge', built['bridge'],
                 '--core-source', str(DEVKIT / 'native'), '--owned-game', '--main-thread', '--control-stdin',
                 '--managed-projects', '--log-session', events.session]
+            if bank_mode:
+                arguments = [sys.executable, '-X', 'utf8', str(DEVKIT / 'scripts/plugin-watch.py'),
+                    '--source', str(source / 'src'), '--output', str(root / '.local/xalkit/bank-watch'),
+                    '--toolchain', str(toolchain), '--client', built['controller'], '--bridge', built['bridge'],
+                    '--core-source', str(DEVKIT / 'native'), '--owned-game', '--main-thread', '--control-stdin',
+                    '--bank-project', str(source), '--bank-package', str(bank_package),
+                    '--bank-graphics', str(built['graphics']), '--bank-cmake', str(bank_cmake),
+                    '--plugin-id', name, '--log-session', events.session]
             if built.get('console'):
                 arguments += ['--console-build', str(root / '.local/xalkit/console-build'), '--console-project', name]
             process = subprocess.Popen(arguments, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -387,6 +563,7 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 break
             event = json.loads(line)
             events.emit(event)
+            built = refresh_command_endpoint(root, owned, built, event, name, selected_instance, bank_mode)
             if event['status'] == 'plugin_discovered' and event.get('plugin') == name:
                 selected_instance = event['instance']
             # The new starter has a passive display event: render after a save.
@@ -401,6 +578,8 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                     except (OSError, RuntimeError) as budget_error:
                         events.emit({'status': 'background_budget_unavailable', 'reason': str(budget_error)})
                     events.emit({'status': 'watching', 'message': text('watching')})
+                    if bank_mode:
+                        publish_resource_endpoint(root, owned, built)
                     if selected_instance:
                         watch = root / '.local/xalkit/watch'
                         bridge = watch / (name + '-' + selected_instance) / ('bridge-' + name + '-' + selected_instance + '.dll')
@@ -445,12 +624,6 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                         background_budget.close()
                     except (OSError, RuntimeError) as budget_error:
                         session_failures.append('background_budget_cleanup:' + str(budget_error))
-                if console_broker is not None:
-                    try:
-                        console_broker.close()
-                    except Exception as broker_error:
-                        session_failures.append('console_broker_stop:' + type(broker_error).__name__)
-                        events.emit({'status': 'console_broker_stop_failed', 'reason': str(broker_error)})
                 if resource_client is not None:
                     try:
                         resource_client.close()
@@ -469,6 +642,14 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                                      'supervisor_pid': process.pid})
                 elif process and process.poll() != 0:
                     session_failures.append('supervisor_exit_nonzero')
+                # Finish in-flight core/console replacements before stopping the
+                # host services their activation and rollback still depend on.
+                if console_broker is not None:
+                    try:
+                        console_broker.close()
+                    except Exception as broker_error:
+                        session_failures.append('console_broker_stop:' + type(broker_error).__name__)
+                        events.emit({'status': 'console_broker_stop_failed', 'reason': str(broker_error)})
                 if owned and owned_handle and kernel.WaitForSingleObject(owned_handle, 0) != 0:
                     probe = load_backend('native-probe.py')
                     handle = kernel.OpenProcess(0x1000, False, owned['pid'])
@@ -550,12 +731,25 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                     try:
                         if owned and final_game_exit is None:
                             raise RuntimeError('Owned game exit unconfirmed; graphics files retained')
-                        with workshop_module.exclusive(root / '.local'):
+                        with (ExitStack() if startup_mutation_locked else workshop_module.exclusive(root / '.local', process_lease=True)):
                             restore_owned_graphics(staged_graphics)
                         events.emit({'status': 'graphics_restored'})
                     except Exception as graphics_error:
                         session_failures.append('graphics_restore:' + str(graphics_error))
                         events.emit({'status': 'graphics_restore_unconfirmed', 'reason': str(graphics_error)})
+                if staged_bank:
+                    try:
+                        if owned and final_game_exit is None:
+                            raise RuntimeError('Owned game exit unconfirmed; bank files retained')
+                        with (ExitStack() if startup_mutation_locked else workshop_module.exclusive(root / '.local', process_lease=True)):
+                            restore_bank_runtime(staged_bank)
+                        events.emit({'status': 'bank_files_restored'})
+                    except Exception as bank_error:
+                        session_failures.append('bank_restore:' + str(bank_error))
+                        recovery_manifests = sorted({str(record['recovery_manifest']) for record in staged_bank.values()
+                                                     if 'recovery_manifest' in record})
+                        events.emit({'status': 'bank_restore_unconfirmed', 'reason': str(bank_error),
+                                     'recovery_manifests': recovery_manifests})
                 if stop_reason == 'keyboard_interrupt' and not game_started and not session_failures:
                     events.emit({'status': 'game_launch_cancelled', 'game_pid': owned['pid'] if owned else None})
                 if session_failures:
@@ -577,6 +771,7 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                     report_path.parent.mkdir(parents=True, exist_ok=True)
                     report = {'schema_version': 1, 'session_id': str(events.session), 'project': name,
                               'kind': 'resources' if resources else 'native',
+                              'native_adapter': native_adapter,
                               'scope': 'owned development lifecycle; no scene-rendering acceptance',
                               'game_pid': owned['pid'] if owned else None,
                               'game_created': str(owned['created']) if owned else None,
@@ -597,6 +792,7 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                     events.emit({'status': 'session_report_unavailable', 'reason': str(report_error),
                                  'error': sdk_error('SDK_SESSION_FAILED', diagnostic=str(events.directory))})
                 finally:
+                    startup_mutation_lease.close()
                     events.close()
     if session_failures:
         raise RuntimeError(text('session_failed', diagnostic=events.directory))

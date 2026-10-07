@@ -13,7 +13,7 @@ from unittest.mock import patch
 from zipfile import ZipFile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from sdk_storage import GameAssets, unlink_readonly
+from sdk_storage import GameAssets, unlink_readonly, workspace_mutation
 
 
 class SharedGameStorage(unittest.TestCase):
@@ -147,6 +147,33 @@ class SharedGameStorage(unittest.TestCase):
                 self.assets.clean(keep=0)
         self.assertTrue(game.exists())
 
+    def test_workspace_staging_lease_preserves_busy_copy_then_allows_retirement(self):
+        workspace, game = self.sandbox('staging')
+        original = (game / 'data/resource.pak').read_bytes()
+        with workspace_mutation(workspace / '.local'):
+            result = self.assets.clean(keep=0)
+            self.assertEqual(result['retired'], [])
+            self.assertTrue(game.exists())
+            self.assertEqual((game / 'data/resource.pak').read_bytes(), original)
+            self.assertFalse((workspace / '.local/test-state/retired-game.zip').exists())
+        result = self.assets.clean(keep=0)
+        self.assertEqual(len(result['retired']), 1)
+        self.assertFalse(game.exists())
+
+    def test_game_start_between_discovery_and_lease_prevents_sharing_and_archiving(self):
+        workspace, game = self.sandbox('late-start')
+        with patch('sdk_storage.require_games_closed', side_effect=[None, RuntimeError('game started')]), \
+                patch.object(self.assets, 'share') as share:
+            with self.assertRaisesRegex(RuntimeError, 'game started'):
+                self.assets._adopt()
+            share.assert_not_called()
+        with patch.object(self.assets, 'adopt', return_value={}), \
+                patch('sdk_storage.require_games_closed', side_effect=[None, RuntimeError('game started')]):
+            with self.assertRaisesRegex(RuntimeError, 'game started'):
+                self.assets._clean(keep=0)
+        self.assertTrue(game.exists())
+        self.assertFalse((workspace / '.local/test-state/retired-game.zip').exists())
+
     def test_changed_test_resource_is_preserved_in_snapshot(self):
         _, game = self.sandbox('custom')
         destination = game / 'data/resource.pak'
@@ -232,6 +259,27 @@ class SharedGameStorage(unittest.TestCase):
         os.utime(restored, (1, 1))
         self.assets.clean(keep=0)
         self.assertEqual(len(list(directory.glob('*.dmp'))), 2)
+
+    def test_dump_restore_checksum_mismatch_retains_archive_and_removes_partial_output(self):
+        import gzip
+        import hashlib
+        directory = self.root / '.local/xalkit/crashes/checksum'
+        directory.mkdir(parents=True)
+        archive = directory / 'fixture.dmp.gz'
+        expected = b'MDMPexpected payload'
+        changed = b'MDMPchanged payload!'
+        self.assertEqual(len(expected), len(changed))
+        with gzip.open(archive, 'wb') as output:
+            output.write(changed)
+        provenance = archive.with_suffix('.archive.json')
+        provenance.write_text(json.dumps({'source': str(archive.with_suffix('')), 'archive': str(archive),
+            'sha256': hashlib.sha256(expected).hexdigest(), 'original_bytes': len(expected)}))
+        with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
+            self.assets.restore_dump(archive)
+        self.assertTrue(archive.exists())
+        self.assertTrue(provenance.exists())
+        self.assertFalse(archive.with_suffix('').exists())
+        self.assertFalse(list(directory.glob('*.restore-*')))
 
     def test_dump_restore_rejects_an_archive_outside_the_storage_root(self):
         outside = self.installation / 'outside.dmp.gz'

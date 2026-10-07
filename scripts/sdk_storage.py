@@ -1,6 +1,6 @@
 """Share immutable game assets and retire owned, closed test installations."""
 import ctypes
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 import hashlib
 import gzip
 import json
@@ -17,6 +17,27 @@ import portalocker
 
 
 MAX_SANDBOXES = 3
+
+
+@contextmanager
+def workspace_mutation(directory):
+    """Share one OS lease across staging, recovery and retiring a sandbox."""
+    directory = Path(directory).absolute()
+    if directory.resolve() != directory:
+        raise ValueError('Workspace mutation directory is redirected')
+    directory.mkdir(parents=True, exist_ok=True)
+    lock = directory / 'mod-dev.lease'
+    if lock.resolve() != lock or (lock.exists() and lock.stat().st_nlink != 1):
+        raise ValueError('Workspace lease refuses linked files')
+    lease = portalocker.Lock(lock, mode='a+b', timeout=0)
+    try:
+        lease.acquire()
+    except portalocker.exceptions.LockException as failure:
+        raise FileExistsError('Another workspace mutation operation is running') from failure
+    try:
+        yield
+    finally:
+        lease.release()
 SHARED_EXTENSIONS = {'.pak', '.ogg', '.mp3', '.wav', '.bik'}
 SHARED_MIN_BYTES = 8 * 1024 * 1024
 
@@ -247,10 +268,18 @@ class GameAssets:
         linked = 0
         for index, entry in enumerate(games, 1):
             game = entry['game']
-            for source in resources:
-                destination = game / source.relative_to(self.installation)
-                if destination.is_file() and destination.resolve().is_relative_to(game):
-                    linked += self.share(source, destination)
+            mutation = ExitStack()
+            try:
+                mutation.enter_context(workspace_mutation(entry['workspace'] / '.local'))
+            except FileExistsError:
+                mutation.close()
+                continue
+            with mutation:
+                require_games_closed()
+                for source in resources:
+                    destination = game / source.relative_to(self.installation)
+                    if destination.is_file() and destination.resolve().is_relative_to(game):
+                        linked += self.share(source, destination)
             if progress is not None:
                 progress(index, len(games))
         return {'sandboxes': len(games), 'shared_files': linked}
@@ -376,57 +405,65 @@ class GameAssets:
             game, workspace = entry['game'], entry['workspace']
             if (workspace / '.local/test-state/mod-dev.lock').exists():
                 continue
-            if game.resolve() != game or not game.is_relative_to(self.root / '.local'):
-                raise ValueError('Unsafe test installation cleanup path')
-            archive = workspace / '.local/test-state/retired-game.zip'
-            if archive.parent.resolve() != archive.parent:
-                raise ValueError('Unsafe test archive directory')
-            archive.parent.mkdir(parents=True, exist_ok=True)
-            if archive.is_symlink():
-                raise ValueError('Unsafe existing test archive')
-            temporary = archive.with_suffix('.zip.tmp')
-            if temporary.is_symlink():
-                raise ValueError('Unsafe temporary test archive')
-            references = {}
-            if (game / 'sandbox-storage.json').exists():
-                raise ValueError('Test installation contains a reserved storage manifest name')
-            with ZipFile(temporary, 'w', ZIP_DEFLATED) as package:
-                for directory, children, files in os.walk(game, followlinks=False):
-                    parent = Path(directory)
-                    for name in children + files:
-                        if getattr((parent / name).lstat(), 'st_file_attributes', 0) & 0x400:
-                            raise ValueError('Refuse cleanup through a reparse point')
-                    for name in files:
-                        path = parent / name
-                        relative = path.relative_to(game).as_posix()
-                        cached = self.shared_files.get(relative)
-                        if cached is not None and cached.exists():
-                            if os.path.samefile(path, cached):
-                                references[path.relative_to(game).as_posix()] = {
-                                    'sha256': cached.name, 'size': path.stat().st_size}
-                                continue
-                        package.write(path, path.relative_to(game).as_posix())
-                package.writestr('sandbox-storage.json', json.dumps({
-                    'version': 1, 'shared_cache': str(self.cache), 'shared_assets': references,
-                    'game': str(game), 'workspace': str(workspace)}))
-            with ZipFile(temporary) as package:
-                if package.testzip() is not None:
-                    raise RuntimeError('Retired test archive verification failed')
-                for reference in references.values():
-                    cached = self.cache / reference['sha256']
-                    identity = cached.stat()
-                    signature = (cached.name, identity.st_ino, identity.st_size, identity.st_mtime_ns)
-                    if identity.st_size != reference['size'] or signature not in self.validated_cache:
-                        raise RuntimeError('Retired test archive resource reference failed')
-            if archive.exists():
-                history = archive.with_name('retired-game-' + uuid.uuid4().hex + '.zip')
-                os.rename(archive, history)
-            os.replace(temporary, archive)
-            require_games_closed()
-            self.remove_tree(game)
-            if entry['marker'].exists():
-                os.replace(entry['marker'], entry['marker'].with_name('prepared.retired.json'))
-            retired.append({'game': str(game), 'archive': str(archive)})
+            mutation = ExitStack()
+            try:
+                mutation.enter_context(workspace_mutation(workspace / '.local'))
+            except FileExistsError:
+                mutation.close()
+                continue
+            with mutation:
+                require_games_closed()
+                if game.resolve() != game or not game.is_relative_to(self.root / '.local'):
+                    raise ValueError('Unsafe test installation cleanup path')
+                archive = workspace / '.local/test-state/retired-game.zip'
+                if archive.parent.resolve() != archive.parent:
+                    raise ValueError('Unsafe test archive directory')
+                archive.parent.mkdir(parents=True, exist_ok=True)
+                if archive.is_symlink():
+                    raise ValueError('Unsafe existing test archive')
+                temporary = archive.with_suffix('.zip.tmp')
+                if temporary.is_symlink():
+                    raise ValueError('Unsafe temporary test archive')
+                references = {}
+                if (game / 'sandbox-storage.json').exists():
+                    raise ValueError('Test installation contains a reserved storage manifest name')
+                with ZipFile(temporary, 'w', ZIP_DEFLATED) as package:
+                    for directory, children, files in os.walk(game, followlinks=False):
+                        parent = Path(directory)
+                        for name in children + files:
+                            if getattr((parent / name).lstat(), 'st_file_attributes', 0) & 0x400:
+                                raise ValueError('Refuse cleanup through a reparse point')
+                        for name in files:
+                            path = parent / name
+                            relative = path.relative_to(game).as_posix()
+                            cached = self.shared_files.get(relative)
+                            if cached is not None and cached.exists():
+                                if os.path.samefile(path, cached):
+                                    references[path.relative_to(game).as_posix()] = {
+                                        'sha256': cached.name, 'size': path.stat().st_size}
+                                    continue
+                            package.write(path, path.relative_to(game).as_posix())
+                    package.writestr('sandbox-storage.json', json.dumps({
+                        'version': 1, 'shared_cache': str(self.cache), 'shared_assets': references,
+                        'game': str(game), 'workspace': str(workspace)}))
+                with ZipFile(temporary) as package:
+                    if package.testzip() is not None:
+                        raise RuntimeError('Retired test archive verification failed')
+                    for reference in references.values():
+                        cached = self.cache / reference['sha256']
+                        identity = cached.stat()
+                        signature = (cached.name, identity.st_ino, identity.st_size, identity.st_mtime_ns)
+                        if identity.st_size != reference['size'] or signature not in self.validated_cache:
+                            raise RuntimeError('Retired test archive resource reference failed')
+                if archive.exists():
+                    history = archive.with_name('retired-game-' + uuid.uuid4().hex + '.zip')
+                    os.rename(archive, history)
+                os.replace(temporary, archive)
+                require_games_closed()
+                self.remove_tree(game)
+                if entry['marker'].exists():
+                    os.replace(entry['marker'], entry['marker'].with_name('prepared.retired.json'))
+                retired.append({'game': str(game), 'archive': str(archive)})
         return {'kept': len(games) - len(retired), 'retired': retired}
 
     def remove_tree(self, game):
