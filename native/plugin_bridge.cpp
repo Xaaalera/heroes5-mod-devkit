@@ -1,6 +1,7 @@
 #include "plugin_runtime.hpp"
 #include "diagnostic_bus.hpp"
 #include "console_module.hpp"
+#include "selector_runtime.hpp"
 #include "../game-api/include/h5/script_observers.hpp"
 #include "../game-api/include/h5/camera_input.hpp"
 #include "../game-api/include/h5/build.hpp"
@@ -21,6 +22,7 @@ HWND mainWindow = nullptr;
 UINT dispatchMessage = 0;
 UINT exitMessage = 0;
 UINT consoleMessage = 0;
+UINT selectorMessage = 0;
 std::atomic<uint32_t*> pending{nullptr};
 std::atomic<DWORD> pendingStatus{0};
 HANDLE hookThread = nullptr;
@@ -290,12 +292,53 @@ bool RefreshEvents() {
     eventSettings = settings;
     return true;
 }
+DWORD ControlBankSelectorOnMain(heroes5_sdk::SelectorAction action, uint32_t* result = nullptr, uint32_t statistic = 0) {
+    if (GetCurrentThreadId() != windowThread) { return ERROR_INVALID_THREAD_ID; }
+    wchar_t executable[32768]{};
+    const DWORD length = GetModuleFileNameW(nullptr, executable, 32768);
+    if (!length || length >= 32768) { return ERROR_BAD_PATHNAME; }
+    const auto loaderPath = std::filesystem::path(executable).parent_path() / L"dinput8.dll";
+    const auto loader = GetModuleHandleW(loaderPath.c_str());
+    using Control = DWORD (WINAPI*)(void*);
+    const auto control = loader ? reinterpret_cast<Control>(GetProcAddress(loader, "Heroes5BankSelectorControl")) : nullptr;
+    if (!control) { return ERROR_NOT_SUPPORTED; }
+    heroes5_sdk::SelectorRequest binding;
+    const DWORD status = control(&binding);
+    if (status != ERROR_SUCCESS && status != ERROR_NOT_READY) { return status; }
+    binding.action = action;
+    binding.expectedGeneration = binding.generation;
+    binding.window = mainWindow;
+    if (action == heroes5_sdk::SelectorAction::ReadState && result) {
+        if (statistic > 5) { return ERROR_INVALID_PARAMETER; }
+        if (statistic >= 4) {
+            // Generated bank data reserves 64 cache slots before the routes.
+            uint32_t cachedRoots[64]{};
+            binding.stateOffset = 256;
+            binding.output = reinterpret_cast<unsigned char*>(cachedRoots);
+            binding.outputBytes = sizeof(cachedRoots);
+            const DWORD readStatus = control(&binding);
+            if (readStatus != ERROR_SUCCESS) { return readStatus; }
+            uint32_t count = 0;
+            uint32_t fingerprint = 2166136261u;
+            for (const uint32_t root : cachedRoots) {
+                if (root) { ++count; }
+                fingerprint = (fingerprint ^ root) * 16777619u;
+            }
+            *result = statistic == 4 ? count : fingerprint;
+            return ERROR_SUCCESS;
+        }
+        binding.stateOffset = 8 + statistic * sizeof(uint32_t);
+        binding.output = reinterpret_cast<unsigned char*>(result);
+        binding.outputBytes = sizeof(*result);
+    }
+    return control(&binding);
+}
 LRESULT CALLBACK MainThreadHook(int code, WPARAM parameter, LPARAM data) {
     const auto request = pending.load(std::memory_order_acquire);
     if (code >= 0 && request) {
         const auto* message = reinterpret_cast<const CWPSTRUCT*>(data);
         if (message->hwnd == mainWindow && (message->message == dispatchMessage ||
-            message->message == exitMessage || message->message == consoleMessage) &&
+            message->message == exitMessage || message->message == consoleMessage || message->message == selectorMessage) &&
             message->lParam == reinterpret_cast<LPARAM>(request)) {
             if (message->message == exitMessage) {
                 const auto& exit = h5::hooks::ExitRequest;
@@ -316,9 +359,23 @@ LRESULT CALLBACK MainThreadHook(int code, WPARAM parameter, LPARAM data) {
                     std::memory_order_release);
                 return CallNextHookEx(nullptr, code, parameter, data);
             }
-            const auto status = request[0] == UINT32_MAX ? (ClearEvents() ? 0u : 104u) :
-                request[0] == UINT32_MAX - 1 ? (RefreshEvents() ? 0u : 104u) :
-                (!RefreshEvents() ? 104u : static_cast<DWORD>(runtime->Invoke(request[0], request[1], request[2])));
+            if (message->message == selectorMessage) {
+                const auto action = static_cast<heroes5_sdk::SelectorAction>(request[0]);
+                const bool allowed = action == heroes5_sdk::SelectorAction::BindWindow
+                    || action == heroes5_sdk::SelectorAction::AttachHook || action == heroes5_sdk::SelectorAction::DetachHook
+                    || action == heroes5_sdk::SelectorAction::ReadState;
+                pendingStatus.store(allowed ? ControlBankSelectorOnMain(action, &request[2], request[1])
+                    : ERROR_INVALID_PARAMETER, std::memory_order_release);
+                return CallNextHookEx(nullptr, code, parameter, data);
+            }
+            DWORD status = 0;
+            switch (request[0]) {
+            case UINT32_MAX: status = ClearEvents() ? 0u : 104u; break;
+            case UINT32_MAX - 1: status = RefreshEvents() ? 0u : 104u; break;
+            default:
+                status = !RefreshEvents() ? 104u : static_cast<DWORD>(runtime->Invoke(request[0], request[1], request[2]));
+                break;
+            }
             request[3] = runtime->Generation();
             pendingStatus.store(status, std::memory_order_release);
         }
@@ -364,11 +421,11 @@ DWORD WINAPI HookOwner(void*) {
     mainHook = nullptr; mainWindow = nullptr;
     return 0;
 }
-DWORD SendToMain(uint32_t* request, bool exitRequest = false, bool consoleRequest = false) {
+DWORD SendToMain(uint32_t* request, bool exitRequest = false, bool consoleRequest = false, bool selectorRequest = false) {
     pendingStatus = 102;
     pending.store(request, std::memory_order_release);
-    SendMessageW(mainWindow, consoleRequest ? consoleMessage :
-        (exitRequest ? exitMessage : dispatchMessage), 0, reinterpret_cast<LPARAM>(request));
+    SendMessageW(mainWindow, selectorRequest ? selectorMessage : (consoleRequest ? consoleMessage :
+        (exitRequest ? exitMessage : dispatchMessage)), 0, reinterpret_cast<LPARAM>(request));
     pending = nullptr;
     return pendingStatus.load(std::memory_order_acquire);
 }
@@ -416,7 +473,8 @@ DWORD EnsureMainThreadHook(bool withConsole = true) {
         dispatchMessage = RegisterWindowMessageW(L"Heroes5ModDevkit.PluginDispatch.v1");
         exitMessage = RegisterWindowMessageW(L"Heroes5ModDevkit.RequestExit.v1");
         consoleMessage = RegisterWindowMessageW(L"Heroes5ModDevkit.ConsoleCommand.v1");
-        if (!dispatchMessage || !exitMessage || !consoleMessage) { return 100; }
+        selectorMessage = RegisterWindowMessageW(L"Heroes5ModDevkit.BankSelector.v1");
+        if (!dispatchMessage || !exitMessage || !consoleMessage || !selectorMessage) { return 100; }
         hookReady = CreateEventW(nullptr, TRUE, FALSE, nullptr);
         hookStop = CreateEventW(nullptr, TRUE, FALSE, nullptr);
         if (!hookReady || !hookStop) {
@@ -490,6 +548,12 @@ extern "C" DWORD WINAPI Heroes5PluginRequestExit(void*) {
     uint32_t request[4]{};
     return SendToMain(request, true);
 }
+extern "C" DWORD WINAPI Heroes5PluginBankControlMain(void* memory) {
+    Guard guard;
+    if (!memory || !runtime || !hookThread || !mainHook || !IsWindow(mainWindow)) { return ERROR_NOT_READY; }
+    return SendToMain(static_cast<uint32_t*>(memory), false, false, true);
+}
+#pragma comment(linker, "/EXPORT:Heroes5PluginBankControlMain=_Heroes5PluginBankControlMain@4")
 extern "C" DWORD WINAPI Heroes5PluginConsoleCommand(void* memory) {
     Guard guard;
     if (!memory || !h5::hooks::ObserverMemory(reinterpret_cast<uintptr_t>(memory),
@@ -503,6 +567,75 @@ extern "C" DWORD WINAPI Heroes5PluginConsoleCommand(void* memory) {
     return SendToMain(request, false, true);
 }
 #pragma comment(linker, "/EXPORT:Heroes5PluginConsoleCommand=_Heroes5PluginConsoleCommand@4")
+extern "C" DWORD WINAPI Heroes5PluginReplaceBank(void* memory) {
+    Guard guard;
+    if (!memory) { return ERROR_INVALID_PARAMETER; }
+    auto& replacement = *static_cast<heroes5_sdk::BankReplaceRequest*>(memory);
+    if (replacement.size != sizeof(replacement) || replacement.version != 1 || !replacement.path[0]
+        || wcsnlen_s(replacement.path, 4096) == 4096) { return ERROR_INVALID_PARAMETER; }
+    replacement.applied = 0; replacement.moduleReleased = 0;
+    if (!hookThread || !mainHook || !IsWindow(mainWindow)) { return ERROR_NOT_READY; }
+    HMODULE module = nullptr;
+    HANDLE file = INVALID_HANDLE_VALUE;
+    DWORD result = ERROR_INVALID_DATA;
+    try {
+        const auto path = std::filesystem::canonical(replacement.path);
+        wchar_t executable[32768]{};
+        const DWORD length = GetModuleFileNameW(nullptr, executable, 32768);
+        if (!length || length >= 32768) { return ERROR_BAD_PATHNAME; }
+        const auto gameBin = std::filesystem::canonical(executable).parent_path();
+        const auto allowed = gameBin / L"Heroes5Mods/BankUpdates";
+        if (std::filesystem::canonical(allowed) != allowed || path.parent_path() != allowed) { return ERROR_ACCESS_DENIED; }
+        file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
+        if (file == INVALID_HANDLE_VALUE) { return GetLastError(); }
+        if (path.filename().string() != h5::Sha256(file) + ".dll") { result = ERROR_INVALID_DATA; }
+        else {
+            module = LoadLibraryExW(path.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
+            using Query = const heroes5_sdk::BankSelectorPayload* (__cdecl*)();
+            const auto query = module ? reinterpret_cast<Query>(GetProcAddress(module, "Heroes5BankSelectorQuery")) : nullptr;
+            const auto* payload = query ? query() : nullptr;
+            using heroes5_sdk::SelectorModuleBytes;
+            const bool valid = SelectorModuleBytes(module, payload, sizeof(heroes5_sdk::BankSelectorPayload))
+                && payload->size == sizeof(*payload) && payload->version == 1 && payload->codeBytes && payload->codeBytes <= 4096
+                && payload->dataBytes && payload->dataBytes <= 65536 && payload->dataOffsetCount <= 16384
+                && payload->codeFixupCount <= 1024 && payload->dataFixupCount <= 1024
+                && SelectorModuleBytes(module, payload->code, payload->codeBytes)
+                && SelectorModuleBytes(module, payload->initialData, payload->dataBytes)
+                && SelectorModuleBytes(module, payload->dataOffsets, payload->dataOffsetCount * sizeof(uint32_t))
+                && SelectorModuleBytes(module, payload->codeFixups, payload->codeFixupCount * sizeof(heroes5_sdk::SelectorFixup))
+                && SelectorModuleBytes(module, payload->dataFixups, payload->dataFixupCount * sizeof(heroes5_sdk::SelectorFixup))
+                && SelectorModuleBytes(module, payload->packageSha256, 65);
+            if (valid && payload->packageSha256[64] == '\0' && strspn(payload->packageSha256, "0123456789abcdef") == 64
+                && h5::Sha256(gameBin.parent_path() / L"UserMODs/workshop-army-reference.h5u") == payload->packageSha256) {
+                using Control = DWORD (WINAPI*)(void*);
+                const auto loader = GetModuleHandleW((gameBin / L"dinput8.dll").c_str());
+                const auto control = loader ? reinterpret_cast<Control>(GetProcAddress(loader, "Heroes5BankSelectorControl")) : nullptr;
+                if (control) {
+                    heroes5_sdk::SelectorRequest request;
+                    result = control(&request);
+                    if (result == ERROR_SUCCESS) {
+                        request.action = heroes5_sdk::SelectorAction::Replace;
+                        request.expectedGeneration = request.generation;
+                        request.bytes = payload->code; request.byteCount = payload->codeBytes;
+                        request.sourceCode = payload->sourceCode; request.sourceData = payload->sourceData;
+                        request.dataSchema = payload->dataSchema;
+                        request.codeFixups = payload->codeFixups; request.codeFixupCount = payload->codeFixupCount;
+                        request.dataFixups = payload->dataFixups; request.dataFixupCount = payload->dataFixupCount;
+                        result = control(&request);
+                        replacement.applied = result == ERROR_SUCCESS;
+                    }
+                } else { result = ERROR_NOT_SUPPORTED; }
+            }
+        }
+    } catch (const std::exception&) { result = ERROR_INVALID_DATA; }
+    if (module) {
+        if (FreeLibrary(module)) { replacement.moduleReleased = 1; }
+        else { result = ERROR_BUSY; }
+    }
+    if (file != INVALID_HANDLE_VALUE) { CloseHandle(file); }
+    return result;
+}
+#pragma comment(linker, "/EXPORT:Heroes5PluginReplaceBank=_Heroes5PluginReplaceBank@4")
 extern "C" DWORD WINAPI Heroes5PluginReplaceConsole(void* memory) {
     Guard guard;
     if (!memory) { return ERROR_INVALID_PARAMETER; }

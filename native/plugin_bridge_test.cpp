@@ -88,6 +88,12 @@ void Require(bool condition, const char* reason) {
 int wmain(int count, wchar_t** arguments) {
     try {
         Require(count == 2, "Expected payload path");
+        heroes5_sdk::BankReplaceRequest unavailable;
+        wcscpy_s(unavailable.path, L"fixture.dll");
+        unavailable.applied = 1; unavailable.moduleReleased = 1;
+        Require(Heroes5PluginReplaceBank(&unavailable) == ERROR_NOT_READY
+                && unavailable.applied == 0 && unavailable.moduleReleased == 0,
+                "Unavailable bank replacement retained a stale success receipt.");
         const auto instance = GetModuleHandleW(nullptr);
         WNDCLASSW gameClass{};
         gameClass.lpfnWndProc = DefWindowProcW;

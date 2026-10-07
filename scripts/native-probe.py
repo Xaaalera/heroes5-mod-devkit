@@ -59,16 +59,20 @@ def layout_data(counter, routes):
     return bytes(data)
 
 
-def layout_trampoline(address, counter, routes):
+def layout_trampoline(address, counter, routes, *, return_to_caller=False):
     from keystone import Ks, KS_ARCH_X86, KS_MODE_32
     # Select a separate root before the native updater fills/layouts it.
     # EDI is the public tooltip model here. Never inspect its guard fields.
     # The two strategies are the untouched default root and the registered
     # reference template. The prototype uses the public title as its key.
+    # A managed host may CALL the selector and regain control for retirement.
+    # Managed mode is cdecl uint32_t(uint32_t publicTooltip): EAX is the selected
+    # root, saved registers/flags survive, and the caller removes its argument.
     instructions = f'''
-        mov ebp, dword ptr [0xfd9668]
+        {'' if return_to_caller else 'mov ebp, dword ptr [0xfd9668]'}
         pushfd
         pushad
+        {'mov edi, dword ptr [esp + 40]; mov ebp, dword ptr [0xfd9668]; mov dword ptr [esp + 28], ebp' if return_to_caller else ''}
         lock inc dword ptr [{counter + 8}]
         mov ecx, edi
         mov eax, dword ptr [ecx]
@@ -147,12 +151,12 @@ def layout_trampoline(address, counter, routes):
         mov eax, dword ptr [eax + 4]
         test byte ptr [ebp + eax + 11], 0x80
         jnz done
-        mov dword ptr [esp + 8], ebp
+        mov dword ptr [esp + {28 if return_to_caller else 8}], ebp
         lock inc dword ptr [{counter + 16}]
     done:
         popad
         popfd
-        jmp {LAYOUT_ENTRY + len(LAYOUT_ORIGINAL)}
+        {'ret' if return_to_caller else f'jmp {LAYOUT_ENTRY + len(LAYOUT_ORIGINAL)}'}
     '''
     return bytes(Ks(KS_ARCH_X86, KS_MODE_32).asm(instructions, addr=address)[0])
 

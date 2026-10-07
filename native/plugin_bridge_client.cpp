@@ -1,6 +1,7 @@
 #include "player_launch.hpp"
 #include "graphics_build_identity.hpp"
 #include "plugin_runtime.hpp"
+#include "selector_runtime.hpp"
 #include "../game-api/include/h5/console.hpp"
 #include "diagnostic_bus.hpp"
 #include "../game-api/include/h5/process.hpp"
@@ -202,6 +203,10 @@ int wmain(int count, wchar_t** arguments) {
         const auto featureAddress = GetProcAddress(local, "Heroes5PluginNewFeature");
         const auto feature = featureAddress ? base + reinterpret_cast<uintptr_t>(featureAddress) -
             reinterpret_cast<uintptr_t>(local) : 0;
+        const auto bankExport = GetProcAddress(local, "Heroes5PluginReplaceBank");
+        const auto replaceBank = bankExport ? base + reinterpret_cast<uintptr_t>(bankExport) - reinterpret_cast<uintptr_t>(local) : 0;
+        const auto bankControlExport = GetProcAddress(local, "Heroes5PluginBankControlMain");
+        const auto bankControl = bankControlExport ? base + reinterpret_cast<uintptr_t>(bankControlExport) - reinterpret_cast<uintptr_t>(local) : 0;
         bool mainUsed = false;
         bool exitConfirmed = false;
         DWORD gameExitCode = STILL_ACTIVE;
@@ -215,6 +220,7 @@ int wmain(int count, wchar_t** arguments) {
             DWORD status = 0; uint32_t request[4]{};
             std::string stateSnapshot;
             std::string diagnosticSnapshot;
+            heroes5_sdk::BankReplaceRequest bankReplacement;
             if (line.rfind("console ", 0) == 0) {
                 mainUsed = true;
                 const auto text = Wide(line.substr(8));
@@ -290,6 +296,43 @@ int wmain(int count, wchar_t** arguments) {
                 }
                 if (line == "suspend" && status == 0) { stateSnapshot = EncodeSnapshot(snapshot); }
                 request[3] = snapshot.generation;
+            } else if (line == "bank-bind" || line == "bank-attach" || line == "bank-detach" || line.rfind("bank-stat ", 0) == 0) {
+                Require(bankControl != 0, "bank_control_unavailable");
+                using heroes5_sdk::SelectorAction;
+                if (line == "bank-bind") { request[0] = static_cast<uint32_t>(SelectorAction::BindWindow); }
+                else if (line == "bank-attach") { request[0] = static_cast<uint32_t>(SelectorAction::AttachHook); }
+                else if (line == "bank-detach") { request[0] = static_cast<uint32_t>(SelectorAction::DetachHook); }
+                else {
+                    std::istringstream input(line.substr(10)); std::string trailing;
+                    Require(static_cast<bool>(input >> request[1]) && request[1] <= 5 && !(input >> trailing), "invalid_bank_statistic");
+                    request[0] = static_cast<uint32_t>(SelectorAction::ReadState);
+                }
+                mainUsed = true;
+                if (remote) {
+                    SIZE_T written = 0;
+                    Require(WriteProcessMemory(process, buffer, request, sizeof(request), &written) && written == sizeof(request), "bank_control_write_failed");
+                }
+                status = Call(process, bankControl, remote ? buffer : request, "bank_control_main");
+                if (remote) {
+                    SIZE_T received = 0;
+                    Require(ReadProcessMemory(process, buffer, request, sizeof(request), &received) && received == sizeof(request), "bank_control_read_failed");
+                }
+            } else if (line.rfind("bank-reload ", 0) == 0) {
+                const auto path = std::filesystem::absolute(Wide(line.substr(12))).wstring();
+                Require(replaceBank && !path.empty() && path.size() < 4096 && path.find(L'\0') == std::wstring::npos,
+                    "bank_replace_unavailable_or_path_too_long");
+                std::copy(path.begin(), path.end(), bankReplacement.path);
+                if (remote) {
+                    SIZE_T written = 0;
+                    Require(WriteProcessMemory(process, buffer, &bankReplacement, sizeof(bankReplacement), &written)
+                        && written == sizeof(bankReplacement), "bank_path_write_failed");
+                }
+                status = Call(process, replaceBank, remote ? buffer : &bankReplacement, "replace_bank");
+                if (remote) {
+                    SIZE_T received = 0;
+                    Require(ReadProcessMemory(process, buffer, &bankReplacement, sizeof(bankReplacement), &received)
+                        && received == sizeof(bankReplacement), "bank_replace_receipt_read_failed");
+                }
             } else if (line.rfind("reload ", 0) == 0 || line.rfind("console-replace ", 0) == 0) {
                 const bool consoleReplacement = line.rfind("console-replace ", 0) == 0;
                 Require(!consoleReplacement || replaceConsole, "console_replace_export_missing");
@@ -325,6 +368,10 @@ int wmain(int count, wchar_t** arguments) {
                 << ",\"generation\":" << request[3];
             if (line.rfind("console ", 0) == 0) {
                 std::cout << ",\"dispatch_returned\":" << (status == 0 ? "true" : "false");
+            }
+            if (line.rfind("bank-reload ", 0) == 0) {
+                std::cout << ",\"applied\":" << (bankReplacement.applied ? "true" : "false")
+                    << ",\"module_released\":" << (bankReplacement.moduleReleased ? "true" : "false");
             }
             if (!stateSnapshot.empty()) { std::cout << ",\"snapshot\":\"" << stateSnapshot << "\""; }
             if (!diagnosticSnapshot.empty()) { std::cout << ",\"diagnostics\":\"" << diagnosticSnapshot << "\""; }
