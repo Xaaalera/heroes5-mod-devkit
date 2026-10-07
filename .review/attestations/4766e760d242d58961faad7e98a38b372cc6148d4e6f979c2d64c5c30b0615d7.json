@@ -1,6 +1,6 @@
 {
-  "diffHash": "acf5e6c5b807a752c3feae1f0a6e638ce732158812cb454c8b6658cc8c18989a",
-  "commitSha": "76d2c5a599c99383b87f9782727960f99fc71932",
+  "diffHash": "4766e760d242d58961faad7e98a38b372cc6148d4e6f979c2d64c5c30b0615d7",
+  "commitSha": "e61daaa655a15edb7392ff6e8de6d002b29236e8",
   "perAgent": {
     "craft": {
       "agent": "craft",
@@ -916,10 +916,12 @@
         "minor": 0,
         "advisory": 0
       },
-      "one_line": "Both concrete findings are resolved in the current worktree; no remaining finding in the stated tests-review scope.",
+      "one_line": "Both prior findings remain resolved; two CI fixture roots now canonicalize Windows TEMP aliases without weakening production guards.",
       "reviewer": "/root/sdk_publication_tests",
       "review": {
-        "reviewer": "/root/sdk_publication_tests",
+        "reviewer_id": "/root/sdk_publication_tests",
+        "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+        "findings": [],
         "claims": [
           {
             "path": ".claude/review.config.json",
@@ -1298,8 +1300,7 @@
           {
             "path": "tests/test_game_control.py",
             "disposition": "judged",
-            "depth": "shallow coverage inventory only",
-            "reason": "Enumerated and mapped against named tests; complete implementation/branch review was not performed for this path."
+            "depth": "targeted fixture/production-guard review"
           },
           {
             "path": "tests/test_plugin_watch.py",
@@ -1349,7 +1350,63 @@
             "depth": "targeted runtime/test-pair review"
           }
         ],
-        "findings": []
+        "summary": {
+          "agent": "tests",
+          "verdict": "PASS",
+          "score": 10,
+          "counts": {
+            "blocker": 0,
+            "major": 0,
+            "minor": 0,
+            "advisory": 0
+          },
+          "one_line": "Both prior findings remain resolved; two CI fixture roots now canonicalize Windows TEMP aliases without weakening production guards."
+        },
+        "scope_limits": [
+          "Score covers this independent tests lens only, including explicitly marked shallow claims; it is not a publication attestation or universal runtime certification.",
+          "Read-only review, no game, input, build or test rerun.",
+          "Parent-reported CTest7/7 and Node8/8 and bank consumer6/6 were not independently rerun. Repository storage-lease-regressions.txt was read and records unittest193 OK; this does not reach standalone or player live package assertions.",
+          "Private bank-player-latest-archive proves one exact bank player archive ordinary startup and selector, no visual card claim; SDK-source-release proves source/runtime sealing, not native-counter player acceptance. bank-human-card-core-live-final includes screenshot/input/card evidence and resident core lifecycle; visuals themselves were not independently inspected in this review.",
+          "No mutation run performed; corruption-test finding is a directly checked absence of a negative case, not an assertion that current checksum code is wrong.",
+          "Configured tests rules are prose, with no supplied deterministic regex. Test skip scan found explicit Windows conditions and optional emulator skip; recorded Windows193 OK does not imply all future environments collect emulator cases.",
+          "TypeScript/React/Vitest-specific clauses of tests-architecture are N/A to this Python/C++ diff; behavior, determinism, false-green and boundary clauses apply.",
+          "Recheck retained the fixed publication base and all78 path dispositions; the follow-up deeply inspected the five changed producer/consumer/test paths, adding plugin_core to targeted claims. No new full-tree or live attestation is implied."
+        ],
+        "resolved_findings": [
+          {
+            "severity": "major",
+            "why_this_severity": "The current test oracle rejects the archive producer output and surfaces a failed acceptance report to the user (questions 3, 4, 7, 8); confidence comes from reading both producer and consumer, without launching a game.",
+            "where": "scripts/plugin-player-check.py:217; scripts/plugin-check.py:542",
+            "occurrences": 2,
+            "problem": "Live acceptance archive membership checks contradict the current release producer. Player backend omits mandatory NOTICE.txt. Standalone extended acceptance still requires wsock32.dll and omits d3d9.dll, NOTICE.txt and README.txt; it also reads the absent wsock32 entry immediately afterward.",
+            "scenario": "Run xkit check --player on an otherwise successful development check: plugin-watch.update writes the six-entry native release including NOTICE.txt; plugin-player-check requires exactly five entries and raises AssertionError before player launch. Run standalone plugin-check.py --live or --live --core: the current producer archive fails its obsolete membership assertion before delivery verification. A valid package is reported failed.",
+            "confidence": "high",
+            "evidence": "scripts/plugin-watch.py:575-580 writes plugin,dinput8,d3d9,NOTICE,release and README. tests/test_plugin_watch.py:906 tests the producer archive including NOTICE. tests/test_xalkit.py:895 mocks the entire player subprocess, and :926 exercises source guards/cleanup only, so neither reaches the contradictory package-membership oracle."
+          },
+          {
+            "severity": "minor",
+            "why_this_severity": "The untested integrity boundary is a trap for a future edit rather than a demonstrated current incorrect restore (question 5).",
+            "where": "scripts/sdk_storage.py:390; tests/test_sdk_storage.py:243",
+            "occurrences": 1,
+            "problem": "New dump restore integrity and partial-output cleanup branches lack a negative regression case.",
+            "scenario": "A future edit removes the restore_dump digest comparison: a valid gzip containing same-size changed bytes is restored despite the recorded SHA. The current successful-roundtrip and outside-root-refusal tests still pass, allowing a corrupt diagnostic artifact to be treated as verified.",
+            "confidence": "high",
+            "evidence": "Read full tests/test_sdk_storage.py. Only test_old_dumps_are_losslessly_archived_and_restorable enters restore_dump with an archive inside the root; test_dump_restore_rejects_an_archive_outside_the_storage_root exits before decoding. No inside-root corrupt gzip, mismatched SHA/size, insufficient restore space or write-failure case reaches the integrity/temporary cleanup branches. The existing archive-failure test covers retirement testzip, not dump restoration."
+          }
+        ],
+        "recheck_evidence": [
+          "scripts/plugin_core.py:199 validates the real six-member archive, ABI3, CRC, and plugin/loader/graphics hashes; scripts/plugin-player-check.py:215 and scripts/plugin-check.py:416,:545 use that validator. Standalone release stages the graphics facade and no longer reads wsock32 from the package.",
+          "tests/test_plugin_watch.py:906 invokes the real producer plus shared validator, checks NOTICE bytes, and rejects missing NOTICE and changed graphics.",
+          "tests/test_sdk_storage.py:263 supplies valid gzip containing same-size changed bytes against correct provenance and verifies checksum failure, retained archive/provenance and absent destination/temporary output. This reaches sdk_storage restore_dump digest rejection rather than a preceding path/provenance guard.",
+          "Parent reports targeted watch38/storage17 passing. No independent rerun, game launch or input use performed.",
+          "CI fixture recheck: tests/test_game_control.py:333,:356 now resolve TemporaryDirectory roots before stage/restore. This removes Windows8.3 TEMP spelling differences while leaving production validate_player_path and redirected-directory negative regression at :294 unchanged. Reviewed git diff contains exactly these two fixture lines. Parent reports local test_game_control32 PASS; hosted CI37692600703 failed on previous fixture spelling. CI log not found at the known evidence-folder path and not independently read."
+        ],
+        "source_identity": {
+          "head": "bc41a0336be0a5b4af6680c1b5d1c3024669525e",
+          "publication_base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+          "worktree_test_game_control_sha256": "62d912155ed82934b48c94a366cf091f6eda71529252dd92183289eadae6b3dd",
+          "delta_scope": "Two uncommitted fixture-root changes in tests/test_game_control.py; HEAD alone does not identify this reviewed worktree."
+        }
       }
     },
     "docs": {
@@ -1806,5 +1863,5 @@
     }
   },
   "overall": "PASS",
-  "timestamp": "2026-10-07T21:50:18.319Z"
+  "timestamp": "2026-10-07T22:02:14.940Z"
 }
