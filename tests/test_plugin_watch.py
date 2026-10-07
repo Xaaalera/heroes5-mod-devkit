@@ -499,6 +499,41 @@ class PluginWatchBoundaries(unittest.TestCase):
                     self.assertIn('plugin_cleanup_unconfirmed', statuses)
                     process.terminate.assert_called_once()
 
+    def test_slot_remains_reserved_when_worker_exits_between_scan_and_admission(self):
+        plugins = self.root / 'late-exit-plugins'
+        source = plugins / 'alpha'
+        source.mkdir(parents=True)
+        (source / 'plugin.cpp').write_text('fixture', encoding='utf-8')
+        bridge = self.root / 'late-exit-bridge.dll'
+        bridge.write_bytes(b'fixture')
+        options = SimpleNamespace(plugins=plugins, output=self.root / 'late-exit-supervised',
+            toolchain=self.root / 'vcvarsall.bat', client=self.root / 'client.exe', bridge=bridge,
+            owned_game=False, main_thread=False, control_stdin=False, core_source=None,
+            log_format='json', log_session=None, managed_projects=False,
+            console_build=None, console_project=None)
+        alpha = Mock()
+        alpha.poll.side_effect = [None, 1, 1]
+        alpha.wait.return_value = 1
+        beta = Mock()
+        beta.poll.return_value = None
+        beta.wait.return_value = 0
+        def spawn_worker(*arguments, **keywords):
+            if not (plugins / 'beta').exists():
+                other = plugins / 'beta'
+                other.mkdir()
+                (other / 'plugin.cpp').write_text('fixture', encoding='utf-8')
+                return alpha
+            return beta
+        with patch.object(watch_module, 'compiler_environment', return_value=(self.root/'cl.exe', {})), \
+                patch.object(watch_module.subprocess, 'Popen', side_effect=spawn_worker) as spawn, \
+                patch.object(watch_module.threading, 'Thread'), \
+                patch.object(watch_module.time, 'sleep', side_effect=[None, KeyboardInterrupt]), \
+                patch.object(watch_module, 'EventLog'):
+            watch_module.supervise_plugins(options)
+        self.assertEqual(spawn.call_count, 2)
+        beta_arguments = spawn.call_args_list[1].args[0]
+        self.assertEqual(beta_arguments[beta_arguments.index('--slot') + 1], '1')
+
     def test_core_transaction_retains_membership_and_requires_live_matching_instances(self):
         for scenario in ('accepted', 'rejected', 'lost_queued', 'lost_applied', 'stale_reply'):
             with self.subTest(scenario=scenario):

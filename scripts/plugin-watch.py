@@ -170,7 +170,7 @@ def supervise_plugins(options):
                     break
                 if name in children:
                     continue
-                used_slots = {child['slot'] for child in children.values() if child['process'].poll() is None}
+                used_slots = {child['slot'] for child in children.values()}
                 slot = next((number for number in range(64) if number not in used_slots), None)
                 if slot is None:
                     continue
