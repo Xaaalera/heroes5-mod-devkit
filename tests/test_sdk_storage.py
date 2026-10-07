@@ -4,6 +4,7 @@ import importlib.util
 import os
 from pathlib import Path
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -85,6 +86,33 @@ class SharedGameStorage(unittest.TestCase):
         self.assertEqual(self.assets.games(), [])
         self.assets.clean(keep=0)
         self.assertTrue(game.exists())
+
+    @unittest.skipUnless(os.name == 'nt', 'NTFS junction refusal is Windows-specific')
+    def test_retirement_and_recursive_cleanup_refuse_real_directory_junctions(self):
+        for operation in ('retire', 'remove_tree'):
+            with self.subTest(operation=operation):
+                workspace, game = self.sandbox('junction-' + operation)
+                target = self.root / ('outside-game-' + operation)
+                target.mkdir()
+                sentinel = target / 'keep.txt'
+                sentinel.write_bytes(b'outside contents must survive')
+                junction = game / 'outside-link'
+                result = subprocess.run(['cmd', '/c', 'mklink', '/J', str(junction), str(target)],
+                                        capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                try:
+                    self.assertTrue(junction.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+                    with self.assertRaisesRegex(ValueError, 'reparse point'):
+                        if operation == 'retire':
+                            self.assets.clean(keep=0)
+                        else:
+                            self.assets.remove_tree(game)
+                    self.assertEqual(sentinel.read_bytes(), b'outside contents must survive')
+                    self.assertTrue((game / 'bin/H5_Game.exe').exists())
+                    self.assertTrue((workspace / '.local/test-state/prepared.json').exists())
+                finally:
+                    # Remove only the junction entry; never traverse its target.
+                    junction.rmdir()
 
     def test_retirement_preserves_maps_and_shared_resource_manifest(self):
         for index in range(4):
