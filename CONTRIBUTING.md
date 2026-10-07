@@ -2,6 +2,8 @@
 
 ## RU
 
+- CI получает закреплённый Game API вместе с SDK через checkout сабмодуля. Самостоятельный локальный clone тоже должен инициализировать `game-api`; связанная мастерская использует свою команду синхронизации.
+
 - Рецензенты читают назначенные конфигурацией руководства и применяют их к соответствующему языку. Проверяют самостоятельный запуск без ИИ, понятные команды/документацию и независимую поставку модов. В описаниях нужны имена функций и их назначение; числовые привязки к памяти остаются в исходниках и приватных доказательствах. Отсутствующие руководства и границы проверки указываются явно.
 
 - Один набор общих инструментов: исправления в scripts/ сопровождаются актуальным README или docs/commands.md и тестом значимого поведения. Конкретные моды живут отдельно; не добавлять сюда предиктор ради запуска общего инструмента.
@@ -13,6 +15,8 @@
 - `npm ci` устанавливает pre-push hook. CI подтверждает тесты и запись ревью, не запускает модели или игру. Локальный hook технически обходится; серверная защита ветки отдельно не обещается.
 
 ## EN
+
+- CI checks out the pinned Game API submodule with the SDK. A standalone local clone must also initialize `game-api`; the linked workshop uses its canonical synchronization command.
 
 - Reviewers load configured guides and apply them to the relevant language. They check standalone use without AI, readable commands/documentation and independent mod delivery. Human explanations use function names and purpose; numeric memory bindings stay in source and private evidence. Missing guides and verification limits must be reported explicitly.
 
