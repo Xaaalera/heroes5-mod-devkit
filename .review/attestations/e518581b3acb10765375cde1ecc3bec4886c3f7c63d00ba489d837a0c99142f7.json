@@ -1,0 +1,72 @@
+{
+  "diffHash": "e518581b3acb10765375cde1ecc3bec4886c3f7c63d00ba489d837a0c99142f7",
+  "commitSha": "530cea38fde5a0d0a5243da0b27628fd71055fcf",
+  "perAgent": {
+    "craft": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "architecture": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "tests": {
+      "score": 10,
+      "verdict": "PASS"
+    },
+    "docs": {
+      "score": 10,
+      "verdict": "PASS",
+      "review": {
+        "reviewer": "/root/sdk_publish_docs (independent Codex documentation reviewer)",
+        "files": [
+          "AGENTS.md",
+          "CONTRIBUTING.md",
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Agent audience and SDK ownership are explicit. CONTRIBUTING.md: Contributor duties now explicitly include obtaining pinned native dependencies in CI and standalone clones. README.md: SDK developer setup, plugin development and player package audience are clear. docs/commands.md: Command reference covers session, diagnostics, HMR and release responsibilities."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Reading order and canonical links separate work rules from commands. CONTRIBUTING.md: RU/EN sections follow the same gate sequence. README.md: Numbered setup/create/stop/release path and advanced instructions name current human commands. docs/commands.md: Daily-entry anchor points to current xkit heading; old startup/wheel/restart observations are visibly historical where corrected."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Independent DLL/H5U, input authorization and ABI rules identify concrete constraints. CONTRIBUTING.md: Names game-api submodule and distinguishes standalone initialization from linked workshop synchronization; workflow uses submodules:true and gitlink pins2aa326d. README.md: Transition guidance now uses restart NAME in RU/EN, matching required command registry; original DLL and persistent-state instructions remain concrete. docs/commands.md: Runtime folder belongs in SDK; game original d3d9 stays retained locally; bootstrap differs from hot modules."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Standalone submodule initialization and verification sequence are actionable. CONTRIBUTING.md: CI checkout obtains declared submodule before native checks; existing README clone --recurse-submodules and update --init game-api commands provide local reproduction. README.md: uv installation, setup/doctor/new/start/save/build/release and restart NAME examples provide a standalone path with required arguments. docs/commands.md: Human xkit workflow and optional diagnostic commands name prerequisites, expected results and failure recovery."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Dated prototype notes identify limitations; later human checks supplied separately. CONTRIBUTING.md: verify.yml checkout configuration, .gitmodules and HEAD game-api gitlink substantiate configuration claim; actual corrected hosted native run remains unverified. README.md: Current local acceptance statements retain their scoped Windows/input/player meaning; public availability remains explicitly pending. docs/commands.md: Ordinary-startup failure paragraph168 is explicitly historical; physical drag is accepted separately from unverified cross-monitor migration. Old live reports retain original revision scopes."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Owned test game and supported-build restrictions are explicit. CONTRIBUTING.md: Native guides apply to native code; JS guide only to JS and no game artifacts committed. README.md: Compiler-free resource runtime differs from native compiler requirements and player delivery. docs/commands.md: Editor/other Windows versions, schema migration, native crash containment and arbitrary hooks remain outside acceptance."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: RU/EN work rules preserve ownership and input semantics. CONTRIBUTING.md: Added RU/EN notes state the same pinned CI, standalone and canonical workshop dependency requirements. README.md: Core workflow and resource/native delivery exist in RU/EN; stale limitations affect both. docs/commands.md: Human command help, physical versus ImGui testing and graphics delivery preserve RU/EN meaning."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "AGENTS.md: Canonical dependency synchronization and review renewal rules identify upkeep. CONTRIBUTING.md: Changed CI preparation is paired with contributor instructions in the same delta; three other reviewed Markdown files and production behavior are unchanged. README.md: Canonical editable SDK and pinned standalone submodule avoid duplicate tool copies. docs/commands.md: Direct supervisor guidance requires owned game closure after worker/retirement failure; current code raises on failure/timeout and retains slots while child records exist."
+          }
+        },
+        "findings": []
+      }
+    },
+    "security": {
+      "score": 10,
+      "verdict": "PASS"
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-10-07T11:29:39.549Z"
+}
