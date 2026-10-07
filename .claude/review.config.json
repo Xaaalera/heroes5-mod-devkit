@@ -6,24 +6,64 @@
     {
       "name": "craft",
       "threshold": 7,
-      "skills": []
+      "skills": [
+        "solid",
+        "ockham",
+        "conventions",
+        "ui-strings",
+        "responsive-layout"
+      ],
+      "rules": [
+        "Use full descriptive identifiers in C++/Python/JS. Reject opaque abbreviations without domain meaning; preserve required ABI/protocol/register names. JS/TS conventions apply only to JS/TS. For changed UI strings/layout apply localization and viewport/DPI guidance only where relevant.",
+        "Load the actual configured skill guides before reviewing; resolve Codex aliases through the marketplace links in AGENTS.md. Do not claim a skill was applied if its guide was unavailable.",
+        "Every new feature must be human-usable without AI: clear entry point/help/defaults/progress/actionable failures and a reproducible human workflow. Do not accept a chain of internal Python/PowerShell/RPC commands as the primary user interface, or document an unimplemented friendly command as available.",
+        "Human usability includes README/help/documentation/descriptions/examples/messages: explain purpose, starting steps, expected results and recovery for the intended reader, define terms, and do not require AI to fill missing steps or decode internal jargon.",
+        "Human docs/help/descriptions must not expose numerical memory addresses, pointer/structure byte offsets or address-derived disassembler labels. Require meaningful function/event/type symbols with purpose explained; numeric bindings stay in source/private evidence. Preserve original technical records privately and retain dated conclusions when correcting old docs. Treat an address-only explanation as a documentation finding."
+      ]
     },
     {
       "name": "architecture",
       "threshold": 8,
-      "skills": []
+      "skills": [
+        "solid",
+        "ockham"
+      ],
+      "rules": [
+        "Apply SOLID, DRY, KISS and YAGNI; reuse canonical modules before adding abstractions. Inspect responsibility, dependency direction, extension boundaries and native callback/state lifetime.",
+        "Load the actual configured skill guides before reviewing; resolve Codex aliases through the marketplace links in AGENTS.md. Do not claim a skill was applied if its guide was unavailable.",
+        "Every new feature must be human-usable without AI: clear entry point/help/defaults/progress/actionable failures and a reproducible human workflow. Do not accept a chain of internal Python/PowerShell/RPC commands as the primary user interface, or document an unimplemented friendly command as available.",
+        "Human usability includes README/help/documentation/descriptions/examples/messages: explain purpose, starting steps, expected results and recovery for the intended reader, define terms, and do not require AI to fill missing steps or decode internal jargon.",
+        "Human docs/help/descriptions must not expose numerical memory addresses, pointer/structure byte offsets or address-derived disassembler labels. Require meaningful function/event/type symbols with purpose explained; numeric bindings stay in source/private evidence. Preserve original technical records privately and retain dated conclusions when correcting old docs. Treat an address-only explanation as a documentation finding.",
+        "Each mod must ship independently: one H5U for a resource mod or its own DLL for a native plugin. A shared bootstrap/infrastructure dependency is allowed, but unrelated mod payloads must not be merged into a mandatory DLL. Verify separate release packages, optional installation and coexistence; do not claim runtime demand loading without evidence."
+      ]
     },
     {
       "name": "tests",
       "threshold": 7,
-      "skills": []
+      "skills": [
+        "tests-architecture"
+      ],
+      "rules": [
+        "Apply tests-architecture to real failure boundaries and regressions. Distinguish native/local/live acceptance, use meaningful assertions, and avoid tests mirroring implementation.",
+        "Load the actual configured skill guides before reviewing; resolve Codex aliases through the marketplace links in AGENTS.md. Do not claim a skill was applied if its guide was unavailable.",
+        "Each mod must ship independently: one H5U for a resource mod or its own DLL for a native plugin. A shared bootstrap/infrastructure dependency is allowed, but unrelated mod payloads must not be merged into a mandatory DLL. Verify separate release packages, optional installation and coexistence; do not claim runtime demand loading without evidence."
+      ]
     },
     {
       "name": "docs",
       "threshold": 8,
-      "skills": [],
+      "skills": [
+        "standard",
+        "wittgenstein"
+      ],
       "rules": [
-        "Read CONTRIBUTING.md mandatory standard and independent review protocol. Assess every Markdown path from review:info; return docs.review with all eight criteria, evidence and findings. Do not certify drafts or invent reviewer identity."
+        "Read CONTRIBUTING.md mandatory standard and independent review protocol. Assess every Markdown path from review:info; return docs.review with all eight criteria, evidence and findings. Do not certify drafts or invent reviewer identity.",
+        "Apply standard to documentation ownership and wittgenstein to clarity. Check reproducibility, RU/EN parity and exact evidence scope.",
+        "Load the actual configured skill guides before reviewing; resolve Codex aliases through the marketplace links in AGENTS.md. Do not claim a skill was applied if its guide was unavailable.",
+        "Every new feature must be human-usable without AI: clear entry point/help/defaults/progress/actionable failures and a reproducible human workflow. Do not accept a chain of internal Python/PowerShell/RPC commands as the primary user interface, or document an unimplemented friendly command as available.",
+        "Human usability includes README/help/documentation/descriptions/examples/messages: explain purpose, starting steps, expected results and recovery for the intended reader, define terms, and do not require AI to fill missing steps or decode internal jargon.",
+        "Human docs/help/descriptions must not expose numerical memory addresses, pointer/structure byte offsets or address-derived disassembler labels. Require meaningful function/event/type symbols with purpose explained; numeric bindings stay in source/private evidence. Preserve original technical records privately and retain dated conclusions when correcting old docs. Treat an address-only explanation as a documentation finding.",
+        "Each mod must ship independently: one H5U for a resource mod or its own DLL for a native plugin. A shared bootstrap/infrastructure dependency is allowed, but unrelated mod payloads must not be merged into a mandatory DLL. Verify separate release packages, optional installation and coexistence; do not claim runtime demand loading without evidence."
       ]
     },
     {

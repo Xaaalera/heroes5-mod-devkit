@@ -1,5 +1,29 @@
 # Devkit agent instructions
 
+## Problem-solving order
+
+Test storage: reuse a sandbox; keep at most three prepared installations per storage area. Fresh copies need a concrete isolation hypothesis. Use GameAssets and `xkit storage clean`; immutable assets share a private cache, original installation and mutable files remain independent. Snapshot and verify before retiring a closed owned copy; retain reports and cache references. Keep two raw dumps, losslessly archive older ones. Test ownership/reparse/space/locking guards before destructive storage changes.
+
+For every problem, first search our logs, research, backlog and handoff for prior occurrences, attempts, solutions and their verified conditions. Then research the web when needed for causes, documentation, existing solutions and libraries. Only then choose an approach and act. Repeat known experiments only for a new hypothesis or changed conditions. Record links, conclusions and verification limits in the existing log.
+
+RU/EN, 2026-10-06 correction: earlier player PASS used native-probe.launch with developer import/startup-script patches even with control=False. Corrected plugin-player-check now uses ordinary flags0 CreateProcessW, retains the owned handle before capturing creation identity, and preserves staged files if game exit is unconfirmed. Stock -advmap is a request, not proof of map identity. Use the current paired-graphics acceptance report; do not claim unmodified startup from those old reports.
+
+RU, 2026-10-06: каждый нативный мод выпускается отдельной DLL. Текущие пакеты используют общие dinput8.dll и d3d9.dll; исходный d3d9.dll игры сохраняется локально как d3d9.universe.dll и не распространяется. Проверены обычный запуск двух пакетов и независимое отключение. Bootstrap и графическая цепочка относятся к запуску; HMR ядра и плагинов проверяется отдельно. Инструкция установки — в README девкита; публикация ещё не завершена.
+EN: Each native mod is a separate DLL; current packages share input/graphics infrastructure and retain the original graphics DLL locally. Ordinary two-package startup and independent stop are verified. Startup bootstrap/facade remain separate from hot core/plugin generations. Follow current devkit installation instructions; publication remains pending.
+
+
+## Independent mod delivery / Независимая поставка модов
+
+RU: Каждый мод выпускается и устанавливается отдельно: ресурсный — собственный H5U, нативный — собственная DLL. Общий загрузчик или инфраструктура SDK допустимы как описанная зависимость. Установка одного мода не требует остальных. Проверять отдельные пакеты и совместную установку. Загрузка и выгрузка по требованию во время игры требуют отдельной проверки.
+EN: Release each resource mod as its own H5U and each native plugin as its own DLL. Do not merge several mods into one mandatory payload DLL. A shared loader or SDK infrastructure may be an explicit dependency. Installing one mod must not require the other mods. Verify separate packages and coexistence. Optional installation does not establish runtime demand loading/unloading; verify that capability separately.
+
+
+[Game API](https://github.com/Xaaalera/heroes5-game-api) — shared C++ game bindings / общая библиотека привязок к игре.
+
+2026-10-04 final prototype acceptance: ABI3 watch/functions/UI/window and validated engine CALL observer, state/errors/concurrent reload and same-source player package all verified. Native4/Python51 PASS; repeat scripts/plugin-check.py --live after changing runtime behavior. Read current commands first; historical dated failures are retained. Do not resume predictor work automatically. Uncommitted/unpublished prototype, with explicit limits on arbitrary prologues/multithread hooks/crash recovery/schema migration.
+
+RU: native watch/release prototype ABI3: package bin/Heroes5Mods/Plugins/<name>.dll + общий bin/dinput8.dll; тот же payload source для live и выпуска. Существующие legacy-моды не становятся reloadable автоматически. EN: Read current docs/commands.md release notes; player startup stays ordinary DLL bootstrap, no developer client/Python dependency. Window-event/UI controls passed; arbitrary engine detours/concurrency hardening remain. Uncommitted/unpublished work.
+
 
 ## Public projects / Публичные проекты
 
@@ -36,7 +60,7 @@ RU: эти проекты принадлежат автору; база знан
 
 - Перед работой читать README.md, docs/commands.md и CONTRIBUTING.md. Это общие инструменты, не репозиторий конкретного мода.
 - `H5_WORKSPACE` — изменяемые файлы, `H5_GAME_DIR` — исходная установленная игра. Путь к соседнему инструменту вычислять от __file__, не от рабочей папки. Проверять работу в отдельной временной папке.
-- Не запускать игру ради unit-тестов, не перехватывать общий курсор без согласованного интервала. Не считать отправленную команду подтверждением результата.
+- Пользователь разрешает фокус, мышь и клавиатуру для авторизованной разработки и проверки SDK без повторного согласования. По сообщению пользователя о необходимости фокуса или ввода немедленно прекратить их использование до сообщения о продолжении. Проверять только собственную тестовую игру; фоновый ввод не выдавать за физическую проверку.
 - Не менять чужие пакеты, штатные игровые бинарники или профили. Не выдавать sandbox за доказанную полную изоляцию профиля.
 - Тесты в tests/ являются каноническими; потребитель может вызывать их через переходник. Код конкретного мода и его C++-тесты сюда не копировать.
 - Соблюдать обязательное независимое ревью из CONTRIBUTING перед каждым push; отчёт нельзя подменять собственной оценкой. Запись аттестации не является доказательством личности рецензента.
@@ -60,8 +84,42 @@ RU: эти проекты принадлежат автору; база знан
 
 - Read README, docs/commands and CONTRIBUTING. This repository owns shared tools, not individual mods.
 - H5_WORKSPACE owns mutable state; H5_GAME_DIR points to the installed source. Resolve sibling tools from __file__, not workspace. Test a workspace outside this checkout.
-- Unit tests never launch the game. Do not commandeer shared input without a coordinated interval. Dispatch does not prove completion.
+- Unit tests never launch the game. The user authorizes focus, mouse and keyboard use in the owned test game without repeated coordination. Stop immediately when the user says they need focus or input; resume when they say to continue. Dispatch does not prove completion.
 - Preserve foreign packages, original binaries and profiles. Sandbox creation does not certify complete profile isolation.
 - tests/ is canonical; consumers may bridge to it. Keep individual mod C++ code/tests outside the devkit.
 - Independent pre-push review is mandatory; never invent verdicts. Attestation records judgments, not authenticated reviewer identity.
 - Maintain bilingual docs, public research links and explicit validation limits. Never publish game contents.
+
+## Standalone use / Работа вне мастерской
+
+RU: этот репозиторий можно использовать отдельно. Начни с его README и AGENTS.md; глобальная папка мастерской не обязательна. Если есть .gitmodules, выполни `git submodule update --init --recursive` после клонирования. В связанной мастерской используй её sync-subrepos вместо создания вторых checkout.
+EN: This repository can be used independently. Start with its README and AGENTS.md; the global workshop is optional. If .gitmodules exists, initialize pinned dependencies with `git submodule update --init --recursive`. In a linked workshop use its canonical dependency synchronization.
+
+- [Devkit commands / команды SDK](https://github.com/Xaaalera/heroes5-mod-devkit/blob/main/docs/commands.md).
+- [Game API contracts / контракты библиотеки](https://github.com/Xaaalera/heroes5-game-api/blob/main/docs/mechanisms/game-bindings.md).
+- [Research index / карта исследований](https://xaaalera.github.io/heroes5-knowledge/reference/research-index/).
+
+## Code standards / Стандарты кода
+
+RU: перед новой правкой применяй подходящие установленные скиллы из [маркетплейса автора](https://github.com/Xaaalera/claude-skills). Имена переменных/параметров должны объяснять смысл; не использовать непрозрачные сокращения. C++ сохраняет calling convention, lifetime и ABI; Python использует описательные snake_case имена. Обязательные имена API/protocol/register и общепринятые PID/DLL/ABI сокращения допустимы. JS правила не переносить механически на C++/Python.
+EN: Load the applicable guides before coding/reviewing. Use descriptive names, small functions with one responsibility, canonical dependencies and no speculative abstractions. Preserve native ABI/protocol compatibility during readability changes. Existing code is changed when relevant, not mass-renamed by this policy.
+
+- All code: [solid](https://github.com/Xaaalera/claude-skills/blob/main/plugins/meta/skills/solid/SKILL.md), [ockham](https://github.com/Xaaalera/claude-skills/blob/main/plugins/meta/skills/ockham/SKILL.md).
+- JS/TS only: [conventions](https://github.com/Xaaalera/claude-skills/blob/main/plugins/frontend-js/skills/conventions/SKILL.md).
+- Tests: Codex alias `tests-architecture`, upstream [tests:architecture](https://github.com/Xaaalera/claude-skills/blob/main/plugins/tests/skills/architecture/SKILL.md).
+- Documents: [standard](https://github.com/Xaaalera/claude-skills/blob/main/plugins/docs/skills/standard/SKILL.md), [lean-writing](https://github.com/Xaaalera/claude-skills/blob/main/plugins/meta/skills/lean-writing/SKILL.md), [wittgenstein](https://github.com/Xaaalera/claude-skills/blob/main/plugins/meta/skills/wittgenstein/SKILL.md).
+- Changed user-facing UI: [ui-strings](https://github.com/Xaaalera/claude-skills/blob/main/plugins/i18n/skills/ui-strings/SKILL.md), [responsive-layout](https://github.com/Xaaalera/claude-skills/blob/main/plugins/frontend-css/skills/responsive-layout/SKILL.md).
+- New public JSON error boundaries: [format](https://github.com/Xaaalera/claude-skills/blob/main/plugins/error/skills/format/SKILL.md); version changes explicitly, do not silently reinterpret native status words.
+- Reviewers load every applicable guide listed in .claude/review.config.json. If a guide is not installed, read the canonical source above and report availability honestly. Do not vendor independent copies of these standards.
+
+## Human-usable functionality / Использование человеком
+
+RU/EN: Never expose raw memory addresses, pointer/structure byte offsets or address-derived labels in human docs/help/descriptions. Use meaningful function/event/type names and explain role. Numeric bindings belong in code/private machine logs. Reviewers reject address-only explanations; preserve dated facts and private originals when correcting older text.
+
+RU/EN: use maintained libraries/standard language facilities for infrastructure before adding custom implementations. SDK logs use structlog + Python logging + concurrent-log-handler; project adapters only attach context and compiler locations. Event JSONL rotates at10MiB with five gzip backups; every process must use the same retention settings. Reports, dumps and raw diagnostics are retained separately. Parallel operations must retain session/operation/plugin/instance/stage/level/time, readable console output, machine-readable JSONL and linked raw diagnostics. Apply the same pattern to all SDK operations; do not claim complete adoption from CLI/watcher-only coverage.
+
+RU: весь функционал проекта должен быть пригоден для самостоятельного использования человеком без AI. Основной сценарий требует понятного входа, справки, разумных настроек по умолчанию, видимого состояния и ошибок с действием для исправления. Цепочка внутренних Python/PowerShell/RPC команд не заменяет пользовательский интерфейс. Разработчик должен уметь подготовить окружение, создать/запустить/обновить плагин и получить готовый мод по документации самостоятельно.
+EN: Every feature must be usable by a person without an AI agent. Provide a clear entry point, help, sensible defaults, observable progress and actionable errors. Internal scripts/RPC sequences may support diagnostics but do not satisfy the main user workflow. Acceptance includes following the documented workflow as a human; never document a planned friendly command as already implemented. This is a project rule, not a new skill.
+
+RU: правило также относится к README, документации, справке, описаниям, примерам и сообщениям. Писать для указанной аудитории простым языком: зачем функция нужна, как начать, какой результат ожидается, как исправить ошибку. Объяснять термины при первом использовании; внутренние механизмы выносить в документацию разработчика. Инструкция не должна требовать AI для расшифровки или поиска пропущенных шагов.
+EN: Apply the same rule to README, documentation, help, descriptions, examples and messages. Explain purpose, starting steps, expected result and recovery in language appropriate to the reader. Define unfamiliar terms on first use; keep internals in developer documentation. A person must be able to follow the instructions without AI filling missing steps.

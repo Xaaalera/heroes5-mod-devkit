@@ -2,6 +2,8 @@
 
 ## RU
 
+- Рецензенты читают назначенные конфигурацией руководства и применяют их к соответствующему языку. Проверяют самостоятельный запуск без ИИ, понятные команды/документацию и независимую поставку модов. В описаниях нужны имена функций и их назначение; числовые привязки к памяти остаются в исходниках и приватных доказательствах. Отсутствующие руководства и границы проверки указываются явно.
+
 - Один набор общих инструментов: исправления в scripts/ сопровождаются актуальным README или docs/commands.md и тестом значимого поведения. Конкретные моды живут отдельно; не добавлять сюда предиктор ради запуска общего инструмента.
 - Документация двуязычная. Отделять проверку файлов/эмулятора от нового запуска игры, указывать сборку и ограничения. Историю исследований ведёт [публичный дневник](https://xaaalera.github.io/heroes5-knowledge/reference/research-diary/).
 - Никогда не коммитить игру, PAK/H5M/H5U, извлечённые ресурсы, DLL/EXE, профили, сохранения, журналы или личные пути. Генератор читает ресурсы пользователя локально. Новые рабочие папки проверяются вне клона; не привязывать инструменты к имени личной директории.
@@ -11,6 +13,8 @@
 - `npm ci` устанавливает pre-push hook. CI подтверждает тесты и запись ревью, не запускает модели или игру. Локальный hook технически обходится; серверная защита ветки отдельно не обещается.
 
 ## EN
+
+- Reviewers load configured guides and apply them to the relevant language. They check standalone use without AI, readable commands/documentation and independent mod delivery. Human explanations use function names and purpose; numeric memory bindings stay in source and private evidence. Missing guides and verification limits must be reported explicitly.
 
 Keep one canonical tool implementation. Changes to scripts update README/commands and meaningful behavior tests. Individual mods stay separate; generic tools must not require the predictor.
 
