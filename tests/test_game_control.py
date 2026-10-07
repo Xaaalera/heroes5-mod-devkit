@@ -330,7 +330,7 @@ class GameControlCommandTests(unittest.TestCase):
         checker = importlib.util.module_from_spec(specification)
         specification.loader.exec_module(checker)
         with TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             target = root / 'wsock32.dll'
             target.write_bytes(b'previous')
             original_write = Path.write_bytes
@@ -353,7 +353,7 @@ class GameControlCommandTests(unittest.TestCase):
         checker = importlib.util.module_from_spec(specification)
         specification.loader.exec_module(checker)
         with TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             loader = root / 'dinput8.dll'
             preload = root / 'wsock32.dll'
             plugin = root / 'one.dll'
