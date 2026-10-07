@@ -1,0 +1,3 @@
+[submodule "game-api"]
+	path = game-api
+	url = https://github.com/Xaaalera/heroes5-game-api.git

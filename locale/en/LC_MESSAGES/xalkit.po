@@ -1,0 +1,586 @@
+# English translations for xkit.
+
+msgid "xalkit.game_restart"
+msgstr "Load the named map again, resetting its game state."
+
+msgid "xalkit.game_menu"
+msgstr "Return to the main menu in the connected game."
+
+msgid "xalkit.game_menu_dispatched"
+msgstr "Return to the main menu requested."
+
+
+msgid "xalkit.game_map"
+msgstr "Load a sandbox map in the connected game."
+
+msgid "xalkit.map_argument"
+msgstr "Map filename from the sandbox Maps folder; Tab lists available maps."
+
+msgid "xalkit.game_map_dispatched"
+msgstr "Loading map '{name}' requested."
+
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the xkit project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xkit 0.1.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-04 21:17+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "xalkit.about"
+msgstr "xkit — create, run and release Heroes V Universe mods."
+
+msgid "xalkit.setup"
+msgstr "Configure game and project folders once."
+
+msgid "xalkit.doctor"
+msgstr "Check the environment and show what needs fixing."
+
+msgid "xalkit.new"
+msgstr "Create a C++ HMR project; --resources creates an H5U project."
+
+msgid "xalkit.build"
+msgstr "Build the selected mod without launching the game."
+
+msgid "xalkit.start"
+msgstr "Launch the test game; enable HMR for C++ projects."
+
+msgid "xalkit.release"
+msgstr "Build a player-ready DLL/ZIP or H5U."
+
+msgid "xalkit.workspace"
+msgstr "Folder for your projects and test game"
+
+msgid "xalkit.game"
+msgstr "Installed Universe game folder"
+
+msgid "xalkit.saved"
+msgstr "Settings saved. Next: xkit doctor, then xkit new demo."
+
+msgid "xalkit.created"
+msgstr "Project created: {path}. Next: xkit start {name}."
+
+msgid "xalkit.bad_name"
+msgstr "Use lowercase letters, digits and hyphens, for example my-plugin."
+
+msgid "xalkit.missing_project"
+msgstr "No project selected. Run xkit new demo, or specify a name."
+
+msgid "xalkit.missing_game"
+msgstr ""
+"Game not found. Run xkit setup and select the folder containing "
+"bin/H5_Game.exe."
+
+msgid "xalkit.missing_compiler"
+msgstr "C++ needs Visual Studio Build Tools with MSVC x86/x64 and CMake."
+
+msgid "xalkit.missing_uv"
+msgstr "Install uv once; see the xkit README."
+
+msgid "xalkit.prepare"
+msgstr "Preparing a separate test game"
+
+msgid "xalkit.native_build"
+msgstr "Building the SDK core and loader"
+
+msgid "xalkit.building"
+msgstr "Building {name}"
+
+msgid "xalkit.launching"
+msgstr "Launching the test game"
+
+msgid "xalkit.watching"
+msgstr ""
+"HMR is active. Edit and save plugin.cpp. Ctrl+C ends the session and "
+"closes the test game."
+
+msgid "xalkit.plugins_starting"
+msgstr "Building and connecting plugins. Waiting for the selected plugin to become ready."
+
+msgid "xalkit.operation_started"
+msgstr "Started: xkit {action}"
+
+msgid "xalkit.operation_completed"
+msgstr "Completed: xkit {action}"
+
+msgid "xalkit.operation_failed"
+msgstr "Failed: xkit {action}. Diagnostics: {diagnostic}"
+
+msgid "xalkit.operation_cancelled"
+msgstr "Cancelled: xkit {action}. Diagnostics: {diagnostic}"
+
+msgid "xalkit.operation_log_failed"
+msgstr "Could not record the operation failure. Check write access to {diagnostic}."
+
+msgid "xalkit.diagnostics_log_archive"
+msgstr "Compressed event journal"
+
+msgid "xalkit.game_trace"
+msgstr "Read module diagnostics from the current SDK game session."
+
+msgid "xalkit.game_trace_console"
+msgstr "Also send the selected messages to the game console."
+
+msgid "xalkit.game_trace_summary"
+msgstr "Messages: {count}. Continue with --after {cursor}. Dropped due to bus contention: {dropped}."
+
+msgid "xalkit.console_button"
+msgstr "Logs"
+
+msgid "xalkit.console_logs"
+msgstr "Logs"
+
+msgid "xalkit.console_commands"
+msgstr "Commands"
+
+msgid "xalkit.console_modules"
+msgstr "Modules"
+
+msgid "xalkit.console_empty"
+msgstr "No system messages yet."
+
+msgid "xalkit.console_help"
+msgstr "List commands"
+
+msgid "xalkit.console_pending_commands"
+msgstr "Game command transport is not connected in this prototype."
+
+msgid "xalkit.console_pending_modules"
+msgstr "Module lifecycle registry is not connected in this prototype."
+
+msgid "xalkit.console_clear"
+msgstr "Clear local output"
+
+msgid "xalkit.console_filter"
+msgstr "Filter by module or message"
+
+msgid "xalkit.console_invalid_request"
+msgstr "Invalid SDK console request. Check the command and arguments."
+
+msgid "xalkit.console_unauthorized"
+msgstr "This console is not connected to the active SDK session."
+
+msgid "xalkit.console_not_ready"
+msgstr "The SDK game is not ready yet. Wait for startup to complete."
+
+msgid "xalkit.console_connection_lost"
+msgstr "SDK connection lost. This command was not resubmitted."
+
+msgid "xalkit.console_run"
+msgstr "Run (Ctrl+Enter)"
+
+msgid "xalkit.console_input_too_long"
+msgstr "The command is too long. Shorten it before sending."
+
+msgid "xalkit.console_result_large"
+msgstr "The result is too large for this view. The full command result remains in the operation journal."
+
+msgid "xalkit.result"
+msgstr "Ready file: {path}"
+
+msgid "xalkit.failure"
+msgstr "Operation did not finish: {reason}"
+
+msgid "xalkit.check"
+msgstr "Check"
+
+msgid "xalkit.status"
+msgstr "Status"
+
+msgid "xalkit.ok"
+msgstr "Ready"
+
+msgid "xalkit.missing"
+msgstr "Missing"
+
+msgid "xalkit.projects"
+msgstr "Projects"
+
+msgid "xalkit.installation"
+msgstr "Universe game"
+
+msgid "xalkit.compiler"
+msgstr "C++ Build Tools"
+
+msgid "xalkit.settings"
+msgstr "Settings"
+
+msgid "xalkit.unsafe_source"
+msgstr "Project already exists; its files will not be overwritten."
+
+msgid "xalkit.closed"
+msgstr "Session ended."
+
+msgid "xalkit.help_json"
+msgstr "Machine JSONL instead of concise output."
+
+msgid "xalkit.readme"
+msgstr ""
+"# {name}\n"
+"\n"
+"Created with [xkit](https://github.com/Xaaalera/heroes5-mod-devkit).\n"
+"\n"
+"`xkit start {name}` develops; `xkit release {name}` builds the player"
+" mod.\n"
+"For C++, change DisplayValue in plugin.cpp: the test game updates after "
+"saving.\n"
+
+msgid "xalkit.language_help"
+msgstr "Select interface language: ru or en."
+
+msgid "xalkit.language_choice"
+msgstr "Available languages: ru and en."
+
+msgid "xalkit.language_saved"
+msgstr "Language saved."
+
+msgid "xalkit.game_help"
+msgstr "Control your owned test game without restarting the process."
+
+msgid "xalkit.game_status"
+msgstr "Check the game connection and runtime state."
+
+msgid "xalkit.game_heroes"
+msgstr "Read hero names on the loaded map."
+
+msgid "xalkit.game_army"
+msgstr "Read or set one creature total: HERO CREATURE --count N."
+
+msgid "xalkit.game_resource"
+msgstr "Read or set one player resource: PLAYER KIND --amount N."
+
+msgid "xalkit.game_teleport"
+msgstr "Move a hero to a cell: HERO X Y; --floor selects the level."
+
+msgid "xalkit.game_level"
+msgstr "Raise a hero to the selected level: HERO LEVEL."
+
+msgid "xalkit.game_interact"
+msgstr "Send a hero to an object: HERO OBJECT."
+
+msgid "xalkit.map_option"
+msgstr "Map in the test Maps folder; omit to open the menu."
+
+msgid "xalkit.check_help"
+msgstr "Check SDK hot reload, state transfer and rollback in an owned test game."
+
+msgid "xalkit.check_scope"
+msgstr "Checking the SDK with two temporary plugins. Your project is not used. Player packaging and scene rendering are checked separately."
+
+msgid "xalkit.check_console_option"
+msgstr "Check completion, help and history in the in-game console instead of native HMR."
+
+msgid "xalkit.check_console_conflict"
+msgstr "Run --console and --player separately: they check different workflows."
+
+msgid "xalkit.check_console_scope"
+msgstr "Checking seven console scenarios in an owned test game. ImGui events are used; physical keyboard and camera wheel input are not tested. Your project is not deployed."
+
+msgid "xalkit.check_console_passed"
+msgstr "Console check passed in {seconds}s. The test game is closed. Report and captures: {report}"
+
+msgid "xalkit.check_console_step"
+msgstr "Console scenario {scenario}/7 passed."
+
+msgid "xalkit.check_phase_owned_launch"
+msgstr "Owned test game started."
+
+msgid "xalkit.check_phase_two_observers_native_owner"
+msgstr "Both plugin callbacks are working."
+
+msgid "xalkit.check_phase_payload_hmr"
+msgstr "Plugin code updated; state retained."
+
+msgid "xalkit.check_phase_core_hmr"
+msgstr "SDK core updated in the same game."
+
+msgid "xalkit.check_phase_coordinated_rollback"
+msgstr "Rejected core rolled back for both plugins."
+
+msgid "xalkit.check_phase_independent_remove"
+msgstr "Stopping one plugin kept the other working."
+
+msgid "xalkit.check_phase_readd_same_owned_process"
+msgstr "Plugin reconnected in the same game."
+
+msgid "xalkit.check_passed"
+msgstr "SDK check passed in {seconds} s. Test game closed. Report: {report}"
+
+msgid "xalkit.check_failed"
+msgstr "SDK check failed. Read the diagnostic log before starting another check: {diagnostic}"
+
+msgid "xalkit.check_cancelled"
+msgstr "SDK check cancelled. Cleanup details: {diagnostic}"
+
+msgid "xalkit.native_build_failed"
+msgstr "Native SDK build failed. Compiler diagnostics: {diagnostic}"
+
+msgid "xalkit.check_cleanup_unconfirmed"
+msgstr "Check cleanup is not confirmed. Do not start another game until you inspect the diagnostic log: {diagnostic}"
+
+msgid "xalkit.check_cancel_report"
+msgstr "Cancellation and game cleanup report: {report}"
+
+msgid "xalkit.check_player_option"
+msgstr "Also build and verify two player DLL packages from the tested sources."
+
+msgid "xalkit.check_player_scope"
+msgstr "Checking SDK hot reload and two ready-to-install DLL packages. Both owned game sessions close automatically; scene rendering and map transitions are separate checks."
+
+msgid "xalkit.check_phase_same_source_package"
+msgstr "Player package built from the tested plugin source."
+
+msgid "xalkit.check_phase_automatic_player_startup_before_any_controller"
+msgstr "Both player DLLs loaded automatically."
+
+msgid "xalkit.check_phase_both_released_callbacks_execute"
+msgstr "Both installed plugin callbacks are working."
+
+msgid "xalkit.check_phase_independent_player_stop"
+msgstr "Stopping one installed plugin kept the other working."
+
+msgid "xalkit.check_phase_all_player_callbacks_removed"
+msgstr "All installed plugin callbacks stopped."
+
+msgid "xalkit.check_phase_normal_native_exit"
+msgstr "Player test game closed normally."
+
+msgid "xalkit.crash_monitor_started"
+msgstr "Owned-game crash monitor started."
+
+msgid "xalkit.crash_monitor_stopped"
+msgstr "Crash monitor stopped; diagnostic log retained."
+
+msgid "xalkit.crash_monitor_unconfirmed"
+msgstr "Crash monitor stop is unconfirmed; inspect the diagnostic log."
+
+msgid "xalkit.game_crash_captured"
+msgstr "Owned-game exception dump saved. Diagnostic log links the dump."
+
+msgid "xalkit.resource_released"
+msgstr "H5U built. Install it in the game's UserMODs folder: {path}"
+
+msgid "xalkit.project_argument"
+msgstr "Project name; omit to use the selected project."
+
+msgid "xalkit.session_failed"
+msgstr "The development session failed or cleanup is unconfirmed. Inspect the session log: {diagnostic}. Before starting again, close any remaining test game."
+
+msgid "xalkit.diagnostics_help"
+msgstr "Locate session logs, check reports and recent crash dumps without launching the game."
+
+msgid "xalkit.diagnostics_json"
+msgstr "Print the result as JSON for scripts and IDEs."
+
+msgid "xalkit.diagnostics_title"
+msgstr "xkit diagnostics"
+
+msgid "xalkit.game_request_started"
+msgstr "Sending the command to the owned test game."
+
+msgid "xalkit.game_request_completed"
+msgstr "Game command completed; result and duration saved."
+
+msgid "xalkit.game_map_not_found"
+msgstr "Map '{name}' was not found. Put the H5M file in {folder} and run the command again with its filename."
+
+msgid "xalkit.game_command_failed"
+msgstr "The game command failed. Check the log at {diagnostic}; confirm your SDK test session is running and the game is in the required state."
+
+msgid "xalkit.ide_task_start"
+msgstr "xkit: start development"
+
+msgid "xalkit.ide_task_build"
+msgstr "xkit: build mod"
+
+msgid "xalkit.ide_task_release"
+msgstr "xkit: create release"
+
+msgid "xalkit.ide_task_diagnostics"
+msgstr "xkit: locate diagnostics"
+
+msgid "xalkit.ide_readme"
+msgstr "\n## VS Code\n\nOpen this project folder. Choose Terminal > Run Task, then a xkit task. Ctrl+Shift+B builds the mod. End a development session with Ctrl+C in its task terminal. After installing xkit, restart the editor if it cannot find the command.\n"
+
+msgid "xalkit.readme_resources"
+msgstr "# {name}\n\nCreated with [xkit](https://github.com/Xaaalera/heroes5-mod-devkit).\n\nEdit mod.json and the files folder to change resources. Run `xkit build {name}` or `xkit release {name}` to create the H5U. Copy only the H5U from the printed release folder to your game's UserMODs. `xkit start {name}` installs it into the test copy and starts the game.\n"
+
+msgid "xalkit.check_phase_new_plugin_function_and_header"
+msgstr "A new plugin function and header update work without restarting the game."
+
+msgid "xalkit.check_phase_extended_core_export"
+msgstr "The new core export works in both plugins."
+
+msgid "xalkit.check_phase_released_extended_functions"
+msgstr "The ready-to-install DLLs retain the new plugin function and core export."
+
+msgid "xalkit.diagnostics_monitor_present"
+msgstr "ProcDump file found: {path}. Its signature is checked when monitoring starts."
+
+msgid "xalkit.diagnostics_monitor_missing"
+msgstr "Crash monitoring is unavailable. Download ProcDump from Microsoft Sysinternals and place procdump.exe here: {path}. See the SDK diagnostics guide."
+
+msgid "xalkit.diagnostics_session_log"
+msgstr "Development session events"
+
+msgid "xalkit.diagnostics_session_report"
+msgstr "Latest development session result"
+
+msgid "xalkit.resource_session_running"
+msgstr "H5U test session is running. Ctrl+C closes the owned test game. Stop, rebuild and start again to apply resource changes."
+
+msgid "xalkit.diagnostics_check_report"
+msgstr "SDK check report"
+
+msgid "xalkit.diagnostics_windows_events"
+msgstr "Windows crash events for an owned game"
+
+msgid "xalkit.diagnostics_windows_failure"
+msgstr "Windows recorded a crash in {module} at {timestamp}."
+
+msgid "xalkit.diagnostics_check_log"
+msgstr "SDK check output"
+
+msgid "xalkit.diagnostics_monitor_log"
+msgstr "Latest crash-monitor log"
+
+msgid "xalkit.diagnostics_exception_dump"
+msgstr "Exception dump"
+
+msgid "xalkit.diagnostics_empty"
+msgstr "No diagnostic artifacts yet. Run xkit start or xkit check first."
+
+msgid "xalkit.diagnostics_scope"
+msgstr "Lists existing SDK files and the latest monitor folder. It does not analyze dumps or certify an old check for current sources."
+msgid "xalkit.console_complete"
+msgstr "Complete (Tab)"
+
+msgid "xalkit.console_history"
+msgstr "History"
+
+msgid "xalkit.console_no_matches"
+msgstr "No matching suggestions."
+msgid "xalkit.console_command_usage"
+msgstr "Check the command and its arguments. Usage: {usage}. {description}"
+msgid "xalkit.start_background"
+msgstr "Request a test window without activation at startup."
+msgid "xalkit.console_close"
+msgstr "Return to game"
+
+msgid "xalkit.console_input_hint"
+msgstr "Ctrl+Enter: run. Tab: complete a command or argument. help: command help; help army: army help."
+
+msgid "xalkit.argument_hero"
+msgstr "Hero name. Press Tab to choose a hero on the current map."
+msgid "xalkit.argument_creature"
+msgstr "Creature type, for example CREATURE_ARCHER. Tab lists available types; you can start with ARCHER."
+msgid "xalkit.argument_count"
+msgstr "Set the total count, from 0 to 1000000. Without --count, only read the count. Example: army Brem CREATURE_ARCHER --count 100."
+msgid "xalkit.argument_player"
+msgstr "Player number, from 1 to 8."
+msgid "xalkit.argument_resource"
+msgstr "Resource: 0 wood, 1 ore, 2 mercury, 3 sulfur, 4 crystals, 5 gems, 6 gold."
+msgid "xalkit.argument_amount"
+msgstr "Set the total resource stock. Without --amount, only read the stock."
+msgid "xalkit.argument_x"
+msgstr "Map tile X coordinate."
+msgid "xalkit.argument_y"
+msgstr "Map tile Y coordinate."
+msgid "xalkit.argument_floor"
+msgstr "Map floor: 0 surface, 1 underground."
+msgid "xalkit.argument_level"
+msgstr "Desired hero level, from 1 to 40. Example: level Brem 20."
+msgid "xalkit.argument_object"
+msgstr "Name of the object the hero should interact with."
+msgid "xalkit.console_hero_list"
+msgstr "Heroes on the current map (use these names in commands):"
+msgid "xalkit.console_army_result"
+msgstr "{hero}: {creature} — previous count {before}, current count {count}."
+msgid "xalkit.console_level_result"
+msgstr "{hero}: level {level}."
+msgid "xalkit.console_resource_result"
+msgstr "Player {player}, resource {resource}: previous amount {before}, current amount {amount}."
+msgid "xalkit.console_position_result"
+msgstr "{hero}: tile ({x}, {y}), floor {floor}."
+msgid "xalkit.console_game_connected"
+msgstr "Test game connected."
+msgid "xalkit.game_screenshot"
+msgstr "Save the current game image as PNG; no desktop capture."
+msgid "xalkit.console_screenshot_result"
+msgstr "Game screenshot saved: {path}"
+msgid "xalkit.game_capture_failed"
+msgstr "Could not save the game screenshot. Check that the test game is running and the diagnostics folder is writable. Details: {diagnostic}"
+msgid "xalkit.console_command_done"
+msgstr "Command completed."
+msgid "xalkit.console_completion_pending"
+msgstr "Loading hero names…"
+msgid "xalkit.console_unknown_command"
+msgstr "Unknown command. Type help for the command list."
+msgid "xalkit.input_profile"
+msgstr "Input file: {profile}"
+
+msgid "xalkit.sdk_tools"
+msgstr "Build and package the SDK runtime."
+
+msgid "xalkit.sdk_build"
+msgstr "Build ready SDK files and their ZIP. SDK maintainers need C++ Build Tools; H5U authors use the ready files."
+
+msgid "xalkit.runtime_not_ready"
+msgstr "Ready SDK files are missing, changed or outdated. Obtain a matching SDK package. SDK maintainers can rebuild them with xkit sdk build."
+
+msgid "xalkit.resource_sdk_failed"
+msgstr "SDK connection failed. Check xkit diagnostics before starting again."
+
+msgid "xalkit.sdk_release"
+msgstr "Package SDK sources, Game API and ready runtime together for standalone installation."
+
+msgid "xalkit.module_loading"
+msgstr "Loading"
+msgid "xalkit.module_active"
+msgstr "Active"
+msgid "xalkit.module_stopped"
+msgstr "Stopped"
+msgid "xalkit.module_failed"
+msgstr "Failed"
+msgid "xalkit.module_unconfirmed"
+msgstr "State unconfirmed"
+msgid "xalkit.module_unknown"
+msgstr "Unknown state"
+msgid "xalkit.input_profile_missing"
+msgstr "Missing {path}. Copy the game's profiles/default_profile/input_a2.cfg here, then check wheel and keyboard controls."
+
+msgid "xalkit.storage_help"
+msgstr "Shared game resources and cleanup of old test installations."
+msgid "xalkit.storage_status_help"
+msgstr "Show test installation count and shared resource cache."
+msgid "xalkit.storage_clean_help"
+msgstr "Share identical resources and archive old closed test installations."
+msgid "xalkit.storage_keep_help"
+msgstr "Keep this many test installations (0–3). Reports and local changes are retained."
+msgid "xalkit.storage_status"
+msgstr "Test installations: {count}. Shared resources: {cache}"
+msgid "xalkit.storage_working"
+msgstr "Checking shared resources and archiving old test installations."
+msgid "xalkit.storage_cleaned"
+msgstr "Archived: {count}. Test installations kept: {kept}. Free space increased by {size} GiB."
+msgid "xalkit.storage_share_progress"
+msgstr "Shared resources checked: {index}/{total} test installations."
+msgid "xalkit.storage_restore_help"
+msgstr "Restore a retired test installation from its snapshot and shared resources."
+msgid "xalkit.storage_restored"
+msgstr "Test installation restored: {path}"
+msgid "xalkit.storage_low_space"
+msgstr "Not enough space for a test installation in {path}. Need {needed} GiB, available {available} GiB. Run xkit storage clean or choose another project drive."
+msgid "xalkit.storage_restore_dump_help"
+msgstr "Restore an archived crash dump and verify its original checksum."

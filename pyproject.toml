@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xalkit"
+version = "0.1.0"
+description = "Heroes V Universe SDK with native hot reload"
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[project.scripts]
+xkit = "xalkit:main"
+xal-kit = "xalkit:main"
+xalKit = "xalkit:main"
+
+[tool.setuptools]
+package-dir = {"" = "scripts"}
+py-modules = ["xalkit", "xalkit_ui", "xalkit_config", "xalkit_runtime", "workspace", "sdk_logging", "sdk_diagnostics", "sdk_console", "sdk_console_commands", "sdk_storage"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

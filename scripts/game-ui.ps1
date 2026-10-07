@@ -5,6 +5,7 @@
     [int]$Y = 0,
     [switch]$SystemInput,
     [switch]$OcrTiles,
+    [ValidateRange(0, 64)][int]$ExpectedSdkControls = 0,
     [long]$ReturnFocusWindow = 0,
     [switch]$RestoreClip,
     [int]$ReturnClipLeft = 0,
@@ -164,14 +165,15 @@ function Read-ImageText([string]$ocrPath, [int]$offsetX = 0, [int]$offsetY = 0) 
 
 function Test-RenderedGameFrame([System.Drawing.Bitmap]$bitmap) {
     # PrintWindow can succeed while DirectX returns a blank black/white surface.
-    # A game frame needs more than two colours; this does not identify its phase.
+    # A diagnostic STATIC/HUD can add a few colours to an otherwise blank frame.
+    # Require actual scene variety; this still does not identify the game phase.
     $colours = New-Object 'System.Collections.Generic.HashSet[int]'
     for ($row = 0; $row -lt 32; $row++) {
         for ($column = 0; $column -lt 32; $column++) {
             $pixelX = [int][Math]::Floor($column * $bitmap.Width / 32)
             $pixelY = [int][Math]::Floor($row * $bitmap.Height / 32)
             [void]$colours.Add($bitmap.GetPixel($pixelX, $pixelY).ToArgb())
-            if ($colours.Count -gt 2) { return $true }
+            if ($colours.Count -gt 16) { return $true }
         }
     }
     return $false
@@ -191,14 +193,31 @@ function Read-GameScreen([switch]$DialogOnly) {
         if (-not (Test-RenderedGameFrame $bitmap)) {
             throw "Game capture contains no rendered content; retained at $path"
         }
+        for ($slot = 0; $slot -lt $ExpectedSdkControls; $slot++) {
+            foreach ($point in @(@(20, 20), @(130, 20), @(20, 38), @(130, 38))) {
+                $pixelY = $point[1] + $slot * 32
+                if ($pixelY -ge $bitmap.Height -or $point[0] -ge $bitmap.Width -or
+                    $bitmap.GetPixel($point[0], $pixelY).ToArgb() -ne [System.Drawing.SystemColors]::Control.ToArgb()) {
+                    throw "SDK diagnostic control $slot is not rendered in the captured game frame; retained at $path"
+                }
+            }
+        }
         if ($DialogOnly) {
             $offsetX = [int]($bounds.Width * 0.3)
             $offsetY = [int]($bounds.Height * 0.2)
             $area = New-Object System.Drawing.Rectangle $offsetX, $offsetY, ([int]($bounds.Width * 0.4)), ([int]($bounds.Height * 0.55))
             $crop = $bitmap.Clone($area, $bitmap.PixelFormat)
             $ocrPath = Join-Path $project '.local/test-state/game-ui-dialog.png'
-            try { $crop.Save($ocrPath, [System.Drawing.Imaging.ImageFormat]::Png) } finally { $crop.Dispose() }
-            $lines = @(Read-ImageText $ocrPath $offsetX $offsetY)
+            $scaled = New-Object System.Drawing.Bitmap ($crop.Width * 2), ($crop.Height * 2)
+            $scaleGraphics = [System.Drawing.Graphics]::FromImage($scaled)
+            try {
+                # Small gold OK lettering was missed at native resolution.
+                $scaleGraphics.DrawImage($crop, 0, 0, $scaled.Width, $scaled.Height)
+                $scaled.Save($ocrPath, [System.Drawing.Imaging.ImageFormat]::Png)
+            } finally { $scaleGraphics.Dispose(); $scaled.Dispose(); $crop.Dispose() }
+            $lines = @(Read-ImageText $ocrPath | ForEach-Object {
+                @{ Text=$_.Text; X=$offsetX+[int]($_.X / 2); Y=$offsetY+[int]($_.Y / 2) }
+            })
         } else {
             $lines = @(Read-ImageText $path)
             if ($OcrTiles) {
@@ -306,7 +325,14 @@ if ($Action -eq 'background') {
 function Wait-ExitConfirmation([int]$Timeout = 25) {
     $deadline = [DateTime]::UtcNow.AddSeconds($Timeout)
     do {
-        $screen = Read-GameScreen -DialogOnly
+        if ($process.WaitForExit(0)) { return $null }
+        try {
+            $screen = Read-GameScreen -DialogOnly
+        } catch {
+            # Window teardown can finish before a confirmation frame is captured.
+            if ($process.WaitForExit(1000)) { return $null }
+            throw
+        }
         $prompt = @($screen.Lines | Where-Object {
             $_.Text -match 'хот.*выйти' -and $_.X -gt $screen.Width * 0.3 -and $_.X -lt $screen.Width * 0.7 -and $_.Y -lt $screen.Height * 0.6
         })
@@ -327,7 +353,7 @@ try {
 $null = $process.Handle
 if (-not $process.CloseMainWindow()) { throw 'Game refused the normal close request.' }
 $target = Wait-ExitConfirmation
-Invoke-GameClick $target.X $target.Y
+if ($null -ne $target) { Invoke-GameClick $target.X $target.Y }
 if (-not $process.WaitForExit(15000)) { throw 'Game did not exit after confirmation.' }
 $report = @{ Status='game_closed'; Pid=$GameProcessId }
 } catch {

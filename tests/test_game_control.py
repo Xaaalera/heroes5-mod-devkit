@@ -3,18 +3,19 @@ import importlib.util
 from pathlib import Path
 import struct
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import io
 import json
 import re
 import sys
 import os
 import subprocess
+import threading
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 
 try:
     from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_CODE
-    from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_ESP, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESI, UC_X86_REG_EFLAGS
+    from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EBX, UC_X86_REG_ECX, UC_X86_REG_EDX, UC_X86_REG_ESP, UC_X86_REG_EDI, UC_X86_REG_EBP, UC_X86_REG_ESI, UC_X86_REG_EFLAGS, UC_X86_REG_XMM0
     import keystone
 except ImportError:
     Uc = None
@@ -25,6 +26,395 @@ specification.loader.exec_module(control)
 
 
 class GameControlCommandTests(unittest.TestCase):
+    def test_startup_wait_observes_heartbeat_without_submitting_commands(self):
+        owner = {'pid': 123, 'created': 456}
+        ready = {'pid': 123, 'heartbeat': 1, 'mailbox_status': 0}
+        with patch.object(control, 'execute', side_effect=[dict(ready, heartbeat=0), ready]) as observe, \
+                patch.object(control.time, 'sleep'):
+            self.assertEqual(control.wait_for_game_loop(None, owner), ready)
+        self.assertEqual(observe.call_count, 2)
+        for call in observe.call_args_list:
+            self.assertEqual(call.args, (None,))
+            self.assertEqual(call.kwargs, {'expected_owner': owner})
+
+    def test_startup_wait_refuses_changed_owner_and_has_a_deadline(self):
+        owner = {'pid': 123, 'created': 456}
+        with patch.object(control, 'execute', side_effect=RuntimeError('Owner changed')):
+            with self.assertRaisesRegex(RuntimeError, 'Owner changed'):
+                control.wait_for_game_loop(None, owner)
+        with patch.object(control, 'execute', return_value={'heartbeat': 0}), \
+                patch.object(control.time, 'monotonic', side_effect=[0, 2]), \
+                patch.object(control.time, 'sleep') as sleep:
+            with self.assertRaises(TimeoutError):
+                control.wait_for_game_loop(None, owner, timeout=1)
+            sleep.assert_not_called()
+
+    def test_menu_uses_one_borrowed_command_and_checks_owner_before_dispatch(self):
+        owner = {'pid': 123, 'created': 456}
+        with patch.object(control, 'STATE') as state, \
+                patch.object(control, '_probe_module', Mock()), \
+                patch.object(control, 'execute') as mailbox, \
+                patch('plugin_core.dispatch_owned_console', return_value={
+                    'pid': 123, 'status': 'dispatched', 'dispatch_returned': True,
+                    'effect_verified': False}) as dispatch:
+            state.read_text.return_value = json.dumps(owner)
+            result = control.main(['menu'])
+            self.assertTrue(result['menu_requested'])
+            self.assertFalse(result['effect_verified'])
+            dispatch.assert_called_once_with(control.ROOT, owner, 'mainmenu')
+            mailbox.assert_not_called()
+            dispatch.reset_mock()
+            token = control.expected_session.set({'pid': 999, 'created': 456})
+            try:
+                with self.assertRaisesRegex(RuntimeError, 'owner changed'):
+                    control.main(['menu'])
+            finally:
+                control.expected_session.reset(token)
+            dispatch.assert_not_called()
+
+    def test_map_returns_native_dispatch_receipt_without_falling_through_to_status(self):
+        owner = {'pid': 123, 'created': 456}
+        with patch.object(control, 'STATE') as state, \
+                patch.object(control, '_probe_module', Mock()), \
+                patch.object(control, 'execute') as mailbox, \
+                patch('game_launch.map_arguments', return_value=['-advmap', 'Maps/Test/map.xdb']), \
+                patch('plugin_core.dispatch_owned_console', return_value={
+                    'pid': 123, 'status': 'dispatched', 'dispatch_returned': True,
+                    'effect_verified': False}) as dispatch:
+            state.read_text.return_value = json.dumps(owner)
+            result = control.main(['map', 'WorkshopPolygon'])
+        self.assertEqual(result['map'], 'WorkshopPolygon')
+        self.assertTrue(result['dispatch_returned'])
+        self.assertFalse(result['effect_verified'])
+        self.assertEqual([call.args[2] for call in dispatch.call_args_list],
+            ['setvar pwl_press_any_key_enabled = 0', 'advmap Maps/Test/map.xdb'])
+        mailbox.assert_not_called()
+
+    def test_player_launch_uses_ordinary_creation_without_probe_patches(self):
+        specification = importlib.util.spec_from_file_location('ordinary_player_test',
+            Path(__file__).resolve().parents[1] / 'scripts/plugin-player-check.py')
+        checker = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(checker)
+        specification = importlib.util.spec_from_file_location('ordinary_probe_test',
+            Path(__file__).resolve().parents[1] / 'scripts/native-probe.py')
+        probe = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(probe)
+        kernel = Mock()
+
+        def create(*arguments):
+            process = arguments[-1]._obj
+            process.process, process.thread, process.pid = 11, 12, 123
+            return 1
+
+        kernel.CreateProcessW.side_effect = create
+        game = Path('C:/fixture with spaces/bin/H5_Game.exe')
+        with patch.object(checker.subprocess, 'run', return_value=Mock(stdout=b'INFO')), \
+                patch.object(checker, 'map_arguments', return_value=['-advmap', 'Maps/Test/map.xdb']), \
+                patch.object(probe, 'HASHES', {}), \
+                patch.object(probe, 'creation_time', return_value=456), \
+                patch.object(probe, 'launch') as patched_launch:
+            pid, handle = checker.launch_player_game(probe, kernel, game)
+        self.assertEqual((pid, handle), (123, 11))
+        arguments = kernel.CreateProcessW.call_args.args
+        self.assertEqual(arguments[5], 0)
+        self.assertIn('-advmap Maps/Test/map.xdb', arguments[1].value)
+        self.assertEqual(arguments[7], str(game.parent))
+        kernel.CloseHandle.assert_called_once_with(12)
+        kernel.WriteProcessMemory.assert_not_called()
+        kernel.ResumeThread.assert_not_called()
+        patched_launch.assert_not_called()
+
+        kernel.reset_mock()
+        with patch.object(checker.subprocess, 'run', return_value=Mock(stdout=b'"H5_Game.exe"')):
+            with self.assertRaisesRegex(RuntimeError, 'Close Heroes'):
+                checker.launch_player_game(probe, kernel, game)
+        kernel.CreateProcessW.assert_not_called()
+
+    def test_screenshot_chooses_newest_complete_frame_without_replaying_request(self):
+        from tempfile import TemporaryDirectory
+        from PIL import Image
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            captures = root / '.local/test-game/screenshots'
+            captures.mkdir(parents=True)
+            owner_path = root / 'owner.json'
+            owner_path.write_text(json.dumps({'pid': 123, 'created': 456}), encoding='utf-8')
+            Image.new('RGB', (3, 2), 'yellow').save(captures / 'ScrnShot_stale.tga')
+            os.utime(captures / 'ScrnShot_stale.tga', ns=(999999999, 999999999))
+            requests = []
+            def dispatch(probe, command=None, timeout=10, mode=None, expected_owner=None):
+                self.assertEqual(expected_owner, {'pid': 123, 'created': 456})
+                if command:
+                    requests.append((command, mode))
+                    for name, color, stamp in [('first', 'red', 100000000), ('last', 'blue', 200000000)]:
+                        path = captures / ('ScrnShot_' + name + '.tga')
+                        Image.new('RGB', (3, 2), color).save(path)
+                        os.utime(path, ns=(stamp, stamp))
+                return {'pid': 123}
+            with patch.object(control, 'ROOT', root), patch.object(control, 'STATE', owner_path), \
+                    patch.object(control, 'execute', side_effect=dispatch):
+                result = control.capture_screenshot(Mock(), 1)
+            self.assertEqual(requests, [('screenshot', 24)])
+            self.assertEqual(result['capture_count'], 2)
+            self.assertEqual(Path(result['source_file']).name, 'ScrnShot_last.tga')
+            with Image.open(result['image_file']) as image:
+                self.assertEqual(image.format, 'PNG')
+                self.assertEqual(image.getpixel((0, 0)), (0, 0, 255))
+
+    def test_screenshot_waits_for_partial_file_and_preserves_cancellation(self):
+        from tempfile import TemporaryDirectory
+        from PIL import Image
+        for cancel in (False, True):
+            with self.subTest(cancel=cancel), TemporaryDirectory() as directory:
+                root = Path(directory)
+                captures = root / '.local/test-game/screenshots'
+                captures.mkdir(parents=True)
+                owner_path = root / 'owner.json'
+                owner_path.write_text(json.dumps({'pid': 123, 'created': 456}), encoding='utf-8')
+                state = {'queries': 0, 'requests': 0}
+                def dispatch(probe, command=None, timeout=10, mode=None, expected_owner=None):
+                    self.assertEqual(expected_owner, {'pid': 123, 'created': 456})
+                    if command:
+                        state['requests'] += 1
+                        (captures / 'ScrnShot_new.tga').write_bytes(b'partial')
+                    else:
+                        state['queries'] += 1
+                        if state['queries'] == 4:
+                            if cancel:
+                                raise RuntimeError('disconnected owner')
+                            Image.new('RGB', (3, 2), 'green').save(captures / 'ScrnShot_new.tga')
+                    return {'pid': 123}
+                with patch.object(control, 'ROOT', root), patch.object(control, 'STATE', owner_path), \
+                        patch.object(control, 'execute', side_effect=dispatch), \
+                        patch.object(control.time, 'sleep'):
+                    if cancel:
+                        with self.assertRaisesRegex(RuntimeError, 'disconnected owner'):
+                            control.capture_screenshot(Mock(), 1)
+                        self.assertFalse((root / '.local/xalkit/captures').exists())
+                    else:
+                        result = control.capture_screenshot(Mock(), 1)
+                        self.assertTrue(Path(result['image_file']).is_file())
+                self.assertEqual(state['requests'], 1)
+
+    def test_screenshot_timeout_does_not_accept_stale_file_or_retry(self):
+        from tempfile import TemporaryDirectory
+        from PIL import Image
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            captures = root / '.local/test-game/screenshots'
+            captures.mkdir(parents=True)
+            owner_path = root / 'owner.json'
+            owner_path.write_text(json.dumps({'pid': 123, 'created': 456}), encoding='utf-8')
+            Image.new('RGB', (3, 2)).save(captures / 'ScrnShot_old.tga')
+            request = Mock(return_value={'pid': 123})
+            with patch.object(control, 'ROOT', root), patch.object(control, 'STATE', owner_path), \
+                    patch.object(control, 'execute', request):
+                with self.assertRaises(TimeoutError):
+                    control.capture_screenshot(Mock(), 0.01)
+            self.assertEqual(sum(call.args[1:] == ('screenshot', 0.01) for call in request.call_args_list), 1)
+            self.assertFalse((root / '.local/xalkit/captures').exists())
+
+    def test_screenshot_rejects_session_change_with_the_actual_owner_guard(self):
+        from tempfile import TemporaryDirectory
+        original_execute = control.execute
+        for next_owner in ({'pid': 999, 'created': 888}, {'pid': 123, 'created': 789}):
+            with self.subTest(next_owner=next_owner), TemporaryDirectory() as directory:
+                root = Path(directory)
+                captures = root / '.local/test-game/screenshots'
+                captures.mkdir(parents=True)
+                owner_path = root / 'owner.json'
+                owner_path.write_text(json.dumps({'pid': 123, 'created': 456}), encoding='utf-8')
+                state = {'requested': False, 'requests': 0}
+                probe = Mock()
+                def dispatch(probe, command=None, timeout=10, mode=None, expected_owner=None):
+                    if command:
+                        state['requested'] = True
+                        state['requests'] += 1
+                        owner_path.write_text(json.dumps(next_owner), encoding='utf-8')
+                        (captures / 'ScrnShot_other_owner.tga').write_bytes(b'partial')
+                        return {'pid': 123}
+                    if state['requested']:
+                        return original_execute(probe, expected_owner=expected_owner)
+                    return {'pid': 123}
+                with patch.object(control, 'ROOT', root), patch.object(control, 'STATE', owner_path), \
+                        patch.object(control, 'execute', side_effect=dispatch):
+                    with self.assertRaisesRegex(RuntimeError, 'session changed'):
+                        control.capture_screenshot(probe, 1)
+                self.assertEqual(state['requests'], 1)
+                probe.api.assert_not_called()
+                self.assertFalse((root / '.local/xalkit/captures').exists())
+
+    def test_disconnected_console_context_cannot_submit_or_be_overridden(self):
+        cancelled = threading.Event()
+        cancelled.set()
+        owner = {'pid': 123, 'created': 456, '_cancelled': cancelled}
+        token = control.expected_session.set(owner)
+        self.addCleanup(control.expected_session.reset, token)
+        probe = Mock()
+        with patch.object(control, 'STATE') as state:
+            state.read_text.return_value = json.dumps({'pid': 123, 'created': 456})
+            with self.assertRaisesRegex(RuntimeError, 'disconnected'):
+                control.execute(probe, '@print(1)', expected_owner={'pid': 123, 'created': 456})
+            with self.assertRaisesRegex(RuntimeError, 'conflicts'):
+                control.execute(probe, '@print(1)', expected_owner={'pid': 999, 'created': 456})
+        probe.api.assert_not_called()
+
+    def test_expected_owner_change_is_rejected_before_opening_or_writing(self):
+        probe = Mock()
+        with patch.object(control, 'STATE') as state:
+            state.read_text.return_value = json.dumps({'pid': 456, 'created': 789})
+            with self.assertRaisesRegex(RuntimeError, 'session changed'):
+                control.execute(probe, '@print(1)', expected_owner={'pid': 123, 'created': 456})
+        probe.api.assert_not_called()
+
+    def test_trace_limits_cursor_and_quotes_console_messages_as_data(self):
+        owner = {'pid': 123, 'created': 456}
+        message = "'\"; injected(); -- __workshop_rpc_result\nстрока"
+        records = [{'sequence': index, 'milliseconds': 10, 'level': 'warning',
+                    'module': 'alpha', 'message': message} for index in (1, 2, 3)]
+        with patch.object(control, '_probe_module', Mock()), \
+                patch.object(control, 'STATE') as state, \
+                patch.object(control, 'execute', side_effect=[{'pid': 123},
+                    {'pid': 123, 'status': 'completed', 'result': 'printed'}]) as execute, \
+                patch('sdk_diagnostics.read_plugin_trace', return_value={
+                    'records': records, 'cursor': 3, 'next_sequence': 4, 'oldest_sequence': 1, 'dropped': 0}):
+            state.read_text.return_value = json.dumps(owner)
+            result = control.main(['trace', '--console', '--limit', '1'])
+        self.assertEqual(result['cursor'], 1)
+        self.assertEqual(len(result['records']), 1)
+        self.assertTrue(result['console_script_completed'])
+        self.assertFalse(result['console_output_verified'])
+        script = execute.call_args.args[1]
+        self.assertEqual(execute.call_args.kwargs['expected_owner'], owner)
+        self.assertNotIn(message, script)
+        self.assertIn('\\039', script)
+        self.assertIn('print(', script)
+        self.assertTrue(script.isascii())
+
+    def test_player_stage_failure_preserves_previous_file_and_removes_partial_temporary(self):
+        from tempfile import TemporaryDirectory
+        specification = importlib.util.spec_from_file_location('atomic_stage_test',
+            Path(__file__).resolve().parents[1] / 'scripts/plugin-player-check.py')
+        checker = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(checker)
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / 'wsock32.dll'
+            target.write_bytes(b'previous')
+            original_write = Path.write_bytes
+            def partial_write(path, contents):
+                original_write(path, contents[:2])
+                raise OSError('partial temporary write')
+            installed = {}
+            with patch.object(Path, 'write_bytes', partial_write):
+                with self.assertRaisesRegex(OSError, 'partial temporary write'):
+                    checker.stage_player_file(target, b'new-library', installed)
+            self.assertEqual(target.read_bytes(), b'previous')
+            self.assertEqual(installed, {})
+            self.assertEqual(list(root.glob('*.tmp')), [])
+
+    def test_player_restore_preserves_changed_shared_file_and_restores_other_owned_files(self):
+        from tempfile import TemporaryDirectory
+        import hashlib
+        specification = importlib.util.spec_from_file_location('shared_restore_test',
+            Path(__file__).resolve().parents[1] / 'scripts/plugin-player-check.py')
+        checker = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(checker)
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            loader = root / 'dinput8.dll'
+            preload = root / 'wsock32.dll'
+            plugin = root / 'one.dll'
+            loader.write_bytes(b'owned-loader')
+            preload.write_bytes(b'external-change')
+            plugin.write_bytes(b'owned-plugin')
+            errors = []
+            checker.restore_player_files({plugin: hashlib.sha256(b'owned-plugin').hexdigest()},
+                loader, hashlib.sha256(b'owned-loader').hexdigest(), b'previous-loader', errors,
+                preload, hashlib.sha256(b'owned-preload').hexdigest(), b'previous-preload')
+            self.assertEqual(preload.read_bytes(), b'external-change')
+            self.assertEqual(loader.read_bytes(), b'previous-loader')
+            self.assertFalse(plugin.exists())
+            self.assertEqual([error['stage'] for error in errors], ['restore_preload'])
+
+    def test_guarded_launch_rejects_identity_before_mutation_and_cancels_interrupted_handshake(self):
+        from unittest.mock import Mock
+        from tempfile import TemporaryDirectory
+        specification = importlib.util.spec_from_file_location('guarded_probe_test',
+            Path(__file__).resolve().parents[1] / 'scripts/native-probe.py')
+        probe = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(probe)
+        for failure in ('creation', 'path', 'interrupt', 'malformed', 'eof', 'cancel_failure'):
+            with self.subTest(failure=failure), TemporaryDirectory() as directory:
+                root = Path(directory)
+                prepared = root / '.local/test-state/prepared.json'
+                prepared.parent.mkdir(parents=True)
+                prepared.write_text('{}', encoding='utf-8')
+                helper = Mock()
+                helper.stdout.readline.return_value = 'PREPARED 123 456 789\n'
+                helper.communicate.return_value = ('', '')
+                if failure == 'interrupt':
+                    helper.stdout.readline.side_effect = KeyboardInterrupt
+                if failure in ('malformed', 'cancel_failure'):
+                    helper.stdout.readline.return_value = 'INVALID\n'
+                if failure == 'eof':
+                    helper.stdout.readline.return_value = ''
+                if failure == 'cancel_failure':
+                    helper.communicate.side_effect = OSError('cleanup failure')
+                kernel = Mock()
+                kernel.OpenProcess.return_value = 99
+                def wrong_path(process, flags, filename, size):
+                    filename.value = str(root / 'different.exe')
+                    return True
+                kernel.QueryFullProcessImageNameW.side_effect = wrong_path
+                with patch.object(probe, 'ROOT', root), patch.object(probe, 'GAME', root), \
+                        patch.object(probe, 'HASHES', {}), \
+                        patch.object(probe.subprocess, 'run', return_value=Mock(stdout=b'')), \
+                        patch.object(probe.subprocess, 'Popen', return_value=helper), \
+                        patch.object(probe, 'creation_time', return_value=0 if failure == 'creation' else 789), \
+                        patch.object(probe, 'read') as read, patch.object(probe, 'write') as write, \
+                        patch.object(probe.sys, 'stderr', io.StringIO()):
+                    with self.assertRaises(KeyboardInterrupt if failure == 'interrupt' else RuntimeError):
+                        probe.launch(kernel, launch_gate=root / 'gate.exe')
+                read.assert_not_called()
+                write.assert_not_called()
+                kernel.VirtualAllocEx.assert_not_called()
+                kernel.TerminateProcess.assert_not_called()
+                helper.communicate.assert_called_once_with('cancel\n', timeout=10)
+
+    def test_live_checker_closes_owned_game_after_manager_cleanup_failures(self):
+        from unittest.mock import Mock
+        specification = importlib.util.spec_from_file_location('control_acceptance_test',
+            Path(__file__).resolve().parents[1] / 'scripts/plugin-control-check.py')
+        acceptance = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(acceptance)
+        for failure in ('broken_pipe', 'manager_timeout', 'subscription_read', 'game_close'):
+            with self.subTest(failure=failure):
+                manager = Mock()
+                manager.poll.side_effect = [None, 0]
+                manager.wait.return_value = 0
+                subscriptions = Mock(return_value=0)
+                close_game = Mock(return_value={'game_close': {'status': 'game_closed'}, 'game_exit_code': 0})
+                if failure == 'broken_pipe':
+                    manager.stdin.write.side_effect = BrokenPipeError('stop pipe closed')
+                elif failure == 'manager_timeout':
+                    manager.wait.side_effect = subprocess.TimeoutExpired('owned-manager', 50)
+                elif failure == 'subscription_read':
+                    subscriptions.side_effect = RuntimeError('remote read failed')
+                else:
+                    close_game.side_effect = RuntimeError('owned exit unconfirmed')
+                report = {'checks_passed': True, 'failure': 'original operation failed'}
+                acceptance.cleanup_session(manager, close_game, subscriptions, report)
+                close_game.assert_called_once_with()
+                self.assertFalse(report['passed'])
+                self.assertTrue(report['cleanup_errors'])
+                self.assertEqual(report['failure'], 'original operation failed')
+                if failure == 'subscription_read':
+                    self.assertNotIn('subscriptions_after_stop', report)
+                if failure != 'game_close':
+                    self.assertEqual(report['game_exit_code'], 0)
+                manager.terminate.assert_not_called()
+
     def test_levelup_install_failure_restores_code_and_releases_allocation(self):
         from types import SimpleNamespace
         from unittest.mock import Mock
@@ -63,6 +453,24 @@ class GameControlCommandTests(unittest.TestCase):
                 control.decode_levelup_state(control.LEVELUP_MAGIC + struct.pack('<10I', *words))
         with self.assertRaises(RuntimeError):
             control.decode_levelup_state(b'wrong')
+        probe = Mock()
+        probe.checked.side_effect = lambda value: value
+        probe.creation_time.return_value = 456
+        observer = {'data': 1000, 'patches': ['90909090909090', '909090909090']}
+        memory = {1000: valid, 1234: struct.pack('<I', 0xe333bc),
+                  1234 + 0x10c: struct.pack('<6I', 2000, 2008, 2008, 3000, 3016, 3016),
+                  3000: struct.pack('<4I', 0x175e8690, 0x72747461, 0, 1)}
+        for (site, _), code in zip(control.LEVELUP_SITES, observer['patches']):
+            memory[site] = bytes.fromhex(code)
+        probe.read.side_effect = lambda kernel, process, address, size: memory[address][:size]
+        with patch.object(control, 'STATE') as state:
+            state.read_text.return_value = json.dumps({'pid': 123, 'created': 456, 'levelup_observer': observer})
+            self.assertEqual(control.levelup_state(probe)['selectable_choices'], [3, 4])
+            memory[1234 + 0x10c] = struct.pack('<6I', 2000, 2008, 2008, 3000, 3000, 3000)
+            self.assertEqual(control.levelup_state(probe)['selectable_choices'], [])
+            memory[1234 + 0x10c] = struct.pack('<6I', 2000, 2008, 2008, 3000, 2996, 3000)
+            with self.assertRaisesRegex(RuntimeError, 'offer vectors'):
+                control.levelup_state(probe)
 
     @unittest.skipUnless(os.name == 'nt', 'Windows bitmap validation requires PowerShell/System.Drawing')
     def test_capture_rejects_blank_and_two_colour_surfaces_before_ocr(self):
@@ -85,8 +493,14 @@ try {
     $graphics.FillRectangle([System.Drawing.Brushes]::White,0,0,8,64)
     $twoColour = Test-RenderedGameFrame $bitmap
     $graphics.FillRectangle([System.Drawing.Brushes]::Red,24,24,16,16)
+    $hudOnly = Test-RenderedGameFrame $bitmap
+    for ($row=0; $row -lt 32; $row++) {
+        for ($column=0; $column -lt 32; $column++) {
+            $bitmap.SetPixel($column*2,$row*2,[System.Drawing.Color]::FromArgb($row*7,$column*7,($row+$column)*3))
+        }
+    }
     $content = Test-RenderedGameFrame $bitmap
-    @{black=$black;white=$white;two_colour=$twoColour;content=$content} | ConvertTo-Json -Compress
+    @{black=$black;white=$white;two_colour=$twoColour;hud_only=$hudOnly;content=$content} | ConvertTo-Json -Compress
 } finally { $graphics.Dispose(); $bitmap.Dispose() }
 '''
         import tempfile
@@ -96,7 +510,7 @@ try {
             result = subprocess.run(['powershell', '-NoProfile', '-File', str(harness), str(script_path)],
                                     capture_output=True, text=True, check=True)
         self.assertEqual(json.loads(result.stdout),
-                         {'black': False, 'white': False, 'two_colour': False, 'content': True})
+                         {'black': False, 'white': False, 'two_colour': False, 'hud_only': False, 'content': True})
 
     def test_runtime_decoder_distinguishes_pending_queues_and_rejects_corrupt_chains(self):
         memory = {}
@@ -369,7 +783,7 @@ class GameControlTests(unittest.TestCase):
                     machine.reg_write(UC_X86_REG_ESP, 0x208000)
                     machine.reg_write(UC_X86_REG_ECX, 0x1234)
                     machine.reg_write(UC_X86_REG_EDX, 0x5678)
-                    machine.emu_start(0x300000, 0x200100, count=200)
+                    machine.emu_start(0x300000, 0x200100, count=2000)
                     self.assertEqual(machine.reg_read(UC_X86_REG_ESP), 0x208004)
                     self.assertEqual(machine.reg_read(UC_X86_REG_ECX), 0x1234)
                     self.assertEqual(machine.reg_read(UC_X86_REG_EDX), 0x5678)
@@ -383,6 +797,83 @@ class GameControlTests(unittest.TestCase):
                     self.assertEqual(calls[0][2][:4], bytes(4))
                 elif mode == 25:
                     self.assertEqual(calls[0][0], 0)
+
+    def test_observer_inspection_recognizes_mailbox_and_native_owner_and_rejects_corruption(self):
+        from types import SimpleNamespace
+        code = 0x300000
+        prefix = control.observer_prefix(code)
+        descriptor = code + control.OBSERVER_DESCRIPTOR_OFFSET
+        for opcode in (0xe8, 0xe9):
+            with self.subTest(opcode=opcode):
+                image = prefix + bytes([opcode]) + struct.pack('<i', 0xd10980 - code - len(prefix) - 5)
+                if opcode == 0xe8:
+                    image += b'\xc3'
+                header = struct.pack('<8s6I32s', control.OBSERVER_MAGIC, 1, 320, control.ENTRY,
+                                     0xd10980, len(image), len(prefix), control.hashlib.sha256(image).digest())
+                memory = {control.ENTRY: b'\xe8' + struct.pack('<i', code - control.ENTRY - 5),
+                          code: image, descriptor: header,
+                          descriptor + 64: struct.pack('<64I', 1111, *([0] * 62), 2222)}
+                probe = SimpleNamespace(read=lambda kernel, process, address, size: memory[address][:size])
+                self.assertEqual(control.read_script_observers(probe, None, 1), [1111, 2222])
+                for damage in ('version', 'digest', 'prefix', 'bounds', 'transfer'):
+                    with self.subTest(damage=damage):
+                        broken_header = bytearray(header)
+                        broken_image = bytearray(image)
+                        if damage == 'version':
+                            broken_header[8:12] = struct.pack('<I', 99)
+                        elif damage == 'digest':
+                            broken_header[32] ^= 1
+                        elif damage == 'prefix':
+                            broken_image[0] ^= 1
+                            broken_header[32:64] = control.hashlib.sha256(broken_image).digest()
+                        elif damage == 'bounds':
+                            broken_header[24:28] = struct.pack('<I', 4096)
+                        else:
+                            broken_image[len(prefix)] = 0x90
+                            broken_header[32:64] = control.hashlib.sha256(broken_image).digest()
+                        memory[descriptor] = bytes(broken_header)
+                        memory[code] = bytes(broken_image)
+                        with self.assertRaises(RuntimeError):
+                            control.read_script_observers(probe, None, 1)
+                        memory[descriptor], memory[code] = header, image
+                memory[control.ENTRY] = control.ORIGINAL
+                self.assertEqual(control.read_script_observers(probe, None, 1), [])
+
+    def test_shared_observers_preserve_machine_state_and_removal_is_independent(self):
+        for remove_first in (False, True):
+            with self.subTest(remove_first=remove_first):
+                machine = Uc(UC_ARCH_X86, UC_MODE_32)
+                machine.mem_map(0x200000, 65536)
+                machine.mem_map(0x300000, 16384)
+                prefix = control.observer_prefix(0x300000)
+                machine.mem_write(0x300000, prefix + b'\xc3')
+                assembler = keystone.Ks(keystone.KS_ARCH_X86, keystone.KS_MODE_32)
+                first = 'inc dword ptr [0x303000]; xor eax, eax; xor ecx, ecx; xor edx, edx; pxor xmm0, xmm0; fninit; fldz; std; ret'
+                last = 'pushfd; pop eax; mov dword ptr [0x303004], eax; inc dword ptr [0x303000]; ret'
+                machine.mem_write(0x300400, bytes(assembler.asm(first, 0x300400)[0]))
+                machine.mem_write(0x300500, bytes(assembler.asm(last, 0x300500)[0]))
+                slots = 0x300000 + control.OBSERVER_DESCRIPTOR_OFFSET + 64
+                machine.mem_write(slots, struct.pack('<I', 0 if remove_first else 0x300400))
+                machine.mem_write(slots + (control.OBSERVER_CAPACITY - 1) * 4, struct.pack('<I', 0x300500))
+                # A value immediately beyond capacity must never be called.
+                machine.mem_write(slots + control.OBSERVER_CAPACITY * 4, struct.pack('<I', 0xffffffff))
+                registers = {UC_X86_REG_EAX: 111, UC_X86_REG_EBX: 222, UC_X86_REG_ECX: 333,
+                             UC_X86_REG_EDX: 444, UC_X86_REG_ESI: 555, UC_X86_REG_EDI: 666,
+                             UC_X86_REG_EBP: 777, UC_X86_REG_XMM0: 0x123456789abcdef}
+                for register, value in registers.items():
+                    machine.reg_write(register, value)
+                machine.reg_write(UC_X86_REG_EFLAGS, 0x647)
+                initial_flags = machine.reg_read(UC_X86_REG_EFLAGS)
+                machine.mem_write(0x208000, struct.pack('<I', 0x200100))
+                machine.reg_write(UC_X86_REG_ESP, 0x208000)
+                machine.emu_start(0x300000, 0x200100, count=2000)
+                self.assertEqual(machine.reg_read(UC_X86_REG_ESP), 0x208004)
+                for register, value in registers.items():
+                    self.assertEqual(machine.reg_read(register), value)
+                self.assertEqual(machine.reg_read(UC_X86_REG_EFLAGS), initial_flags)
+                count, callback_flags = struct.unpack('<2I', machine.mem_read(0x303000, 8))
+                self.assertEqual(count, 1 if remove_first else 2)
+                self.assertFalse(callback_flags & 0x400, 'Each observer must enter with DF clear')
 
     def test_result_hook_copies_only_owned_key_and_bounds_response(self):
         for key, value, accepted in ((control.RESULT_KEY + ':0123456789abcdef', b'14|49|0', True),

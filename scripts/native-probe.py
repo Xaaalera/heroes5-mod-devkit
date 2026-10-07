@@ -188,8 +188,10 @@ def api():
         'FlushInstructionCache': (W.BOOL, [W.HANDLE, C.c_void_p, C.c_size_t]),
         'ResumeThread': (W.DWORD, [W.HANDLE]), 'CloseHandle': (W.BOOL, [W.HANDLE]),
         'TerminateProcess': (W.BOOL, [W.HANDLE, W.UINT]),
+        'WaitForSingleObject': (W.DWORD, [W.HANDLE, W.DWORD]),
         'OpenProcess': (W.HANDLE, [W.DWORD, W.BOOL, W.DWORD]),
         'GetProcessTimes': (W.BOOL, [W.HANDLE] + [C.POINTER(W.FILETIME)] * 4),
+        'QueryFullProcessImageNameW': (W.BOOL, [W.HANDLE, W.DWORD, W.LPWSTR, C.POINTER(W.DWORD)]),
     }
     for name, (result, arguments) in signatures.items():
         function = getattr(kernel, name)
@@ -227,7 +229,12 @@ def creation_time(kernel, process):
 
 
 def launch(kernel, army_layout=False, map_name=None, control=False, native_loader=False,
-           observe_deployment=False, background=False):
+           observe_deployment=False, background=False, before_resume=None, launch_gate=None, graphics_facade_hash=None):
+    if graphics_facade_hash is not None and (launch_gate is None or
+            len(graphics_facade_hash) != 64 or any(value not in '0123456789abcdef' for value in graphics_facade_hash)):
+        raise ValueError('A sealed graphics identity requires the owned SDK launch gate')
+    if launch_gate is not None and native_loader:
+        raise ValueError('Choose one owned launch helper.')
     if observe_deployment and not control:
         raise ValueError('Deployment observation requires --control.')
     if background and native_loader:
@@ -239,7 +246,12 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
     if not (ROOT / '.local/test-state/prepared.json').exists():
         raise RuntimeError('Prepare the sandbox first.')
     for name, expected in HASHES.items():
-        if hashlib.sha256((GAME / 'bin' / name).read_bytes()).hexdigest() != expected:
+        actual = hashlib.sha256((GAME / 'bin' / name).read_bytes()).hexdigest()
+        if name == 'd3d9.dll' and graphics_facade_hash is not None and actual == graphics_facade_hash:
+            if hashlib.sha256((GAME / 'bin/d3d9.universe.dll').read_bytes()).hexdigest() != expected:
+                raise RuntimeError('Unsupported retained graphics binary')
+            continue
+        if actual != expected:
             raise RuntimeError('Unsupported binary: ' + name)
     entry, original = (LAYOUT_ENTRY, LAYOUT_ORIGINAL) if army_layout else (ENTRY, ORIGINAL)
     routes = []
@@ -266,23 +278,37 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
     map_options = map_arguments(GAME, map_name) if map_name else []
     command = C.create_unicode_buffer(subprocess.list2cmdline([executable, *map_options]))
     loader = None
-    if native_loader:
-        loader_path = ROOT / '.local/dist/deployment-preview-native/workshop_preview_loader.exe'
-        loader = subprocess.Popen([str(loader_path), '--game', executable, '--prepare-stdin'],
-                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  text=True, encoding='utf-8')
-        prepared = loader.stdout.readline().strip().split()
-        if len(prepared) != 3 or prepared[0] != 'PREPARED' or not all(value.isdecimal() for value in prepared[1:]):
-            output, errors = loader.communicate(timeout=10)
-            raise RuntimeError('Native launcher did not prepare a child: ' + output + errors)
-        info.pid, info.tid = int(prepared[1]), int(prepared[2])
-    else:
-        checked(kernel.CreateProcessW(executable, command, None, None, False, 4, None,
-                                      str(GAME / 'bin'), C.byref(startup), C.byref(info)))
     resumed = False
+    expected_creation = None
     try:
+        if native_loader or launch_gate is not None:
+            loader_path = Path(launch_gate) if launch_gate is not None else ROOT / '.local/dist/deployment-preview-native/workshop_preview_loader.exe'
+            loader_arguments = [str(loader_path), '--game', executable, '--prepare-stdin']
+            if background and launch_gate is not None:
+                loader_arguments.append('--background')
+            loader = subprocess.Popen(loader_arguments,
+                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                      text=True, encoding='utf-8')
+            prepared = loader.stdout.readline().strip().split()
+            fields = 4 if launch_gate is not None else 3
+            if len(prepared) != fields or prepared[0] != 'PREPARED' or not all(value.isdecimal() for value in prepared[1:]):
+                raise RuntimeError('Native launcher did not prepare a child: ' + ' '.join(prepared))
+            info.pid, info.tid = int(prepared[1]), int(prepared[2])
+            if launch_gate is not None:
+                expected_creation = int(prepared[3])
+        else:
+            checked(kernel.CreateProcessW(executable, command, None, None, False, 4, None,
+                                          str(GAME / 'bin'), C.byref(startup), C.byref(info)))
         if loader is not None:
             info.process = checked(kernel.OpenProcess(0x1038, False, info.pid))
+            if expected_creation is not None:
+                if creation_time(kernel, info.process) != expected_creation:
+                    raise RuntimeError('Owned launch creation mismatch before preparation')
+                filename = C.create_unicode_buffer(32768)
+                filename_size = W.DWORD(len(filename))
+                checked(kernel.QueryFullProcessImageNameW(info.process, 0, filename, C.byref(filename_size)))
+                if Path(filename.value).resolve() != Path(executable).resolve():
+                    raise RuntimeError('Owned launch path mismatch before preparation')
         if read(kernel, info.process, entry, len(original)) != original:
             raise RuntimeError('Entry bytes/base differ; refusing the probe.')
         # Reserve Granny's non-ASLR preferred base by loading it before the
@@ -345,7 +371,8 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
         state = {'pid': info.pid, 'created': creation_time(kernel, info.process),
                  'counter': counter, 'entry': entry, 'allocation': allocation, 'patch_size': len(original),
                  'mode': 'army_layout' if army_layout else 'counter',
-                 'exe_sha256': HASHES['H5_Game.exe'], 'native_loader': native_loader}
+                 'exe_sha256': HASHES['H5_Game.exe'], 'native_loader': native_loader,
+                 'guarded_loader': launch_gate is not None}
         if startup_patch:
             state['startup'] = {'entry': startup_entry, 'patch': startup_patch.hex(), 'map': map_name}
         temporary = STATE.with_suffix('.tmp')
@@ -355,28 +382,46 @@ def launch(kernel, army_layout=False, map_name=None, control=False, native_loade
             import game_control
             game_control.install(sys.modules[__name__], kernel, info.process, info.pid,
                                  observe=native_loader or observe_deployment)
+        if before_resume is not None:
+            before_resume(dict(state), kernel)
         if loader is not None:
             resumed = True
             output, errors = loader.communicate('resume\n', timeout=60)
             if loader.returncode != 0 or 'before game entry' not in output:
                 raise RuntimeError('Native launcher failed: ' + output + errors)
+            if launch_gate is not None:
+                state['image_placement_verified'] = True
+                temporary.write_text(json.dumps(state, indent=2), encoding='utf-8')
+                temporary.replace(STATE)
         else:
             if kernel.ResumeThread(info.thread) == 0xffffffff:
                 raise C.WinError(C.get_last_error())
             resumed = True
         return {'pid': info.pid, 'status': 'probe_started', 'calls': 0, 'map_arguments': map_options,
-                'native_loader': native_loader, 'background_requested': background}
+                'native_loader': native_loader, 'background_requested': background,
+                'image_placement_verified': state.get('image_placement_verified', False)}
     finally:
         # Only terminate our own never-resumed child on setup failure, never a running game.
-        if not resumed:
-            if loader is not None:
-                loader.communicate('cancel\n', timeout=10)
-            elif info.process:
-                kernel.TerminateProcess(info.process, 1)
-        if info.thread:
-            kernel.CloseHandle(info.thread)
-        if info.process:
-            kernel.CloseHandle(info.process)
+        try:
+            if not resumed:
+                if loader is not None:
+                    original_error = sys.exc_info()[1]
+                    try:
+                        loader.communicate('cancel\n', timeout=10)
+                    except Exception as cleanup_error:
+                        if original_error is None:
+                            raise
+                        print(json.dumps({'event': 'owned_launch_cleanup_unconfirmed',
+                                          'reason': str(cleanup_error)}), file=sys.stderr)
+                elif info.process:
+                    checked(kernel.TerminateProcess(info.process, 1))
+                    if kernel.WaitForSingleObject(info.process, 5000) != 0:
+                        raise RuntimeError('Never-resumed owned child termination is unconfirmed')
+        finally:
+            if info.thread:
+                kernel.CloseHandle(info.thread)
+            if info.process:
+                kernel.CloseHandle(info.process)
 
 
 def status(kernel):
@@ -418,11 +463,17 @@ if __name__ == '__main__':
     parser.add_argument('--observe-deployment', action='store_true',
                         help='Add the after-Start observer to --control without a separate launcher.')
     arguments = parser.parse_args()
+    sys.stderr.reconfigure(encoding='utf-8')
+    from sdk_logging import EventLog
+    events = EventLog(ROOT / '.local/xalkit/logs', console=True, stream=sys.stderr)
     try:
-        result = (launch(api(), arguments.army_layout, None if arguments.menu else arguments.map,
-                         arguments.control, arguments.native_loader, arguments.observe_deployment,
-                         arguments.background)
-                  if arguments.command == 'launch' else status(api()))
-        print(json.dumps(result, indent=2))
+        with events.operation('native-probe ' + arguments.command):
+            result = (launch(api(), arguments.army_layout, None if arguments.menu else arguments.map,
+                             arguments.control, arguments.native_loader, arguments.observe_deployment,
+                             arguments.background)
+                      if arguments.command == 'launch' else status(api()))
+            print(json.dumps(result, indent=2))
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         parser.exit(1, str(error) + '\n')
+    finally:
+        events.close()

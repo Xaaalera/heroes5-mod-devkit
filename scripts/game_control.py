@@ -1,8 +1,11 @@
 """Terminal mailbox for the pinned sandbox game's main thread."""
 import argparse
+from contextvars import ContextVar
 import ctypes
 from ctypes import wintypes
 import importlib.util
+import io
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -18,10 +21,14 @@ STATE = ROOT / '.local/test-state/game-control.json'
 ENTRY = 0xd112db
 ORIGINAL = bytes.fromhex('e8 a0 f6 ff ff')
 MAGIC = b'H5CTRL01'
+OBSERVER_MAGIC = b'H5OBS001'
+OBSERVER_CAPACITY = 64
+OBSERVER_DESCRIPTOR_OFFSET = 4096 + 3072
 RESULT_ENTRY = 0x5dee75
 RESULT_ORIGINAL = bytes.fromhex('8b 45 00 3b 45 04')
 RESULT_KEY = '__workshop_rpc_result'
 _probe_module = None
+expected_session = ContextVar('game_control_expected_session', default=None)
 LEVELUP_MAGIC = b'H5LEVEL1'
 LEVELUP_SITES = ((0x6a901a, bytes.fromhex('c74500bc33e300')),
                  (0x6aa430, bytes.fromhex('568bf18b46e8')))
@@ -178,6 +185,24 @@ def levelup_state(probe):
                 continue
             if not matches or first != probe.read(kernel, process, observer['data'], 48):
                 continue
+            choices = []
+            if len(result['objects']) == 1:
+                window = result['objects'][0]
+                vectors = probe.read(kernel, process, window + 0x10c, 24)
+                controls_begin, controls_end, controls_capacity, offers_begin, offers_end, offers_capacity = struct.unpack('<6I', vectors)
+                if (controls_end < controls_begin or controls_capacity < controls_end or
+                        offers_end < offers_begin or offers_capacity < offers_end or
+                        (controls_end - controls_begin) % 4 or (offers_end - offers_begin) % 4 or
+                        controls_end - controls_begin > 64 or offers_end - offers_begin > 64):
+                    raise RuntimeError('Unsupported level-up offer vectors')
+                offer_bytes = probe.read(kernel, process, offers_begin, offers_end - offers_begin) if offers_end > offers_begin else b''
+                offers = struct.unpack('<' + 'I' * (len(offer_bytes) // 4), offer_bytes)
+                choices = [index + 1 for index, control in enumerate(offers) if control < (controls_end - controls_begin) // 4]
+                if (vectors != probe.read(kernel, process, window + 0x10c, 24) or
+                        (offer_bytes and offer_bytes != probe.read(kernel, process, offers_begin, len(offer_bytes))) or
+                        first != probe.read(kernel, process, observer['data'], 48)):
+                    continue
+            result['selectable_choices'] = choices
             return {'pid': state['pid'], **result}
         raise RuntimeError('Level-up observer did not stabilize')
     finally:
@@ -232,6 +257,66 @@ def result_trampoline(address, data):
         jmp 0x5dee7b
     '''
     return bytes(Ks(KS_ARCH_X86, KS_MODE_32).asm(assembly, address)[0])
+
+
+def observer_prefix(address):
+    """Preserve the caller machine state while dispatching registered observers."""
+    from keystone import Ks, KS_ARCH_X86, KS_MODE_32
+    slots = address + OBSERVER_DESCRIPTOR_OFFSET + 64
+    assembly = f'''
+        pushfd
+        pushad
+        mov ebp, esp
+        sub esp, 528
+        and esp, -16
+        fxsave [esp]
+        cld
+        mov esi, {slots}
+        mov edi, {OBSERVER_CAPACITY}
+    next_observer:
+        mov eax, [esi]
+        test eax, eax
+        jz observer_done
+        call eax
+        cld
+    observer_done:
+        add esi, 4
+        dec edi
+        jnz next_observer
+        fxrstor [esp]
+        mov esp, ebp
+        popad
+        popfd
+    '''
+    return bytes(Ks(KS_ARCH_X86, KS_MODE_32).asm(assembly, address)[0])
+
+
+def read_script_observers(probe, kernel, process):
+    """Read the verified SDK contract; caller must validate process ownership."""
+    call = probe.read(kernel, process, ENTRY, 5)
+    if call == ORIGINAL:
+        return []
+    if call[0] != 0xe8:
+        raise RuntimeError('Unknown script dispatcher detour')
+    code = (ENTRY + 5 + struct.unpack('<i', call[1:])[0]) & 0xffffffff
+    descriptor = code + OBSERVER_DESCRIPTOR_OFFSET
+    magic, version, size, site, target, code_bytes, original_offset, digest = struct.unpack(
+        '<8s6I32s', probe.read(kernel, process, descriptor, 64))
+    prefix = observer_prefix(code)
+    if (magic, version, size, site, target, original_offset) != (OBSERVER_MAGIC, 1, 320, ENTRY, 0xd10980, len(prefix)):
+        raise RuntimeError('Unknown script observer contract')
+    if not len(prefix) + 5 <= code_bytes <= 1024:
+        raise RuntimeError('Invalid script dispatcher size')
+    image = probe.read(kernel, process, code, code_bytes)
+    if image[:len(prefix)] != prefix or hashlib.sha256(image).digest() != digest:
+        raise RuntimeError('Script dispatcher code changed')
+    transfer = image[original_offset:original_offset + 5]
+    if transfer[0] != 0xe8 and not (transfer[0] == 0xe9 and code_bytes == len(prefix) + 5):
+        raise RuntimeError('Unknown original script dispatcher transfer')
+    if (code + original_offset + 5 + struct.unpack('<i', transfer[1:])[0]) & 0xffffffff != target:
+        raise RuntimeError('Original script dispatcher target changed')
+    callbacks = struct.unpack('<64I', probe.read(kernel, process, descriptor + 64, 256))
+    return [callback for callback in callbacks if callback]
 
 
 def trampoline(address):
@@ -290,7 +375,8 @@ def trampoline(address):
         popfd
         ret
     '''
-    return bytes(Ks(KS_ARCH_X86, KS_MODE_32).asm(assembly, address)[0])
+    prefix = observer_prefix(address)
+    return prefix + bytes(Ks(KS_ARCH_X86, KS_MODE_32).asm(assembly, address + len(prefix))[0])
 
 
 def install(probe, kernel, process, pid, observe=False):
@@ -316,6 +402,10 @@ def install(probe, kernel, process, pid, observe=False):
     probe.write(kernel, process, allocation, code)
     probe.write(kernel, process, allocation + 1024, result_code)
     probe.write(kernel, process, allocation + 4096, MAGIC + bytes(24))
+    observer_descriptor = struct.pack('<8s6I32s', OBSERVER_MAGIC, 1, 320, ENTRY, 0xd10980,
+                                      len(code), len(observer_prefix(allocation)), hashlib.sha256(code).digest())
+    probe.write(kernel, process, allocation + OBSERVER_DESCRIPTOR_OFFSET,
+                observer_descriptor + bytes(OBSERVER_CAPACITY * 4))
     old, ignored = wintypes.DWORD(), wintypes.DWORD()
     probe.checked(kernel.VirtualProtectEx(process, allocation, 4096, 0x20, ctypes.byref(old)))
     probe.checked(kernel.VirtualProtectEx(process, ENTRY, 5, 0x40, ctypes.byref(old)))
@@ -450,14 +540,25 @@ def install(probe, kernel, process, pid, observe=False):
     state = {'pid': pid, 'created': probe.creation_time(kernel, process),
              'allocation': allocation, 'patch': patch.hex(), 'result_patch': result_patch.hex(),
              'exe_sha256': probe.HASHES['H5_Game.exe'], 'observe_deployment': observe}
+    state['control_code_bytes'] = len(code)
+    state['control_code_sha256'] = hashlib.sha256(code).hexdigest()
     state['levelup_observer'] = install_levelup_observer(probe, kernel, process)
     temporary = STATE.with_suffix('.tmp')
     temporary.write_text(json.dumps(state, indent=2), encoding='utf-8')
     temporary.replace(STATE)
 
 
-def execute(probe, command=None, timeout=10, result_required=False, mode=None):
+def execute(probe, command=None, timeout=10, result_required=False, mode=None, expected_owner=None):
     state = json.loads(STATE.read_text(encoding='utf-8'))
+    context_owner = expected_session.get()
+    if context_owner is not None:
+        if expected_owner is not None and any(expected_owner.get(key) != context_owner.get(key) for key in ('pid', 'created')):
+            raise RuntimeError('Command owner conflicts with the SDK console session')
+        expected_owner = context_owner
+    if expected_owner is not None and expected_owner.get('_cancelled') is not None and expected_owner['_cancelled'].is_set():
+        raise RuntimeError('SDK console session was disconnected before command submission')
+    if expected_owner is not None and any(state.get(key) != expected_owner.get(key) for key in ('pid', 'created')):
+        raise RuntimeError('Game-control session changed before command submission')
     kernel = probe.api()
     process = probe.checked(kernel.OpenProcess(0x1038, False, state['pid']))
     try:
@@ -470,6 +571,9 @@ def execute(probe, command=None, timeout=10, result_required=False, mode=None):
         data = state['allocation'] + 4096
         if probe.read(kernel, process, data, 8) != MAGIC:
             raise RuntimeError('Game-control signature changed')
+        if state.get('control_code_sha256') and hashlib.sha256(probe.read(
+                kernel, process, state['allocation'], state['control_code_bytes'])).hexdigest() != state['control_code_sha256']:
+            raise RuntimeError('Game-control code changed; close the owned test game before restarting')
         if command is None:
             heartbeat, status = struct.unpack('<II', probe.read(kernel, process, data + 8, 8))
             return {'pid': state['pid'], 'heartbeat': heartbeat, 'mailbox_status': status}
@@ -509,6 +613,21 @@ def execute(probe, command=None, timeout=10, result_required=False, mode=None):
             lock.unlink()
     finally:
         kernel.CloseHandle(process)
+
+
+def wait_for_game_loop(probe, owner, timeout=60):
+    """Observe the existing controller after startup; never submit a command."""
+    if not 0 < timeout <= 60:
+        raise ValueError('Game initialization timeout must be in (0,60] seconds')
+    expected_owner = dict(owner)
+    deadline = time.monotonic() + timeout
+    while True:
+        state = execute(probe, expected_owner=expected_owner)
+        if state['heartbeat'] > 0:
+            return state
+        if time.monotonic() >= deadline:
+            raise TimeoutError('Game initialization did not reach its main loop before the deadline')
+        time.sleep(0.1)
 
 
 def decode_runtime_state(read):
@@ -586,6 +705,69 @@ def hero_state(probe, name):
     return response
 
 
+def capture_screenshot(probe, timeout):
+    from PIL import Image
+    if not 0 < timeout <= 60:
+        raise ValueError('Screenshot timeout must be in (0,60] seconds')
+    state = json.loads(STATE.read_text(encoding='utf-8'))
+    owner = {'pid': state['pid'], 'created': state['created']}
+    execute(probe, expected_owner=owner)  # Freeze and validate this exact session.
+    workspace = ROOT.resolve()
+    game = (workspace / '.local/test-game').resolve()
+    directory = (game / 'screenshots').resolve()
+    destination = (workspace / '.local/xalkit/captures').resolve()
+    if not game.is_relative_to(workspace) or not directory.is_relative_to(game) or not destination.is_relative_to(workspace):
+        raise RuntimeError('Screenshot paths escape the owned workspace')
+    previous = {path.name: (path.stat().st_size, path.stat().st_mtime_ns)
+                for path in directory.glob('ScrnShot_*.tga') if path.is_file()}
+    deadline = time.monotonic() + timeout
+    response = execute(probe, 'screenshot', timeout, mode=24, expected_owner=owner)
+    observed = {}
+    while time.monotonic() < deadline:
+        execute(probe, expected_owner=owner)  # Never switch to a later session.
+        candidates = []
+        for path in directory.glob('ScrnShot_*.tga'):
+            if not path.resolve().is_relative_to(directory):
+                raise RuntimeError('Screenshot file escapes the owned capture directory')
+            if path.is_file():
+                signature = (path.stat().st_size, path.stat().st_mtime_ns)
+                if previous.get(path.name) != signature:
+                    candidates.append((signature[1], path, signature))
+        for _, path, signature in sorted(candidates, reverse=True):
+            stable = observed.get(path.name) == signature
+            observed[path.name] = signature
+            if not stable or not 0 < signature[0] <= 128 * 1024 * 1024:
+                continue
+            with path.open('rb') as capture:
+                payload = capture.read(128 * 1024 * 1024 + 1)
+            if len(payload) != signature[0] or (path.stat().st_size, path.stat().st_mtime_ns) != signature:
+                continue
+            try:
+                image = Image.open(io.BytesIO(payload), formats=['TGA'])
+            except (OSError, ValueError):
+                continue
+            except Image.DecompressionBombError as failure:
+                raise RuntimeError('Screenshot exceeds the supported pixel count') from failure
+            with image:
+                if image.width * image.height > 40000000:
+                    raise RuntimeError('Screenshot exceeds the supported pixel count')
+                try:
+                    image.load()
+                except (OSError, ValueError):
+                    continue  # The renderer may still be writing this file.
+                execute(probe, expected_owner=owner)
+                destination.mkdir(parents=True, exist_ok=True)
+                target = destination / ('capture-' + uuid.uuid4().hex + '.png')
+                with target.open('xb') as output:
+                    image.save(output, format='PNG')
+                return {'pid': response['pid'], 'status': 'completed', 'image_file': str(target),
+                        'width': image.width, 'height': image.height,
+                        'source_file': str(path), 'source_sha256': hashlib.sha256(payload).hexdigest(),
+                        'capture_count': len(candidates)}
+        time.sleep(0.05)
+    raise TimeoutError('No complete new game screenshot arrived; the request was not repeated')
+
+
 def main(argv=None):
     global _probe_module
     if _probe_module is None:
@@ -597,8 +779,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--timeout', type=float, default=10)
     actions = parser.add_subparsers(dest='action', required=True)
-    for action in ('status', 'runtime-state', 'levelup-state', 'heroes', 'confirm', 'results', 'quit'):
+    for action in ('status', 'runtime-state', 'levelup-state', 'heroes', 'confirm', 'results', 'quit', 'screenshot'):
         actions.add_parser(action)
+    actions.add_parser('map', help='Load an owned sandbox map through the resident SDK core').add_argument('name')
+    actions.add_parser('menu', help='Request the main menu through the resident SDK core')
     for action in ('console', 'eval', 'event'):
         actions.add_parser(action).add_argument('text')
     actions.add_parser('serve', help='Keep a JSONL terminal session attached to the running sandbox game')
@@ -606,6 +790,11 @@ def main(argv=None):
     actions.add_parser('hero').add_argument('name')
     actions.add_parser('objects', help='Read the generated polygon object catalog, not live game state')
     actions.add_parser('day', help='Read the current adventure day')
+    trace = actions.add_parser('trace', help='Read the shared SDK diagnostic journal')
+    trace.add_argument('--after', type=int, default=0)
+    trace.add_argument('--level', choices=('debug', 'info', 'warning', 'error'), default='info')
+    trace.add_argument('--limit', type=int, default=16)
+    trace.add_argument('--console', action='store_true')
     item = actions.add_parser('creature', help='Read or set total hero creatures of one type')
     item.add_argument('name')
     item.add_argument('creature', help='Lua constant, e.g. CREATURE_PEASANT')
@@ -632,6 +821,58 @@ def main(argv=None):
     if arguments.timeout <= 0 or arguments.timeout > 60:
         parser.error('Timeout must be in (0,60] seconds')
     action = arguments.action
+    if action in ('map', 'menu'):
+        from plugin_core import dispatch_owned_console
+        from game_launch import map_arguments
+        state = json.loads(STATE.read_text(encoding='utf-8'))
+        owner = {key: state[key] for key in ('pid', 'created')}
+        expected = expected_session.get()
+        if expected is not None and (any(expected.get(key) != owner[key] for key in owner) or
+                (expected.get('_cancelled') is not None and expected['_cancelled'].is_set())):
+            raise RuntimeError('Map command owner changed or disconnected')
+        if expected is not None and expected.get('_cancelled') is not None:
+            owner['_cancelled'] = expected['_cancelled']
+        if action == 'map':
+            target = map_arguments(ROOT / '.local/test-game', arguments.name)[1]
+            dispatch_owned_console(ROOT, owner, 'setvar pwl_press_any_key_enabled = 0')
+            result = dispatch_owned_console(ROOT, owner, 'advmap ' + target)
+            result['map'] = arguments.name
+        else:
+            result = dispatch_owned_console(ROOT, owner, 'mainmenu')
+            result['menu_requested'] = True
+        if argv is None:
+            print(json.dumps(result, ensure_ascii=False))
+        return result
+    elif action == 'trace':
+        if not 0 <= arguments.after < 2 ** 64 or not 1 <= arguments.limit <= 64:
+            raise ValueError('Diagnostic cursor or limit is outside its supported range')
+        from sdk_diagnostics import read_plugin_trace
+        identity = execute(probe)
+        owner = json.loads(STATE.read_text(encoding='utf-8'))
+        context_owner = expected_session.get()
+        if context_owner is not None and any(owner.get(key) != context_owner.get(key) for key in ('pid', 'created')):
+            raise RuntimeError('Diagnostic owner conflicts with the SDK console session')
+        if identity['pid'] != owner['pid']:
+            raise RuntimeError('Diagnostic session changed during query')
+        levels = ('debug', 'info', 'warning', 'error')
+        result = read_plugin_trace(ROOT, owner, arguments.after, levels.index(arguments.level))
+        result['records'] = result['records'][:arguments.limit]
+        result['cursor'] = result['records'][-1]['sequence'] if result['records'] else arguments.after
+        result.update(pid=owner['pid'], console_script_completed=False, console_output_verified=False)
+        if arguments.console:
+            for record in result['records']:
+                line = '[' + record['level'].upper() + '] ' + record['module'] + ': ' + record['message']
+                # Decimal UTF-8 escapes prevent Lua code injection and distinguish
+                # actual console output from command echo, including RPC key text.
+                literal = '"' + ''.join('\\' + str(byte).zfill(3) for byte in line.encode('utf-8')) + '"'
+                response = execute(probe, '@print(' + literal + "); SetGameVar('" + RESULT_KEY + "','printed')",
+                                   arguments.timeout, result_required=True, expected_owner=owner)
+                if response.get('status') != 'completed' or response.get('result') != 'printed':
+                    raise RuntimeError('Diagnostic console script did not complete')
+            result['console_script_completed'] = True
+        if argv is None:
+            print(json.dumps(result, ensure_ascii=False))
+        return result
     if action == 'serve':
         print(json.dumps({'status': 'ready', 'protocol': 'game-control-jsonl-v1'}, ensure_ascii=False), flush=True)
         for raw_line in sys.stdin:
@@ -656,7 +897,9 @@ def main(argv=None):
             except (OSError, RuntimeError, TimeoutError, ValueError, json.JSONDecodeError) as error:
                 print(json.dumps({'ok': False, 'error': str(error)}, ensure_ascii=False), flush=True)
         return
-    if action == 'runtime-state':
+    if action == 'screenshot':
+        result = capture_screenshot(probe, arguments.timeout)
+    elif action == 'runtime-state':
         result = runtime_state(probe)
     elif action == 'levelup-state':
         result = levelup_state(probe)
@@ -799,11 +1042,34 @@ def main(argv=None):
         result = hero_state(probe, arguments.name)
         for _ in range(max(0, arguments.target - result['level'])):
             expected_level = result['level'] + 1
+            previous_window = levelup_state(probe)
+            (STATE.parent / 'level-command-progress.json').write_text(json.dumps({
+                'pid': result['pid'], 'hero': arguments.name, 'target': arguments.target,
+                'expected_level': expected_level, 'phase': 'opening', 'before': result}), encoding='utf-8')
             execute(probe, f"@LevelUpHero('{arguments.name}')")
             deadline = time.monotonic() + arguments.timeout
+            while True:
+                modal = levelup_state(probe)
+                if not modal.get('available') or not modal.get('stable'):
+                    raise RuntimeError('Level-up window observer is unavailable')
+                if len(modal.get('objects', [])) == 1 and modal.get('created', 0) > previous_window.get('created', 0):
+                    time.sleep(0.1)
+                    confirmed = levelup_state(probe)
+                    if confirmed.get('open') and confirmed.get('objects') == modal.get('objects'):
+                        break
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Level-up window did not open')
+                time.sleep(0.05)
+            choices = confirmed.get('selectable_choices', [])
+            selected_choice = arguments.choice if arguments.choice in choices else choices[0] if choices else None
+            if selected_choice is not None:
+                execute(probe, 'skill_' + str(selected_choice), mode=24)
+            (STATE.parent / 'level-command-progress.json').write_text(json.dumps({
+                'pid': result['pid'], 'hero': arguments.name, 'target': arguments.target,
+                'expected_level': expected_level, 'phase': 'confirming', 'window': confirmed,
+                'selected_choice': selected_choice}), encoding='utf-8')
+            execute(probe, 'MB_Button_Ok', mode=24)
             while result['level'] < expected_level:
-                execute(probe, 'skill_' + str(arguments.choice), mode=24)
-                execute(probe, 'MB_Button_Ok', mode=24)
                 result = hero_state(probe, arguments.name)
                 if time.monotonic() >= deadline and result['level'] < expected_level:
                     raise TimeoutError('Level selection did not complete')
@@ -846,4 +1112,13 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    main()
+    if '--help' in sys.argv[1:] or '-h' in sys.argv[1:]:
+        main()
+    sys.stderr.reconfigure(encoding='utf-8')
+    from sdk_logging import EventLog
+    events = EventLog(ROOT / '.local/xalkit/logs', console=True, stream=sys.stderr)
+    try:
+        with events.operation('game-control'):
+            main()
+    finally:
+        events.close()

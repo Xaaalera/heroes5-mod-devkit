@@ -6,6 +6,9 @@ research/
 node_modules/
 __pycache__/
 *.pyc
+*.egg-info/
+build/
+dist/
 *.h5u
 *.h5m
 *.pak
@@ -14,3 +17,4 @@ __pycache__/
 /Heroes of Might and Magic 5 Tribes of the East/
 .review/work/
 /mods/
+/runtime/

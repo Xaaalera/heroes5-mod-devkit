@@ -1,6 +1,9 @@
 #include "player_launch.hpp"
+#include "graphics_build_identity.hpp"
 #include <unknwn.h>
 #include <cstring>
+#include <algorithm>
+#include <vector>
 
 namespace {
 using CreateInput = HRESULT (WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
@@ -37,7 +40,7 @@ BOOL CALLBACK InitializeMods(PINIT_ONCE, PVOID, PVOID*) {
         const std::filesystem::path executable(filename.data());
         // The editor can also import DirectInput from the same directory.
         if (_wcsicmp(executable.filename().c_str(), L"H5_Game.exe") != 0) { return TRUE; }
-        universe_player::VerifyGame(executable);
+        universe_player::VerifyGame(executable, xkit::GraphicsFacadeSha256);
         InterlockedOr(&Heroes5ModsStatus, 1);
         struct Module { const wchar_t* filename; const char* entry; LONG flag; };
         const Module modules[] = {
@@ -56,6 +59,30 @@ BOOL CALLBACK InitializeMods(PINIT_ONCE, PVOID, PVOID*) {
                 throw std::runtime_error("A Heroes5Mods plugin refused initialization. Check its files and game version.");
             }
             InterlockedOr(&Heroes5ModsStatus, module.flag);
+        }
+        const auto pluginDirectory = executable.parent_path() / L"Heroes5Mods" / L"Plugins";
+        if (std::filesystem::is_directory(pluginDirectory)) {
+            std::vector<std::filesystem::path> plugins;
+            for (const auto& entry : std::filesystem::directory_iterator(pluginDirectory)) {
+                if (entry.is_regular_file() && _wcsicmp(entry.path().extension().c_str(), L".dll") == 0) {
+                    plugins.push_back(entry.path());
+                }
+            }
+            std::sort(plugins.begin(), plugins.end());
+            uint32_t slot = 0;
+            for (const auto& path : plugins) {
+                const auto library = LoadLibraryExW(path.c_str(), nullptr,
+                    LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
+                if (!library) { throw std::runtime_error("Cannot load an SDK plugin DLL."); }
+                const auto configure = reinterpret_cast<DWORD (WINAPI*)(void*)>(GetProcAddress(library, "Heroes5PluginSetSlot"));
+                if (configure && configure(&slot) != 0) { throw std::runtime_error("Cannot assign SDK plugin UI slot."); }
+                ++slot;
+                const auto initialize = reinterpret_cast<DWORD (__cdecl*)()>(GetProcAddress(library, "Heroes5PluginInstall"));
+                if (!initialize || initialize() != 1) {
+                    throw std::runtime_error("An SDK plugin refused startup.");
+                }
+            }
+            InterlockedOr(&Heroes5ModsStatus, 8);
         }
     } catch (const std::exception& error) {
         InterlockedOr(&Heroes5ModsStatus, static_cast<LONG>(0x80000000u));

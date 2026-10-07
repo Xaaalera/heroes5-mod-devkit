@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 from zipfile import BadZipFile, ZipFile, ZipInfo, ZIP_DEFLATED
 from object_reference import compile_reference, compile_windows
 from game_launch import map_arguments
+from sdk_storage import GameAssets, MAX_SANDBOXES
 
 
 from workspace import workspace_root, game_installation
@@ -119,30 +120,42 @@ class Workshop:
             raise ValueError('prepare requires --sandbox.')
         if self.game.exists():
             raise ValueError('Test installation already exists; it will not be overwritten.')
-        # Separate copies, not hardlinks: writes in the test game cannot alter baseline bytes.
-        self.game.mkdir()
-        for directory in ('bin', 'data', 'profiles', 'music', 'video', 'hwcursors'):
-            source = confined(self.baseline, directory)
-            if source.exists():
-                shutil.copytree(source, self.game / directory)
-        for directory in ('Maps', 'UserMODs', 'UserCampaigns', 'DuelPresets'):
-            (self.game / directory).mkdir()
-        splash = self.baseline / 'splasha2.bmp'
-        if splash.exists():
-            shutil.copy2(splash, self.game / splash.name)
-        profiles = self.game / 'UniverseTeam/Universe Mod/Profiles'
-        profile = profiles / 'WorkshopDev'
-        shutil.copytree(self.game / 'profiles/default_profile', profile)
-        (profiles / 'global_a2.cfg').write_text('setvar profile_name = WorkshopDev\n', encoding='ascii')
-        settings = profile / 'user_a2.cfg'
-        text = settings.read_text(encoding='utf-8')
-        text = re.sub(r'(?m)^setvar gfx_fullscreen = .*$', 'setvar gfx_fullscreen = 0', text)
-        settings.write_text(text, encoding='utf-8')
-        write_json(self.local / 'prepared.json', {
-            'status': 'complete', 'game': str(self.game), 'profile': 'WorkshopDev',
-            'runtime_profile_isolation': 'not_yet_verified',
-        })
-        return {'game': str(self.game), 'profile': str(profile), 'status': 'prepared'}
+        assets = GameAssets(self.root, self.baseline)
+        with assets.locked():
+            result = assets.clean(keep=MAX_SANDBOXES - 1)
+            if result['kept'] >= MAX_SANDBOXES:
+                raise RuntimeError('Close the other storage operation before creating another test installation.')
+            needed = assets.required_space()
+            available = shutil.disk_usage(self.root).free
+            if available < needed:
+                from xalkit_ui import CommandFailure, error
+                raise CommandFailure(error('SDK_STORAGE_LOW_SPACE', path=str(self.root),
+                                           needed=f'{needed / 2**30:.2f}', available=f'{available / 2**30:.2f}'))
+            assets.record_owner(self.game)
+            # Only immutable resources link to a PRIVATE cache; the original game never does.
+            self.game.mkdir()
+            for directory in ('bin', 'data', 'profiles', 'music', 'video', 'hwcursors'):
+                source = confined(self.baseline, directory)
+                if source.exists():
+                    shutil.copytree(source, self.game / directory, copy_function=assets.copy)
+            for directory in ('Maps', 'UserMODs', 'UserCampaigns', 'DuelPresets'):
+                (self.game / directory).mkdir()
+            splash = self.baseline / 'splasha2.bmp'
+            if splash.exists():
+                shutil.copy2(splash, self.game / splash.name)
+            profiles = self.game / 'UniverseTeam/Universe Mod/Profiles'
+            profile = profiles / 'WorkshopDev'
+            shutil.copytree(self.game / 'profiles/default_profile', profile)
+            (profiles / 'global_a2.cfg').write_text('setvar profile_name = WorkshopDev\n', encoding='ascii')
+            settings = profile / 'user_a2.cfg'
+            text = settings.read_text(encoding='utf-8')
+            text = re.sub(r'(?m)^setvar gfx_fullscreen = .*$', 'setvar gfx_fullscreen = 0', text)
+            settings.write_text(text, encoding='utf-8')
+            write_json(self.local / 'prepared.json', {
+                'status': 'complete', 'game': str(self.game), 'profile': 'WorkshopDev',
+                'runtime_profile_isolation': 'not_yet_verified',
+            })
+            return {'game': str(self.game), 'profile': str(profile), 'status': 'prepared'}
 
     def build(self):
         recipe = json.loads((self.source / 'mod.json').read_text(encoding='utf-8'))
@@ -372,4 +385,16 @@ def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    import sys
+    if '--help' in sys.argv[1:] or '-h' in sys.argv[1:]:
+        main()
+    sys.stderr.reconfigure(encoding='utf-8')
+    from sdk_logging import EventLog
+    events = EventLog(ROOT / '.local/xalkit/logs', console=True, stream=sys.stderr)
+    try:
+        with events.operation('mod-dev'):
+            result_code = main()
+            if result_code:
+                raise SystemExit(result_code)
+    finally:
+        events.close()
