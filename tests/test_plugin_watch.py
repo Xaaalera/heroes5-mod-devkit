@@ -896,22 +896,31 @@ class PluginWatchBoundaries(unittest.TestCase):
             watch_module.CoreBuild(self.source, self.source / 'build', {'PATH': ''})
 
     def test_changed_sdk_location_builds_without_overwriting_previous_cmake_cache(self):
-        output = self.root / 'core-build'
-        previous_cache = output / 'cmake/CMakeCache.txt'
-        previous_cache.parent.mkdir(parents=True)
-        previous = 'CMAKE_HOME_DIRECTORY:INTERNAL=' + str(self.root / 'previous-sdk') + '\n'
-        previous_cache.write_text(previous, encoding='utf-8')
-        with patch.object(watch_module.shutil, 'which', return_value=str(self.entry)):
-            builder = watch_module.CoreBuild(self.source, output, {'PATH': ''})
-            repeated = watch_module.CoreBuild(self.source, output, {'PATH': ''})
-        failure = SimpleNamespace(returncode=1, stdout='compiler fixture', stderr='')
-        with patch.object(watch_module.subprocess, 'run', return_value=failure) as configure:
-            builder.update()
-        arguments = configure.call_args.args[0]
-        selected_cache = Path(arguments[arguments.index('-B') + 1])
-        self.assertNotEqual(selected_cache, previous_cache.parent)
-        self.assertEqual(repeated.cache, selected_cache)
-        self.assertEqual(previous_cache.read_text(encoding='utf-8'), previous)
+        resources = self.root / 'scripts/native-ui-resources.py'
+        resources.parent.mkdir(exist_ok=True)
+        resources.write_text('# Source identity fixture; configure fails before resource generation.\n', encoding='utf-8')
+        for console in (False, True):
+            for output_length in (100, 125, 160):
+                with self.subTest(console=console, output_length=output_length):
+                    prefix = 'console-' if console else 'core-'
+                    padding = max(1, output_length - len(str(self.root.resolve())) - len(prefix) - 1)
+                    output = self.root / (prefix + 'x' * padding)
+                    previous_cache = (output if console else output / 'cmake') / 'CMakeCache.txt'
+                    previous_cache.parent.mkdir(parents=True, exist_ok=True)
+                    previous = 'CMAKE_HOME_DIRECTORY:INTERNAL=' + str(self.root / 'previous-sdk') + '\n'
+                    previous_cache.write_text(previous, encoding='utf-8')
+                    with patch.object(watch_module.shutil, 'which', return_value=str(self.entry)):
+                        builder = watch_module.CoreBuild(self.source, output, {'PATH': ''}, console=console)
+                        repeated = watch_module.CoreBuild(self.source, output, {'PATH': ''}, console=console)
+                    failure = SimpleNamespace(returncode=1, stdout='compiler fixture', stderr='')
+                    with patch.object(watch_module.subprocess, 'run', return_value=failure) as configure:
+                        builder.update()
+                    arguments = configure.call_args.args[0]
+                    selected_cache = Path(arguments[arguments.index('-B') + 1])
+                    self.assertLessEqual(len(str(selected_cache)), 128)
+                    self.assertNotEqual(selected_cache, previous_cache.parent.resolve())
+                    self.assertEqual(repeated.cache, selected_cache)
+                    self.assertEqual(previous_cache.read_text(encoding='utf-8'), previous)
 
     def test_release_has_one_plugin_and_both_shared_dependencies_with_matching_hashes(self):
         from zipfile import ZipFile

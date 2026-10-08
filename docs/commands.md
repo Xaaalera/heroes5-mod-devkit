@@ -884,6 +884,10 @@ EN: Add one `.def` file to plugin sources for additional exports. Watch and rele
 
 RU: В фоне простаивающая тестовая игра ограничена по CPU. Команды временно снимают ограничение: до 120 секунд для карты, перезапуска и меню, до 15 секунд для остальных действий. Это предел окна активности, а не гарантия завершения команды. Для длинных папок проектов SDK использует короткие каталоги промежуточных файлов; исходники и готовые пакеты остаются в своих папках.
 
+RU: После переноса SDK или установки новой копии архива сборщик сохраняет старый кеш CMake и выбирает отдельный для нового расположения. Проверка длины применяется к окончательному каталогу, включая кеш консоли. Переносить проект вручную ради сборки не требуется; готовые пакеты сохраняются в папке проектов.
+
+EN: Moving SDK source or installing another archive keeps the old CMake cache and selects a separate cache for the new source location. The length check applies to the final directory, including console builds. You do not need to move the project to rebuild; release packages remain in the workspace.
+
 EN: Idle background games have a CPU cap. Owned commands temporarily release it for up to 120 seconds for map/restart/menu and 15 seconds for other actions. These are activity limits, not completion guarantees. Long project paths use short intermediate build directories; sources and release packages stay in their original locations.
 
 ### Сохранение графической библиотеки / Graphics library recovery

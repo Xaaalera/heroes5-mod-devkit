@@ -325,11 +325,6 @@ class CoreBuild:
         self.ready = None
         self.console = console
         self.cache = self.output if console else self.output / 'cmake'
-        # MSBuild compiler-identification tracking files still exceed MAX_PATH
-        # in nested workspaces. Keep only build intermediates in a short cache.
-        if len(str(self.cache)) > 128:
-            cache_key = hashlib.sha256((str(self.source) + '\0' + str(self.output)).encode('utf-8')).hexdigest()[:24]
-            self.cache = Path(tempfile.gettempdir()).resolve() / 'xkit-cmake' / cache_key
         cache_file = self.cache / 'CMakeCache.txt'
         if cache_file.is_file():
             prefix = 'CMAKE_HOME_DIRECTORY:INTERNAL='
@@ -338,6 +333,11 @@ class CoreBuild:
             if previous_source is None or Path(previous_source).resolve() != self.source:
                 source_key = hashlib.sha256(str(self.source).encode('utf-8')).hexdigest()[:16]
                 self.cache = self.output / ('cmake-' + source_key)
+        # Source relocation can lengthen a previously short output path.
+        # Bound the final choice so MSBuild tracking paths stay below MAX_PATH.
+        if len(str(self.cache)) > 128:
+            cache_key = hashlib.sha256((str(self.source) + '\0' + str(self.output)).encode('utf-8')).hexdigest()[:24]
+            self.cache = Path(tempfile.gettempdir()).resolve() / 'xkit-cmake' / cache_key
         cmake = shutil.which('cmake', path=self.environment.get('PATH'))
         if not cmake:
             cmake = str(Path(self.environment['VSINSTALLDIR']) /
