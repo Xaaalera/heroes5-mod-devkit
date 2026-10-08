@@ -1,0 +1,101 @@
+{
+  "diffHash": "f53c0fca9d75e07d851f95ca2f4faaca3dc3483c968bcba34fdccffc90993e93",
+  "commitSha": "3017cf6ed8e15cd349eabeb9ba898d8cf465ce06",
+  "perAgent": {
+    "craft": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/sdk_resource_final_craft",
+      "source_head": "3017cf6ed8e15cd349eabeb9ba898d8cf465ce06",
+      "scope": "Complete fixed-base cumulative source review; resource player acceptance includes shared graphics facade, excludes original-DLL and multiplayer certification."
+    },
+    "architecture": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/event_api_final_architecture (independent final SDK architecture reviewer)",
+      "source_head": "3017cf6ed8e15cd349eabeb9ba898d8cf465ce06",
+      "scope": "Complete fixed-base cumulative source review; resource player acceptance includes shared graphics facade, excludes original-DLL and multiplayer certification."
+    },
+    "tests": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/event_api_tests",
+      "source_head": "3017cf6ed8e15cd349eabeb9ba898d8cf465ce06",
+      "scope": "Complete fixed-base cumulative source review; resource player acceptance includes shared graphics facade, excludes original-DLL and multiplayer certification."
+    },
+    "docs": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/sdk_resource_final_docs (independent Codex documentation reviewer)",
+      "source_head": "3017cf6ed8e15cd349eabeb9ba898d8cf465ce06",
+      "scope": "Complete fixed-base cumulative source review; resource player acceptance includes shared graphics facade, excludes original-DLL and multiplayer certification.",
+      "review": {
+        "reviewer": "/root/sdk_resource_final_docs (independent Codex documentation reviewer)",
+        "files": [
+          "AGENTS.md",
+          "CONTRIBUTING.md",
+          "NOTICE.md",
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "Five cumulative human Markdown paths identify source-save/build/release workflow, independent mod ownership, maintainer protocol and provenance. Fresh developer/player split specifies no player xkit/Python/compiler and ordinary Heroes/Lobby startup; resource ZIP carries one H5U plus explicit graphics infrastructure."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "README and commands recent changes directly read with surrounding sections. AGENTS/CONTRIBUTING/NOTICE actual Git blobs verified identical to prior sdk-relocated-cache-docs-review.json, preserving prior full judgments. No new layer added; root onboarding, runbook and license remain in appropriate existing homes."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "Resource build retains standalone H5U; release adds exact five-member ZIP with H5U, prebuilt graphics, NOTICE, bilingual README and manifest. Docs specify first-install retained original d3d9.universe.dll, bin/UserMODs, same-version infrastructure, stale-runtime failure recovery and deletion boundaries. Raw human Markdown scan found no memory address/disassembler labels. Actual player README and manifest inspected."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "Current3017cf6 README fixes the identified Major: first install follows ZIP README with original graphics retention and bin/UserMODs; standalone H5U limited to an existing compatible chain. Actual bilingual ZIP README contains shutdown, backup/retention, ordinary startup, same shared version and safe removal steps. CLI release catches packaging failures, logs diagnostic and preserves previous ZIP via atomic replacement; H5U remains separate. Source behavior inspected as paired documentation context, not an implementation verdict."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "Read resource-player-archive-visual.json owner12420, flags0, game0, whole19.3402991s. Independently inspected SHA-linked PNG: visible [xkit: startup-proof], image SHA f8f836e72f770f2ff1d5afd31888ccb56029b0cd71b32c3fefd7654636aa04ad verified. Actual ZIP SHA11506170beb3dce50175fb57a0a0dec8cdaa58c95e787479945d0178aed2e0d4 inspected: exactly five members, manifest hashes match. Raw runner false flags retained; accepted visual result explicitly based on root manual pixels, independently seen here. Facade present, core/controller/bootstrap/plugins absent. Not original-DLL or multiplayer acceptance. Prior20s control now historically scoped; new19.34s applies exact ZIP only. Published preview4 receipt at0c406f45 with archive a945e8db/CI success read; new resource ZIP explicitly excluded from that public archive."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "Pinned owned Universe installation only. Each mod remains independent H5U or native DLL; shared graphics is an explicit dependency. Player workflow has no developer core/controller/bootstrap/plugins, yet does include graphics. Current README now restricts standalone H5U to compatible existing installation. No universal Windows/editor, original-DLL, multiplayer, runtime demand loading, GPU latency or crash containment claim."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "Fresh RU/EN comparison covers preview4 publication versus working-tree resource packaging, runtime/compiler distinction, player install/recovery and all three new locale keys. Actual ZIP README has equivalent retention, shared version, removal and standalone prerequisite. Corrective3017cf6 RU/EN quickstart and historical/live distinction agree. Three unchanged Markdown blobs preserve prior parity."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "All78 fixed-base paths accounted. Three unchanged Markdown blobs compose actual prior report; fresh README/commands/locales and paired packaging code inspected. Documentation accompanies resource package implementation and receipt. Preview4 publication grounded in actual retained receipt; new feature labelled working-tree. Previous gates/notes remain historical; exact final machine gate pending."
+          }
+        },
+        "findings": [
+          {
+            "scenario": null,
+            "path": "README.md",
+            "where": "README.md:289",
+            "evidence": "Compared README at review base and current unchanged Git blob; current commands describe36 packs. Prior sdk-publication-docs-review.json records the same advisory.",
+            "severity": "advisory",
+            "occurrences": 4,
+            "why_this_severity": "Question4: unchanged legacy counts predate this publication change.",
+            "problem": "Legacy resource quick-start still states16 neutral packs and51 tests; expanded commands name36 packs and current suite is larger.",
+            "detail": "Pre-existing README map/test-count mismatch retained from prior full review; current transport delta did not introduce it.",
+            "confidence": "high"
+          }
+        ]
+      }
+    },
+    "security": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/bank_runtime_review",
+      "source_head": "3017cf6ed8e15cd349eabeb9ba898d8cf465ce06",
+      "scope": "Complete fixed-base cumulative source review; resource player acceptance includes shared graphics facade, excludes original-DLL and multiplayer certification."
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-10-08T07:28:03.500Z"
+}
