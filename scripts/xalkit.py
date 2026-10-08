@@ -656,7 +656,7 @@ def new_project(name: str, resources: bool = False):
         (source / 'mod.json').write_text(json.dumps(recipe, indent=2), encoding='utf-8')
     (source / 'README.md').write_text(text('readme_resources' if resources else 'readme', name=name) +
                                     text('ide_readme'), encoding='utf-8')
-    (source / 'AGENTS.md').write_text('[SDK instructions](https://github.com/Xaaalera/heroes5-mod-devkit/blob/main/AGENTS.md)\n', encoding='utf-8')
+    (source / 'AGENTS.md').write_text(text('agents'), encoding='utf-8')
     editor = source / '.vscode'
     editor.mkdir(exist_ok=True)
     tasks = []

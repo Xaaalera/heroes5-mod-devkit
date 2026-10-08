@@ -288,6 +288,12 @@ class XalKitTests(unittest.TestCase):
         readme = (self.root / 'mods/marker/README.md').read_text(encoding='utf-8')
         self.assertIn('mod.json', readme)
         self.assertNotIn('plugin.cpp', readme)
+        self.assertIn('https://xaaalera.github.io/heroes5-knowledge/modding/devkit/', readme)
+        self.assertIn('README.txt', readme)
+        self.assertIn('ZIP', readme)
+        agents = (self.root / 'mods/marker/AGENTS.md').read_text(encoding='utf-8')
+        self.assertIn('five independent critics', agents)
+        self.assertIn('https://xaaalera.github.io/heroes5-knowledge/contributing/', agents)
         resource_tasks = json.loads((self.root / 'mods/marker/.vscode/tasks.json').read_text(encoding='utf-8'))['tasks']
         self.assertTrue(all(task['problemMatcher'] == [] for task in resource_tasks))
 
