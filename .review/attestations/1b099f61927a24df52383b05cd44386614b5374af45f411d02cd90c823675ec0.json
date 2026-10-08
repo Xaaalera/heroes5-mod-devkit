@@ -1,19 +1,19 @@
 {
-  "diffHash": "d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea",
-  "commitSha": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
+  "diffHash": "1b099f61927a24df52383b05cd44386614b5374af45f411d02cd90c823675ec0",
+  "commitSha": "97df489e0931af73f09a5b2d8008024989f1dc50",
   "perAgent": {
     "craft": {
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/event_api_final_craft",
-      "evidence": "Final78-path SDK craft review PASS10/10: exact prior coverage plus generated-record and resolved-path assertion review; existing dead-state advisory retained, final hosted CI not certified.",
+      "reviewed_head": "97df489e0931af73f09a5b2d8008024989f1dc50",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
-        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+        ".review/attestations/d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
         "NOTICE.md",
@@ -87,21 +87,21 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
-      "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios."
+      "evidence": "Full78-path relocated SDK cache craft review PASS10/10: existing builder reused, final-path guard and paired docs/test matrix inspected, one prior dead-state advisory retained.",
+      "verification_limits": "Exact unchanged coverage composed with current three-file delta and replacement attestation; installed candidate workflow and prior native tests retain their stated scope."
     },
     "architecture": {
       "score": 10,
       "verdict": "PASS",
-      "reviewer": "/root/event_api_final_architecture (independent SDK architecture reviewer)",
-      "evidence": "Full SDK scope preserves canonical bindings, GUI dispatch, borrowed core lifetime, no-replay commands and independent mod delivery; no architecture findings.",
+      "reviewer": "/root/event_api_final_architecture (independent final SDK architecture reviewer)",
+      "reviewed_head": "97df489e0931af73f09a5b2d8008024989f1dc50",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
-        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+        ".review/attestations/d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
         "NOTICE.md",
@@ -175,21 +175,21 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
-      "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios."
+      "evidence": "Final cache selection preserves canonical source/cache/output boundaries, native runtime lifetimes and independent release delivery; no architecture findings.",
+      "verification_limits": "Exact unchanged coverage composed with current three-file delta and replacement attestation; installed candidate workflow and prior native tests retain their stated scope."
     },
     "tests": {
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/event_api_tests",
-      "evidence": "Final resolved-path screenshot fixture assertion matches production; prior full coverage and resolved event/script regression minor preserved with no unresolved tests finding.",
+      "reviewed_head": "97df489e0931af73f09a5b2d8008024989f1dc50",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
-        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+        ".review/attestations/d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
         "NOTICE.md",
@@ -263,24 +263,21 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
-      "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios.",
-      "resolved_findings": [
-        "Borrowed command subprocess fixture now covers console/event/script prefixes, unsupported kind and single-call refusal."
-      ]
+      "evidence": "Actual configure-path bound, old-cache preservation and stable repeated selection covered for relocated core/console; no new concrete tests defect.",
+      "verification_limits": "Exact unchanged coverage composed with current three-file delta and replacement attestation; installed candidate workflow and prior native tests retain their stated scope. External long TEMP paths are unverified; configure-path fixture is not a full MSBuild run."
     },
     "docs": {
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/sdk_ci_final_docs (independent Codex SDK documentation reviewer)",
-      "evidence": "PASS10/10: five exact unchanged Markdown blobs composed with two inspected deltas; legacy count advisory retained, draft release and failed current CI explicitly bounded.",
+      "reviewed_head": "97df489e0931af73f09a5b2d8008024989f1dc50",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
-        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+        ".review/attestations/d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
         "NOTICE.md",
@@ -354,40 +351,40 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
-      "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios.",
+      "evidence": "PASS10: four Markdown blobs composed, paired final-cache note reviewed with actual installed candidate receipts; legacy-count advisory retained and old public archive failure distinguished.",
+      "verification_limits": "Exact unchanged coverage composed with current three-file delta and replacement attestation; installed candidate workflow and prior native tests retain their stated scope.",
       "review": {
         "criteria": {
           "purpose": {
-            "evidence": "Five human docs identify SDK source-save/develop/build/release workflow, shared infrastructure, independent mod ownership, provenance and maintainer duties. New screenshot section explains capture through connected SDK core.",
+            "evidence": "Five human docs identify SDK source-save/develop/build/release workflow, shared infrastructure, independent mod ownership, provenance and maintainer duties. New screenshot section explains capture through connected SDK core. Current cache note explains recovery after moving SDK or installing another archive, preserving project and release-package locations.",
             "verdict": "PASS"
           },
           "structure": {
-            "evidence": "All five changed Markdown paths are exact Git blob matches to the approved 1d209ec7606a272fc9d7498a223b8c3f59942559 documentation review. Prior full human workflow, historical/current separation and bilingual screenshot guidance are composed without a blanket reread. Private release notes are separately readable and structured RU/EN.",
+            "evidence": "Four Markdown Git blobs match approved ab27/f5 snapshots exactly and compose prior full docs judgment. Only four inserted docs/commands.md lines directly reviewed with surrounding background/cache section. Paired cache explanations name purpose, consequence and user action without internal hash/threshold jargon.",
             "verdict": "PASS"
           },
           "specificity": {
-            "evidence": "New route names xkit game screenshot, in-game screenshot, named event, PNG captures directory, original TGA, diagnostic logs and xkit sdk build recovery. Source maps console/event/script to concrete native exports and validated game-window dispatch. Human Markdown scan found no raw memory-address or address-derived labels.",
+            "evidence": "New route names xkit game screenshot, in-game screenshot, named event, PNG captures directory, original TGA, diagnostic logs and xkit sdk build recovery. Source maps console/event/script to concrete native exports and validated game-window dispatch. Human Markdown scan found no raw memory-address or address-derived labels. Cache note specifically covers old-cache preservation, source-location cache separation, final directory-length selection including console, and release-package location. Constructor and six-case core/console regression read as paired documentation context.",
             "verdict": "PASS"
           },
           "reproducibility": {
-            "evidence": "Installation/submodule/uv/setup/doctor/new/start/Ctrl+C/build/release workflows have explicit commands, dependencies and expected observations. Screenshot usage prints PNG path or JSON, explains current map/menu/intro frame and source rebuild prerequisite. Active endpoint refusal is propagated once; no alternate fallback/replay advertised.",
+            "evidence": "Installation/submodule/uv/setup/doctor/new/start/Ctrl+C/build/release workflows have explicit commands, dependencies and expected observations. Screenshot usage prints PNG path or JSON, explains current map/menu/intro frame and source rebuild prerequisite. Active endpoint refusal is propagated once; no alternate fallback/replay advertised. Actual installed public preview3 uv/setup/new/resource build-release receipt11.8507s read; its native workflow failed27.161s before game/HMR. Whole unpublished corrected candidate installed through UV without hand-copying fix, then actual shortCLI native start/save42->77/stop/release succeeded; this establishes candidate workflow in existing owned workspace, not universal path support or noSDK H5U gameplay. Private sdk-relocated-cache-release-notes.md separately read: bilingual setup and candidate/timing/native/noSDKH5U distinctions agree; no new published-archive success claim.",
             "verdict": "PASS"
           },
           "evidence": {
-            "evidence": "Prior independently reviewed supplied local Python198/native7/Node8 and targeted38 receipts retain their historical bounded meaning. Parent supplies targeted33 PASS after the one root.resolve() assertion correction; reviewer did not rerun tests. sdk-event-remote-verification.json explicitly reports completed failed CI and draft=true. CI37716290682 TEMP 8.3 alias failure is the supplied reason for this test-only correction; no current CI green result or publication certification is claimed. Private release notes preserve one Crypt card/Russian/1024x768 and map/menu/intro screenshot boundaries, arbitrary-hook and incompatible-schema exclusions, and unfinished source-save timing/resource-H5U acceptance.",
+            "evidence": "Read sdk-preview3-human-native.json passed=false retained,27.160965s,restored source: old public archive native workflow failed before game. Read sdk-candidate-installed.json: entire SHAfde75eb5 archive installed, published=false. Read sdk-installed-candidate-native.json: passed=true, same game owner16752,baseline42/gen1 to77/gen2,save_to_applied3.688842s,game0/monitor0/CLI0,106.1818s full workflow. Read sdk-installed-native-release-provenance.json:77source matchesHMR,ZIP252c5de1 contains one plugin plus shared dinput8/d3d9/NOTICE/release/README; no release-player startup inferred. Parent supplies current198Python PASS19.637s and38targeted PASS0.682s; not rerun. Prior bounded screenshot/live receipts retain historical scope. Applied timing is not visible/GPU timing; corrected candidate is unpublished and success does not repair old public preview3 bytes.",
             "verdict": "PASS"
           },
           "applicability": {
-            "evidence": "Pinned owned Universe test process and active sealed core endpoint required. Client --owned-command borrows resident core and excludes Stop cleanup; game signatures/window thread and text constraints remain Game API contracts. Independent DLL/H5U delivery and shared infrastructure are preserved; no all-state/event/script or native crash containment guarantee.",
+            "evidence": "Pinned owned Universe test process and active sealed core endpoint required. Client --owned-command borrows resident core and excludes Stop cleanup; game signatures/window thread and text constraints remain Game API contracts. Independent DLL/H5U delivery and shared infrastructure are preserved; no all-state/event/script or native crash containment guarantee. New fix changes Python cache selection only; native source/ABI/process guards and GameAPI pin unchanged. Console/core output100/125/160 tested by supplied matrix; no arbitrary TEMP-root/MAX_PATH guarantee. Resource build/release is packaging evidence, not game-visible pureH5U acceptance. Private sdk-relocated-cache-release-notes.md separately read: bilingual setup and candidate/timing/native/noSDKH5U distinctions agree; no new published-archive success claim.",
             "verdict": "PASS"
           },
           "translations": {
-            "evidence": "RU/EN screenshot additions agree on connected core event, client exit preserving plugins, no retry after refusal/unsupported export, diagnostic details and xkit sdk build after SDK edits. Current keyboard source-update paragraphs preserve paired same-process evidence and every-screen/shortcut/drag exclusions. Root workflow and provenance parity retained from exact unchanged blobs. Separately reviewed private sdk-event-release-notes.md: RU/EN agree on active core capture, no replay, preserved plugin lifetime, prerequisites and bounded acceptance/open work. RU download+extract versus EN extract is harmless wording variation.",
+            "evidence": "New RU/EN cache notes directly compared: moving/installing source, keeping prior CMake cache, separate new-source cache, final length check including console and release outputs staying in workspace agree. Four unchanged Markdown blobs preserve prior parity and bounded claims. Private sdk-relocated-cache-release-notes.md separately read: bilingual setup and candidate/timing/native/noSDKH5U distinctions agree; no new published-archive success claim.",
             "verdict": "PASS"
           },
           "maintenance": {
-            "evidence": "Current fixed-base inventory contains78 paths. All five Markdown blobs and76 path states exactly match prior approved1d209ec7606a272fc9d7498a223b8c3f59942559; only added repository-relative public attestation and root.resolve() assertion differ. Test correction changes no shipped runtime command or doc contract, so no documentation update is required. Public attestation identifies prior reviewed head and does not substitute for current review or green CI. Preview3 remains a draft; release-note198/8/7 and five-review claims are historical local gate receipts, not approval of latest hosted CI.",
+            "evidence": "All78 fixed-base paths accounted; four unchanged Markdown blobs compose prior full review, one current commands delta directly read with matching Python selector/test matrix. Since publicf5 snapshot only plugin_core.py/test_plugin_watch.py/docscommands changed. Superseded37e attestation replaced by prior d4b166 record, not proof of current review/gates. Earlier draft/failed-CI metadata superseded by sdk-event-published.json actual preview3 publication; corrected relocated-cache candidate remains unpublished. Native/GameAPI exact source blobs remain unchanged.",
             "verdict": "PASS"
           }
         },
@@ -419,14 +416,14 @@
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/bank_runtime_review",
-      "evidence": "Complete78-path fixed-base security coverage refreshed at ab27f7a; test-only resolved-TEMP assertion and generated relative attestation introduce no concrete security finding.",
+      "reviewed_head": "97df489e0931af73f09a5b2d8008024989f1dc50",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
-        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+        ".review/attestations/d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
         "NOTICE.md",
@@ -500,11 +497,10 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
-      "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios.",
-      "publication_condition": "Final generated record must contain no private absolute paths; removed obsolete local-path record."
+      "evidence": "Complete78-path fixed-base security scope composed with exact prior blobs and four fresh paths; no concrete security defect in final relocated-cache correction.",
+      "verification_limits": "Exact unchanged coverage composed with current three-file delta and replacement attestation; installed candidate workflow and prior native tests retain their stated scope."
     }
   },
   "overall": "PASS",
-  "timestamp": "2026-10-08T02:13:22.277Z"
+  "timestamp": "2026-10-08T04:09:36.733Z"
 }
