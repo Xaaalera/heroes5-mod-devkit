@@ -1,6 +1,6 @@
 {
-  "diffHash": "fe6dc1d53186df1bf5836900ce3f9d68c0a7121678c3e9e18e3f8a122233c9e4",
-  "commitSha": "f700d7650c0c8cd5ee4ff71ab9eaf1e7d168c979",
+  "diffHash": "4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f",
+  "commitSha": "0eb364b8c1099fee9c0cff1e2cf5e55a53ec93b6",
   "perAgent": {
     "craft": {
       "verdict": "PASS",
@@ -44,7 +44,7 @@
             "verdict": "PASS"
           },
           "reproducibility": {
-            "evidence": "Standalone dependency initialization, Python isolated-check/import prerequisites and working-directory distinctions are explicit; generated VSCode guidance identifies task execution, Ctrl+C stop and editor restart recovery. Full installation/game procedures remain canonical site articles.",
+            "evidence": "Standalone dependency initialization now uses git submodule update --init in both AGENTS languages, aligning with README direct game-api initialization. Linked-workshop canonical synchronization, isolated Python import/check requirements and generated IDE guidance remain unchanged; no workflows/tests executed here.",
             "verdict": "PASS"
           },
           "evidence": {
@@ -60,7 +60,7 @@
             "verdict": "PASS"
           },
           "maintenance": {
-            "evidence": "Repository source pointers and generated project entry points route to canonical site guides; NOTICE preserves source/license provenance. Repository-specific review rules stay in configuration/AGENTS rather than copied article manuals.",
+            "evidence": "Canonical source-to-site guide ownership unchanged. Bounded SDK/API dependency-pin inspection confirms documentation/attestation-only API update; all other5-file coverage and gettext instructions retain prior full-review conclusions.",
             "verdict": "PASS"
           }
         },
@@ -74,5 +74,5 @@
     }
   },
   "overall": "PASS",
-  "timestamp": "2026-10-08T14:49:54.514Z"
+  "timestamp": "2026-10-08T15:11:28.838Z"
 }
