@@ -1,3 +1,4 @@
+#include "../game-api/include/h5/adventure_input.hpp"
 #include "plugin_runtime.hpp"
 #include "diagnostic_bus.hpp"
 #include "console_module.hpp"
@@ -271,6 +272,24 @@ bool ClearEvents() {
     return true;
 }
 bool RefreshEvents() {
+    const auto panel=static_cast<HWND>(GetPropW(mainWindow,L"XalKit.Console.Frame.v1"));
+    if (panel) {
+        if (GetCurrentThreadId()!=windowThread) { return false; }
+        const auto& site=h5::hooks::AdventureInputTail;
+        auto* gate=h5::hooks::FindAdventureInputGate(site.address,h5::hooks::AdventureInputTarget);
+        if (!gate) {
+            if (std::memcmp(reinterpret_cast<void*>(site.address),site.expected,sizeof(site.expected))) { return false; }
+            gate=h5::hooks::CreateAdventureInputGate(h5::hooks::AdventureInputTarget,mainWindow);
+            if (!gate) { return false; }
+            const auto code=reinterpret_cast<uintptr_t>(gate)-h5::hooks::ScriptObserverDescriptorOffset;
+            std::array<unsigned char,5> original{};
+            std::memcpy(original.data(),site.expected,original.size());
+            auto replacement=CallBytes(static_cast<uint32_t>(site.address),code);
+            replacement[0]=0xe9;
+            if (!WriteCall(static_cast<uint32_t>(site.address),original,replacement)) { return false; }
+        }
+        if (gate->gameWindow!=reinterpret_cast<uintptr_t>(mainWindow)) { return false; }
+    }
     if (!RefreshCameraInput()) { return false; }
     if (!RefreshEngineHook()) { return false; }
     const auto settings = runtime->EventSettings();

@@ -1,5 +1,15 @@
 # Команды стенда / Test environment commands
 
+## Local keyboard isolation update / Локальное исправление захвата клавиатуры
+
+RU: новая версия в исходниках забирает игровые нажатия, когда видимая консоль имеет фокус ввода. Например, I вводится в консоли и не открывает снаряжение героя позади неё; после закрытия консоли I снова работает в игре. Обработчик выполняется до игровых горячих клавиш, а служебные и неизвестные события проходят как раньше. Отдельная настройка пользователя не нужна.
+
+EN: The local source update captures gameplay key presses while the visible console owns keyboard focus. I no longer opens equipment behind it; after hiding the console, I works in the game. Capture runs before gameplay bindings and preserves unknown/system events. No extra user setting is required.
+
+RU: проверка в одном процессе охватывает новое окно консоли и изменённое ядро версии2, затем нажатия внутри и после закрытия. Проверен один переход с удерживаемой PageDown: после отпускания клавиша не осталась нажатой, а следующий нажим на карте менял масштаб. В отдельной парной проверке щелчки по портрету под консолью не меняли героя, а после закрытия открывали окно второго героя. Эти результаты ограничены проверенной картой и действиями; все экраны, сочетания клавиш и виды перетаскивания пока не проверены. Исправление ещё не выпущено в готовом архиве.
+
+EN: One owned process verifies console HWND replacement and edited core version2 before paired key checks. One held-PageDown hide/release transition confirms no stuck key and a working later map zoom. A separate portrait-click pair leaves the underlying hero unchanged while covered, then opens the second hero after hiding. This covers the tested map/actions; every screen, shortcut and drag gesture remains unverified. The fix is not yet in a published ready archive.
+
 RU, 2026-10-07: текущая графическая цепочка проверена в полном ресурсном сеансе SDK и нативном HMR. Подтверждены две независимые DLL, замена ядра и функций, состояние, отключение callbacks и откат. Два готовых пакета прошли обычный запуск игры. В консоли проверены физические клавиши, изменение размера мышью и прокрутка логов без движения камеры. Редактор и другие версии Windows требуют отдельных проверок; текущая сборка ещё не опубликована.
 EN: The current graphics chain passes resource SDK lifecycle and native HMR: two independent DLLs, core/function replacement, state transfer, callback teardown and rollback. Player packages pass ordinary startup. Console checks cover physical keyboard input, mouse resizing and log scrolling without camera movement. Editor and other Windows versions require separate checks; current changes remain unpublished.
 
