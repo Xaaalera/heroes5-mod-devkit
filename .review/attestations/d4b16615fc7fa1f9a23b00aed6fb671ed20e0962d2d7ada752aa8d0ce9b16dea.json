@@ -1,17 +1,18 @@
 {
-  "diffHash": "37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca",
-  "commitSha": "1d209ec7606a272fc9d7498a223b8c3f59942559",
+  "diffHash": "d4b16615fc7fa1f9a23b00aed6fb671ed20e0962d2d7ada752aa8d0ce9b16dea",
+  "commitSha": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
   "perAgent": {
     "craft": {
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/event_api_final_craft",
-      "evidence": "Full77-path SDK craft publication review PASS10/10: exact-byte/blob composition and independent current deltas leave no unresolved scored finding; one existing dead-state advisory retained.",
+      "evidence": "Final78-path SDK craft review PASS10/10: exact prior coverage plus generated-record and resolved-path assertion review; existing dead-state advisory retained, final hosted CI not certified.",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
+        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
@@ -86,7 +87,7 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "1d209ec7606a272fc9d7498a223b8c3f59942559",
+      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
       "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios."
     },
     "architecture": {
@@ -99,6 +100,7 @@
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
+        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
@@ -173,19 +175,20 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "1d209ec7606a272fc9d7498a223b8c3f59942559",
+      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
       "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios."
     },
     "tests": {
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/event_api_tests",
-      "evidence": "Connected capture outcome/no replay and direct event/script prefix/refusal regression cases are checked; full fixed-base path coverage and native/live limitations are preserved.",
+      "evidence": "Final resolved-path screenshot fixture assertion matches production; prior full coverage and resolved event/script regression minor preserved with no unresolved tests finding.",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
+        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
@@ -260,7 +263,7 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "1d209ec7606a272fc9d7498a223b8c3f59942559",
+      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
       "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios.",
       "resolved_findings": [
         "Borrowed command subprocess fixture now covers console/event/script prefixes, unsupported kind and single-call refusal."
@@ -269,13 +272,14 @@
     "docs": {
       "score": 10,
       "verdict": "PASS",
-      "reviewer": "/root/event_api_docs (independent Codex SDK documentation reviewer)",
-      "evidence": "SDK documentation passes with bounded connected-core screenshot guidance; one pre-existing legacy-count advisory remains.",
+      "reviewer": "/root/sdk_ci_final_docs (independent Codex SDK documentation reviewer)",
+      "evidence": "PASS10/10: five exact unchanged Markdown blobs composed with two inspected deltas; legacy count advisory retained, draft release and failed current CI explicitly bounded.",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
+        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
@@ -350,7 +354,7 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "1d209ec7606a272fc9d7498a223b8c3f59942559",
+      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
       "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios.",
       "review": {
         "criteria": {
@@ -359,7 +363,7 @@
             "verdict": "PASS"
           },
           "structure": {
-            "evidence": "README supplies human entry before legacy diagnostics. Commands contains current workflows before dated research snapshots, bilingual screenshot usage/recovery and native/resource delivery limits. Four unchanged root Markdown Git blobs match the prior full reviewed snapshot; current commands reread including latest route.",
+            "evidence": "All five changed Markdown paths are exact Git blob matches to the approved 1d209ec7606a272fc9d7498a223b8c3f59942559 documentation review. Prior full human workflow, historical/current separation and bilingual screenshot guidance are composed without a blanket reread. Private release notes are separately readable and structured RU/EN.",
             "verdict": "PASS"
           },
           "specificity": {
@@ -371,7 +375,7 @@
             "verdict": "PASS"
           },
           "evidence": {
-            "evidence": "Orchestrator reports SDK Python198/native7/Node8 PASS plus final targeted38 PASS0.635s. Human screenshot produced1889x1360 intro PNG in1.47s, complete session27.505s; native event/script crypt-card control RU1024x76826.725s normalcleanup0. These are supplied bounded receipts, not reviewer reruns. Docs claim a current frame and bounded actions, never infer map/gameplay readiness from an intro or dispatcher return. Historical controls retain their own source/scope; unchanged pre-existing count advisory is explicit.",
+            "evidence": "Prior independently reviewed supplied local Python198/native7/Node8 and targeted38 receipts retain their historical bounded meaning. Parent supplies targeted33 PASS after the one root.resolve() assertion correction; reviewer did not rerun tests. sdk-event-remote-verification.json explicitly reports completed failed CI and draft=true. CI37716290682 TEMP 8.3 alias failure is the supplied reason for this test-only correction; no current CI green result or publication certification is claimed. Private release notes preserve one Crypt card/Russian/1024x768 and map/menu/intro screenshot boundaries, arbitrary-hook and incompatible-schema exclusions, and unfinished source-save timing/resource-H5U acceptance.",
             "verdict": "PASS"
           },
           "applicability": {
@@ -379,11 +383,11 @@
             "verdict": "PASS"
           },
           "translations": {
-            "evidence": "RU/EN screenshot additions agree on connected core event, client exit preserving plugins, no retry after refusal/unsupported export, diagnostic details and xkit sdk build after SDK edits. Current keyboard source-update paragraphs preserve paired same-process evidence and every-screen/shortcut/drag exclusions. Root workflow and provenance parity retained from exact unchanged blobs.",
+            "evidence": "RU/EN screenshot additions agree on connected core event, client exit preserving plugins, no retry after refusal/unsupported export, diagnostic details and xkit sdk build after SDK edits. Current keyboard source-update paragraphs preserve paired same-process evidence and every-screen/shortcut/drag exclusions. Root workflow and provenance parity retained from exact unchanged blobs. Separately reviewed private sdk-event-release-notes.md: RU/EN agree on active core capture, no replay, preserved plugin lifetime, prerequisites and bounded acceptance/open work. RU download+extract versus EN extract is harmless wording variation.",
             "verdict": "PASS"
           },
           "maintenance": {
-            "evidence": "Full77-path fixed-base inventory covered. Prior review reused only for verified unchanged Git blobs; current commands plus native bridge/client/Python routing/capture regressions reread. Final1d209ec fixture tests all3 wire kinds, unknown-kind no subprocess and refusal once per kind. Reviewed Game APIa71985c pinned; superseded private attestation removed. Local SDK ZIP build11.816s is separate from remote preview2/publication gate status.",
+            "evidence": "Current fixed-base inventory contains78 paths. All five Markdown blobs and76 path states exactly match prior approved1d209ec7606a272fc9d7498a223b8c3f59942559; only added repository-relative public attestation and root.resolve() assertion differ. Test correction changes no shipped runtime command or doc contract, so no documentation update is required. Public attestation identifies prior reviewed head and does not substitute for current review or green CI. Preview3 remains a draft; release-note198/8/7 and five-review claims are historical local gate receipts, not approval of latest hosted CI.",
             "verdict": "PASS"
           }
         },
@@ -408,19 +412,20 @@
           "README.md",
           "docs/commands.md"
         ],
-        "reviewer": "/root/event_api_docs (independent Codex SDK documentation reviewer)"
+        "reviewer": "/root/sdk_ci_final_docs (independent Codex SDK documentation reviewer)"
       }
     },
     "security": {
       "score": 10,
       "verdict": "PASS",
       "reviewer": "/root/bank_runtime_review",
-      "evidence": "All77 fixed-base paths accounted for; no concrete open security issue in the current event/script/screenshot delta and superseded private-path attestation is absent.",
+      "evidence": "Complete78-path fixed-base security coverage refreshed at ab27f7a; test-only resolved-TEMP assertion and generated relative attestation introduce no concrete security finding.",
       "reviewed_files": [
         ".claude/review.config.json",
         ".github/workflows/verify.yml",
         ".gitignore",
         ".gitmodules",
+        ".review/attestations/37e860c1e3da25e073c0e1a7154967f048c3e92ba88330e9390cbd16eff0d8ca.json",
         ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
         "AGENTS.md",
         "CONTRIBUTING.md",
@@ -495,11 +500,11 @@
         "xalKit.cmd",
         "xkit.cmd"
       ],
-      "reviewed_head": "1d209ec7606a272fc9d7498a223b8c3f59942559",
+      "reviewed_head": "ab27f7aecbfcb1d5cafe55ee569017debb0d50c8",
       "verification_limits": "Prior exact-byte coverage reused only where verified; native and supplied live controls retain bounded scenarios.",
       "publication_condition": "Final generated record must contain no private absolute paths; removed obsolete local-path record."
     }
   },
   "overall": "PASS",
-  "timestamp": "2026-10-08T02:05:29.323Z"
+  "timestamp": "2026-10-08T02:13:22.277Z"
 }
