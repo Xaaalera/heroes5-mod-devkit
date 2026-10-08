@@ -200,6 +200,12 @@ int wmain(int count, wchar_t** arguments) {
         const auto consoleExport = GetProcAddress(local, "Heroes5PluginConsoleCommand");
         const auto dispatchConsole = consoleExport ? base + reinterpret_cast<uintptr_t>(consoleExport) -
             reinterpret_cast<uintptr_t>(local) : 0;
+        const auto gameEventExport=GetProcAddress(local,"Heroes5PluginGameEvent");
+        const auto dispatchGameEvent=gameEventExport ? base+reinterpret_cast<uintptr_t>(gameEventExport)-
+            reinterpret_cast<uintptr_t>(local) : 0;
+        const auto gameScriptExport=GetProcAddress(local,"Heroes5PluginGameScript");
+        const auto dispatchGameScript=gameScriptExport ? base+reinterpret_cast<uintptr_t>(gameScriptExport)-
+            reinterpret_cast<uintptr_t>(local) : 0;
         const auto featureAddress = GetProcAddress(local, "Heroes5PluginNewFeature");
         const auto feature = featureAddress ? base + reinterpret_cast<uintptr_t>(featureAddress) -
             reinterpret_cast<uintptr_t>(local) : 0;
@@ -216,14 +222,17 @@ int wmain(int count, wchar_t** arguments) {
             if (line == "quit") { break; }
             Require(!diagnosticReader || line.rfind("trace ", 0) == 0, "diagnostic_reader_command_rejected");
             Require(!consoleController || line.rfind("console-replace ", 0) == 0, "console_controller_command_rejected");
-            Require(!gameCommandController || line.rfind("console ", 0) == 0, "game_command_controller_command_rejected");
+            Require(!gameCommandController || line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0,
+                    "game_command_controller_command_rejected");
             DWORD status = 0; uint32_t request[4]{};
             std::string stateSnapshot;
             std::string diagnosticSnapshot;
             heroes5_sdk::BankReplaceRequest bankReplacement;
-            if (line.rfind("console ", 0) == 0) {
+            if (line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0) {
+                const bool gameEvent=line.rfind("game-event ",0)==0;
+                const bool gameScript=line.rfind("game-script ",0)==0;
                 mainUsed = true;
-                const auto text = Wide(line.substr(8));
+                const auto text = Wide(line.substr(gameEvent ? 11 : (gameScript ? 12 : 8)));
                 Require(dispatchConsole && !text.empty() && text.size() < 4096 &&
                     text.find(L'\0') == std::wstring::npos, "invalid_console_command");
                 h5::ConsoleCommandRequest command;
@@ -233,7 +242,11 @@ int wmain(int count, wchar_t** arguments) {
                     Require(WriteProcessMemory(process, buffer, &command, sizeof(command), &written) &&
                         written == sizeof(command), "console_command_write_failed");
                 }
-                status = Call(process, dispatchConsole, remote ? buffer : &command, "dispatch_console");
+                Require(!gameEvent || dispatchGameEvent,"game_event_export_unavailable");
+                Require(!gameScript || dispatchGameScript,"game_script_export_unavailable");
+                status = Call(process, gameEvent ? dispatchGameEvent : (gameScript ? dispatchGameScript : dispatchConsole),
+                              remote ? buffer : &command,gameEvent ? "dispatch_game_event" :
+                              (gameScript ? "dispatch_game_script" : "dispatch_console"));
             } else if (line == "stop") {
                 status = Call(process, stop, nullptr, "stop_payload");
             } else if (line == "connect" || line == "connect-prepare" || line == "connect-check") {
@@ -366,7 +379,7 @@ int wmain(int count, wchar_t** arguments) {
             }
             std::cout << "{\"status\":" << status << ",\"result\":" << request[2]
                 << ",\"generation\":" << request[3];
-            if (line.rfind("console ", 0) == 0) {
+            if (line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0) {
                 std::cout << ",\"dispatch_returned\":" << (status == 0 ? "true" : "false");
             }
             if (line.rfind("bank-reload ", 0) == 0) {

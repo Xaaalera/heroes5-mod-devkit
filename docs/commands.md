@@ -89,6 +89,10 @@ RU: Снимается текущий игровой кадр: это может
 
 EN: Run `xkit game screenshot` in the terminal or `screenshot` in the in-game console. The command saves a PNG under the workspace's `.local/xalkit/captures` and prints its path. Add `--json` for scripts. It captures the current game frame, which may be a map, menu or intro. A new complete frame is required; original game TGAs are retained. Pillow converts the selected complete frame to PNG. Multiple captures from one request do not trigger replay. SDK module/log diagnostics remain available through `xkit diagnostics`.
 
+RU: В подключённом сеансе захват отправляется через активное ядро SDK как игровое событие. Завершение диагностического клиента не отключает плагины. Если ядро отказало или не поддерживает захват, запрос не повторяется другим способом; подробности отказа остаются в журнале. После обновления исходников самого SDK сначала выполни `xkit sdk build`.
+
+EN: In a connected session, capture uses the active SDK core's named game event. Exiting the diagnostic client does not stop plugins. A refusal or unsupported capture is not replayed through another route; diagnostic details remain in the log. After updating SDK source, run `xkit sdk build` first.
+
 RU: При сбое терминал и игровая консоль показывают одинаковое сообщение и путь к журналу. Проверь запущенный тестовый сеанс и доступ к папке диагностики; техническая причина сохраняется в журнале, а не подменяет подсказку.
 
 EN: Terminal and in-game console preserve the same registered error and diagnostic path. Check the active test session and write access to the diagnostics folder; technical details stay in the journal.

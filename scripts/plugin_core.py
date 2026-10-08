@@ -56,11 +56,14 @@ def owned_core_endpoint(root, owner):
     return paths
 
 
-def dispatch_owned_console(root, owner, command):
+def dispatch_owned_console(root, owner, command, *, kind='console'):
     """Borrow the connected core once; never stop its payload or replay a request."""
     if (not isinstance(command, str) or not command or any(value in command for value in ('\0', '\r', '\n')) or
             len(command.encode('utf-16-le')) > 8190):
         raise ValueError('Invalid bounded console command')
+    prefixes={'console':'console ', 'event':'game-event ', 'script':'game-script '}
+    if kind not in prefixes:
+        raise ValueError('Unknown native game dispatch kind')
     cancelled = owner.get('_cancelled')
     if cancelled is not None and cancelled.is_set():
         raise RuntimeError('SDK command session was disconnected')
@@ -69,7 +72,8 @@ def dispatch_owned_console(root, owner, command):
         raise RuntimeError('SDK command session was disconnected')
     result = subprocess.run([str(paths['controller']), '--owned-command', str(owner['pid']), str(owner['created']),
         str((Path(root) / '.local/test-game/bin/H5_Game.exe').resolve()), str(paths['bridge'])],
-        input='console ' + command + '\nquit\n', capture_output=True, text=True, encoding='utf-8', timeout=55)
+        input=prefixes[kind] + command + '\nquit\n',
+        capture_output=True, text=True, encoding='utf-8', timeout=55)
     replies = [json.loads(line) for line in result.stdout.splitlines()]
     if (result.returncode or len(replies) != 2 or replies[0] != {'ready': True} or
             replies[1].get('status') != 0 or replies[1].get('dispatch_returned') is not True):

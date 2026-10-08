@@ -161,6 +161,43 @@ class GameControlCommandTests(unittest.TestCase):
                 self.assertEqual(image.format, 'PNG')
                 self.assertEqual(image.getpixel((0, 0)), (0, 0, 255))
 
+    def test_screenshot_connected_core_uses_one_event_and_never_replays_on_failure(self):
+        from tempfile import TemporaryDirectory
+        from PIL import Image
+        for fails in (False, True):
+            with self.subTest(dispatch_fails=fails), TemporaryDirectory() as directory:
+                root = Path(directory)
+                captures = root / '.local/test-game/screenshots'
+                captures.mkdir(parents=True)
+                endpoint = root / '.local/xalkit/watch/diagnostic-owner.json'
+                endpoint.parent.mkdir(parents=True)
+                endpoint.write_text('{}', encoding='utf-8')
+                owner = {'pid': 123, 'created': 456}
+                owner_path = root / 'owner.json'
+                owner_path.write_text(json.dumps(owner), encoding='utf-8')
+
+                def dispatch(*arguments, **keywords):
+                    if fails:
+                        raise RuntimeError('Native event export unavailable')
+                    Image.new('RGB', (3, 2), 'blue').save(captures / 'ScrnShot_new.tga')
+                    return {'pid': 123, 'dispatch_returned': True}
+
+                with patch.object(control, 'ROOT', root), patch.object(control, 'STATE', owner_path), \
+                        patch.object(control, 'execute', return_value={'pid': 123}) as mailbox, \
+                        patch('plugin_core.dispatch_owned_console', side_effect=dispatch) as native_dispatch:
+                    if fails:
+                        with self.assertRaisesRegex(RuntimeError, 'export unavailable'):
+                            control.capture_screenshot(Mock(), 1)
+                        self.assertFalse((root / '.local/xalkit/captures').exists())
+                    else:
+                        result = control.capture_screenshot(Mock(), 1)
+                        with Image.open(result['image_file']) as image:
+                            self.assertEqual(image.getpixel((0, 0)), (0, 0, 255))
+                    native_dispatch.assert_called_once_with(root, owner, 'screenshot', kind='event')
+                    for call in mailbox.call_args_list:
+                        self.assertEqual(len(call.args), 1)
+                        self.assertEqual(call.kwargs, {'expected_owner': owner})
+
     def test_screenshot_waits_for_partial_file_and_preserves_cancellation(self):
         from tempfile import TemporaryDirectory
         from PIL import Image

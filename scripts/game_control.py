@@ -721,7 +721,11 @@ def capture_screenshot(probe, timeout):
     previous = {path.name: (path.stat().st_size, path.stat().st_mtime_ns)
                 for path in directory.glob('ScrnShot_*.tga') if path.is_file()}
     deadline = time.monotonic() + timeout
-    response = execute(probe, 'screenshot', timeout, mode=24, expected_owner=owner)
+    if (workspace / '.local/xalkit/watch/diagnostic-owner.json').exists():
+        from plugin_core import dispatch_owned_console
+        response = dispatch_owned_console(workspace, owner, 'screenshot', kind='event')
+    else:
+        response = execute(probe, 'screenshot', timeout, mode=24, expected_owner=owner)
     observed = {}
     while time.monotonic() < deadline:
         execute(probe, expected_owner=owner)  # Never switch to a later session.

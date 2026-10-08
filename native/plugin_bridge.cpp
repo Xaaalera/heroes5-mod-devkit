@@ -374,7 +374,9 @@ LRESULT CALLBACK MainThreadHook(int code, WPARAM parameter, LPARAM data) {
             }
             if (message->message == consoleMessage) {
                 const auto* command = reinterpret_cast<const h5::ConsoleCommandRequest*>(request[1]);
-                pendingStatus.store(command && h5::DispatchConsoleCommand(mainWindow, *command) ? 0u : 104u,
+                const bool dispatched=command && (request[0] ? h5::DispatchGameText(mainWindow,*command,request[0])
+                                                               : h5::DispatchConsoleCommand(mainWindow,*command));
+                pendingStatus.store(dispatched ? 0u : 104u,
                     std::memory_order_release);
                 return CallNextHookEx(nullptr, code, parameter, data);
             }
@@ -586,6 +588,24 @@ extern "C" DWORD WINAPI Heroes5PluginConsoleCommand(void* memory) {
     return SendToMain(request, false, true);
 }
 #pragma comment(linker, "/EXPORT:Heroes5PluginConsoleCommand=_Heroes5PluginConsoleCommand@4")
+extern "C" DWORD WINAPI Heroes5PluginGameEvent(void* memory) {
+    Guard guard;
+    if (!memory || !h5::hooks::ObserverMemory(reinterpret_cast<uintptr_t>(memory),
+        sizeof(h5::ConsoleCommandRequest),PAGE_READWRITE)) { return ERROR_INVALID_PARAMETER; }
+    if (!hookThread || !mainHook || !IsWindow(mainWindow)) { return ERROR_NOT_READY; }
+    uint32_t request[4]{1,static_cast<uint32_t>(reinterpret_cast<uintptr_t>(memory)),0,0};
+    return SendToMain(request,false,true);
+}
+#pragma comment(linker, "/EXPORT:Heroes5PluginGameEvent=_Heroes5PluginGameEvent@4")
+extern "C" DWORD WINAPI Heroes5PluginGameScript(void* memory) {
+    Guard guard;
+    if (!memory || !h5::hooks::ObserverMemory(reinterpret_cast<uintptr_t>(memory),
+        sizeof(h5::ConsoleCommandRequest),PAGE_READWRITE)) { return ERROR_INVALID_PARAMETER; }
+    if (!hookThread || !mainHook || !IsWindow(mainWindow)) { return ERROR_NOT_READY; }
+    uint32_t request[4]{2,static_cast<uint32_t>(reinterpret_cast<uintptr_t>(memory)),0,0};
+    return SendToMain(request,false,true);
+}
+#pragma comment(linker, "/EXPORT:Heroes5PluginGameScript=_Heroes5PluginGameScript@4")
 extern "C" DWORD WINAPI Heroes5PluginReplaceBank(void* memory) {
     Guard guard;
     if (!memory) { return ERROR_INVALID_PARAMETER; }
