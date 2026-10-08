@@ -193,7 +193,7 @@ class PluginWatchBoundaries(unittest.TestCase):
 
     def test_shipped_runtime_loads_without_tools_and_refuses_mutation_or_stale_sources(self):
         import hashlib
-        from plugin_core import load_sdk_runtime, package_sdk_runtime, package_sdk_release
+        from plugin_core import load_sdk_runtime, package_sdk_runtime, package_sdk_release, package_resource_player
         from zipfile import ZipFile
         with tempfile.TemporaryDirectory() as directory:
             sdk = Path(directory) / 'sdk'
@@ -223,6 +223,65 @@ class PluginWatchBoundaries(unittest.TestCase):
             with patch('plugin_core.subprocess.run') as compiler:
                 loaded = load_sdk_runtime(sdk)
                 compiler.assert_not_called()
+            (sdk / 'NOTICE.md').write_text('Runtime license notice', encoding='utf-8')
+            resource = Path(directory) / 'marker.h5u'
+            with ZipFile(resource, 'w') as package:
+                package.writestr('UI/MainMenu2/Version.txt', b'marker')
+            resource.with_suffix('.build.json').write_text(json.dumps({
+                'artifact_sha256': hashlib.sha256(resource.read_bytes()).hexdigest()}))
+            player_archive = Path(directory) / 'marker.zip'
+            with patch('plugin_core.subprocess.run') as compiler:
+                package_resource_player(sdk, resource, 'marker', player_archive)
+                compiler.assert_not_called()
+            expected_members = {'UserMODs/workshop-marker.h5u', 'bin/d3d9.dll',
+                                'NOTICE.txt', 'README.txt', 'release.json'}
+            with ZipFile(player_archive) as package:
+                self.assertEqual(set(package.namelist()), expected_members)
+                self.assertEqual(len(package.namelist()), len(expected_members))
+                self.assertIsNone(package.testzip())
+                self.assertEqual(package.read('UserMODs/workshop-marker.h5u'), resource.read_bytes())
+                self.assertEqual(package.read('bin/d3d9.dll'), b'graphics')
+                readme = package.read('README.txt').decode('utf-8')
+                self.assertIn('Игроку не нужны xkit', readme)
+                self.assertIn('Players need no xkit', readme)
+                self.assertIn('UserMODs/workshop-marker.h5u', readme)
+                manifest = json.loads(package.read('release.json'))
+                for member, digest in manifest['files'].items():
+                    self.assertEqual(hashlib.sha256(package.read(member)).hexdigest(), digest)
+            previous_archive = player_archive.read_bytes()
+            original_resource = resource.read_bytes()
+            resource.write_bytes(b'changed after build')
+            with self.assertRaisesRegex(ValueError, 'Resource changed'):
+                package_resource_player(sdk, resource, 'marker', player_archive)
+            resource.write_bytes(original_resource)
+            damaged_resource = bytearray(original_resource)
+            with ZipFile(resource) as contents:
+                member = contents.infolist()[0]
+                data_offset = member.header_offset + 30 + len(member.filename.encode('utf-8')) + len(member.extra)
+            damaged_resource[data_offset] ^= 1
+            resource.write_bytes(damaged_resource)
+            resource.with_suffix('.build.json').write_text(json.dumps({
+                'artifact_sha256': hashlib.sha256(damaged_resource).hexdigest()}))
+            with self.assertRaisesRegex(ValueError, 'Resource archive CRC differs'):
+                package_resource_player(sdk, resource, 'marker', player_archive)
+            self.assertEqual(player_archive.read_bytes(), previous_archive)
+            resource.write_bytes(original_resource)
+            resource.with_suffix('.build.json').write_text(json.dumps({
+                'artifact_sha256': hashlib.sha256(original_resource).hexdigest()}))
+            with patch('plugin_core.os.replace', side_effect=OSError('publication refused')):
+                with self.assertRaisesRegex(OSError, 'publication refused'):
+                    package_resource_player(sdk, resource, 'marker', player_archive)
+            self.assertEqual(player_archive.read_bytes(), previous_archive)
+            self.assertEqual(list(Path(directory).glob('marker.zip.*.tmp')), [])
+            with self.assertRaisesRegex(ValueError, 'Invalid resource player package name'):
+                package_resource_player(sdk, resource, '../outside', player_archive)
+            with patch('plugin_core.load_sdk_runtime', return_value={'manifest': {'version': 1}}):
+                with self.assertRaisesRegex(ValueError, 'current graphics runtime'):
+                    package_resource_player(sdk, resource, 'marker', player_archive)
+            source.write_bytes(b'new core\n')
+            with self.assertRaisesRegex(ValueError, 'outdated'):
+                package_resource_player(sdk, resource, 'marker', player_archive)
+            source.write_bytes(b'core\n')
             for name in ('README.md', 'pyproject.toml', 'scripts/xalkit.py', 'game-api/include/h5/hooks.hpp'):
                 path = sdk / name
                 path.parent.mkdir(parents=True, exist_ok=True)

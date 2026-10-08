@@ -11,7 +11,7 @@ import signal
 import subprocess
 import sys
 import time
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZIP_DEFLATED, BadZipFile
 from typing import Annotated, Optional
 
 import typer
@@ -150,7 +150,7 @@ def resource_operation(saved, name, source, action):
         return workshop.build()
 
 
-def build_project(saved, name, source, native, events):
+def build_project(saved, name, source, native, events, *, player=False):
     events.emit({'status': 'building', 'message': text('building', name=name), 'plugin': name})
     if not native:
         adapter = json.loads((source / 'mod.json').read_text(encoding='utf-8')).get('native_adapter')
@@ -199,6 +199,16 @@ def build_project(saved, name, source, native, events):
         released = output / (name + '.h5u')
         shutil.copyfile(artifact, released)
         shutil.copyfile(artifact.with_suffix('.build.json'), released.with_suffix('.build.json'))
+        if player:
+            from plugin_core import package_resource_player
+            try:
+                archive = package_resource_player(DEVKIT, released, name, output / (name + '.zip'))
+            except (OSError, ValueError, RuntimeError, BadZipFile) as failure:
+                events.emit({'status': 'resource_package_failed', 'diagnostic': str(failure)})
+                raise CommandFailure(error('SDK_RESOURCE_PACKAGE_FAILED', diagnostic=str(events.directory))) from failure
+            events.emit({'status': 'released', 'message': text('resource_player_released', path=archive, resource=released),
+                         'artifact': str(archive), 'resource': str(released)})
+            return str(archive)
         events.emit({'status': 'released', 'message': text('resource_released', path=released), 'artifact': str(released)})
         return str(released)
     toolchain, compiler, environment, built, loader = native_tools(saved, events)
@@ -685,7 +695,13 @@ def build(name: Annotated[Optional[str], typer.Argument(help=text('project_argum
 @app.command(help=text('release'))
 @logged_command('release')
 def release(name: Annotated[Optional[str], typer.Argument(help=text('project_argument'), autocompletion=complete_projects)] = None):
-    build(name)
+    saved = settings(); name, source, native = select_project(saved, name)
+    events = EventLog(Path(saved['workspace']) / '.local/xalkit/logs', console=True, plugin=name)
+    try:
+        artifact = build_project(saved, name, source, native, events, player=True)
+        console.print(text('result', path=artifact))
+    finally:
+        events.close()
 
 
 @app.command(name='check', help=text('check_help'))

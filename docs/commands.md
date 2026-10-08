@@ -167,7 +167,14 @@ EN: Starter display refresh waits for the complete multi-plugin core transaction
 
 RU/EN: Live source edit→build→apply, compiler failure and recovery passed in owned36324; process/monitor closed0. Observed edit-to-apply7.92s, build7.56s, replacement0.26s. This native-session check does not cover resource-session distribution, pending-command transfer, tab/geometry/scroll preservation, full input acceptance or publication review. Earlier dated prototype notes below are historical.
 
-## Готовые нативные пакеты / Native player packages
+## Готовые пакеты для игроков / Player packages
+
+RU: для ресурсного проекта `xkit build NAME` создаёт H5U, а `xkit release NAME` сохраняет его отдельно и создаёт ZIP с H5U, общей графической DLL, лицензиями и README.txt на русском и английском. DLL берётся из проверенной папки runtime готовой поставки SDK: компилятор для этого не нужен. Игроку не нужны xkit, Python, консоль разработчика или контроллер. При первой установке нужно сохранить исходный bin/d3d9.dll игры под именем d3d9.universe.dll, затем скопировать bin и UserMODs из пакета. Сохранённый оригинал не заменять; для нескольких модов использовать одну версию общей DLL. Последующие обычные запуски Heroes/Lobby подключают её автоматически. Новая упаковка ресурсного мода пока находится в рабочей версии, не в preview.4.
+
+EN: For a resource project, `xkit build NAME` creates an H5U; `xkit release NAME` retains it separately and creates a ZIP with the H5U, shared graphics DLL, notices and bilingual README.txt. The DLL comes from the validated runtime in the prepared SDK, without invoking a compiler. Players need no xkit, Python, developer console or controller. On first installation, retain the game original bin/d3d9.dll as d3d9.universe.dll, then copy the package bin and UserMODs folders. Keep the retained original unchanged and use one shared DLL version for several mods. It connects automatically during subsequent ordinary Heroes/Lobby launches. This new resource packaging is in the working tree, not preview.4.
+
+RU: если готовые файлы SDK устарели или ресурс изменился после сборки, release завершается ошибкой и сохраняет прежний ZIP. Причина записывается в журнал; полученный H5U остаётся доступен. Не распространяй папку runtime девкита вместе с модом: в пользовательский ZIP входит только нужная графическая DLL.
+EN: If SDK runtime files are stale or the resource changed after build, release fails and keeps the previous ZIP. The reason is logged; the separate H5U remains available. Do not distribute the developer runtime folder with a mod: its player ZIP contains only the required graphics DLL.
 
 ### В разработке: владелец callback справочника / In development: bank callback owner
 

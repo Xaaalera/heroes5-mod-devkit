@@ -719,3 +719,12 @@ msgstr "Game exited before SDK requested shutdown; inspect exit code and Windows
 
 msgid "xalkit.log_sandbox_background_enabled"
 msgstr "Background updates enabled only in the test profile"
+
+msgid "xalkit.resource_package_failed"
+msgstr "The resource player package could not be created. Use the complete SDK archive with its matching runtime and retry release. Details: {diagnostic}"
+
+msgid "xalkit.resource_player_released"
+msgstr "Player ZIP: {path}\nSeparate H5U: {resource}"
+
+msgid "xalkit.resource_player_readme"
+msgstr "{name}: resource mod with a shared startup compatibility DLL.\nPlayers need no xkit, Python or compiler.\n1. Close the game and extract this ZIP into a separate folder.\n2. Before first installation, back up bin/d3d9.dll. Rename the original supported Universe DLL to d3d9.universe.dll. Keep an existing retained original unchanged; do not rename another mod's DLL as the original.\n3. Copy this archive's bin and UserMODs folders into the game folder. Its graphics DLL connects automatically when you start Heroes/Lobby normally.\nFor multiple mods, keep the same version of the shared graphics DLL.\nRemoval: close the game and remove {resource}. Keep the shared DLL while any other mod uses it. After removing all mods that use it, remove our bin/d3d9.dll and restore the original name from d3d9.universe.dll.\nThe separate H5U remains available for installations that already have a working compatible graphics chain. This ZIP contains no developer console, controller or SDK core."

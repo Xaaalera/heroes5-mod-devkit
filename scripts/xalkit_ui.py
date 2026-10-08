@@ -6,6 +6,7 @@ from workspace import DEVKIT
 from xalkit_config import read_settings
 
 ERROR_REASONS = {
+    'SDK_RESOURCE_PACKAGE_FAILED': (409, 'FAILED_PRECONDITION', 'resource_package_failed'),
     'SDK_BANK_RECOVERY_REFUSED': (409, 'FAILED_PRECONDITION', 'recover_bank_failed'),
     'SDK_STORAGE_LOW_SPACE': (507, 'RESOURCE_EXHAUSTED', 'storage_low_space'),
     'SDK_RUNTIME_NOT_READY': (409, 'FAILED_PRECONDITION', 'runtime_not_ready'),

@@ -300,6 +300,57 @@ class XalKitTests(unittest.TestCase):
                 self.assertEqual(result.exit_code, 0, result.output)
                 self.assertEqual(build.call_args.args[1:4], ('first', self.root / 'mods/first', False))
 
+    def test_resource_cli_release_adds_player_zip_without_compiler_and_preserves_h5u(self):
+        from zipfile import ZipFile
+        from plugin_core import package_sdk_runtime
+        from xalkit_ui import CommandFailure
+        sdk = self.root / 'ready-sdk'
+        (sdk / 'native').mkdir(parents=True)
+        (sdk / 'native/core.cpp').write_bytes(b'core')
+        (sdk / 'NOTICE.md').write_text('Public runtime notice')
+        artifacts = self.root / 'runtime-inputs'
+        artifacts.mkdir()
+        built = {}
+        for role, filename in (('bridge', 'core.dll'), ('controller', 'controller.exe'),
+                               ('launch_gate', 'gate.exe'), ('console', 'XalKitConsole.dll'), ('graphics', 'd3d9.dll')):
+            path = artifacts / filename
+            path.write_bytes(role.encode())
+            built[role] = str(path)
+        (artifacts / 'XalKitConsole.LICENSES.txt').write_text('Public notices')
+        built['source_hashes'] = {'core.cpp': hashlib.sha256(b'core').hexdigest()}
+        built['console_source_hashes'] = dict(built['source_hashes'])
+        package_sdk_runtime(sdk, built, self.root / 'runtime.zip')
+        source = self.root / 'mods/marker'
+        source.mkdir(parents=True)
+        (source / 'mod.json').write_text('{}')
+        resource = self.root / 'marker.h5u'
+        with ZipFile(resource, 'w') as contents:
+            contents.writestr('UI/MainMenu2/Version.txt', b'marker')
+        resource.with_suffix('.build.json').write_text(json.dumps({
+            'artifact_sha256': hashlib.sha256(resource.read_bytes()).hexdigest()}))
+        with patch.object(xalkit, 'DEVKIT', sdk), \
+                patch.object(xalkit, 'resource_operation', return_value={'artifact': str(resource)}), \
+                patch.object(xalkit, 'native_tools', side_effect=AssertionError('Compiler must not run')):
+            built_result = self.runner.invoke(xalkit.app, ['build', 'marker'])
+            self.assertEqual(built_result.exit_code, 0, built_result.output)
+            output = self.root / '.local/xalkit/releases/marker'
+            self.assertTrue((output / 'marker.h5u').is_file())
+            self.assertFalse((output / 'marker.zip').exists())
+            released_result = self.runner.invoke(xalkit.app, ['release', 'marker'])
+            self.assertEqual(released_result.exit_code, 0, released_result.output)
+            self.assertIn('marker.zip', released_result.output)
+            with ZipFile(output / 'marker.zip') as package:
+                self.assertEqual(package.read('UserMODs/workshop-marker.h5u'), resource.read_bytes())
+                self.assertEqual(package.read('bin/d3d9.dll'), b'graphics')
+            previous = (output / 'marker.zip').read_bytes()
+            (sdk / 'native/core.cpp').write_bytes(b'stale')
+            refused = self.runner.invoke(xalkit.app, ['release', 'marker'])
+            self.assertNotEqual(refused.exit_code, 0)
+            self.assertIsInstance(refused.exception, CommandFailure)
+            self.assertEqual(refused.exception.payload['details'][0]['reason'], 'SDK_RESOURCE_PACKAGE_FAILED')
+            self.assertEqual((output / 'marker.zip').read_bytes(), previous)
+            self.assertTrue((output / 'marker.h5u').is_file())
+
     def test_bank_build_produces_independent_native_and_resource_package(self):
         from zipfile import ZipFile
         source = self.root / 'mods/bank'

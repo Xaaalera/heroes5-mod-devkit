@@ -200,6 +200,55 @@ def package_sdk_runtime(sdk, built, archive):
     return archive
 
 
+def package_resource_player(sdk, resource, name, archive):
+    """Keep the H5U separate and package only its compiler-free graphics dependency."""
+    from xalkit_ui import translations
+    if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', name):
+        raise ValueError('Invalid resource player package name')
+    sdk, resource, archive = Path(sdk), Path(resource), Path(archive)
+    if archive.parent.resolve() != resource.parent.resolve() or archive.is_symlink():
+        raise ValueError('Resource player archive must stay beside its H5U')
+    ready = load_sdk_runtime(sdk)
+    if ready['manifest'].get('version') != 2 or 'graphics' not in ready:
+        raise ValueError('Resource player package requires the current graphics runtime')
+    resource_bytes = resource.read_bytes()
+    build_bytes = resource.with_suffix('.build.json').read_bytes()
+    build = json.loads(build_bytes)
+    resource_hash = hashlib.sha256(resource_bytes).hexdigest()
+    if build.get('artifact_sha256') != resource_hash:
+        raise ValueError('Resource changed after its verified build')
+    with ZipFile(io.BytesIO(resource_bytes)) as contents:
+        if contents.testzip() is not None:
+            raise ValueError('Resource archive CRC differs')
+    graphics_bytes = Path(ready['graphics']).read_bytes()
+    graphics_hash = hashlib.sha256(graphics_bytes).hexdigest()
+    if graphics_hash != ready['manifest']['files']['d3d9.dll']:
+        raise ValueError('Graphics runtime changed before resource packaging')
+    resource_member = 'UserMODs/workshop-' + name + '.h5u'
+    members = {resource_member: resource_bytes, 'bin/d3d9.dll': graphics_bytes,
+               'NOTICE.txt': (sdk / 'NOTICE.md').read_bytes()}
+    readme = '\n\n'.join(translations(language).gettext('xalkit.resource_player_readme').format(
+        name=name, resource=resource_member) for language in ('ru', 'en'))
+    members['README.txt'] = (readme + '\n').encode('utf-8')
+    manifest = {'version': 1, 'kind': 'resource', 'project': name,
+                'source_build_sha256': hashlib.sha256(build_bytes).hexdigest(),
+                'graphics_original_sha256': '5eb152357f99d53397b764384d5cf9a0f6aece733ced30a34186ac57fb15be25',
+                'files': {member: hashlib.sha256(content).hexdigest() for member, content in members.items()}}
+    temporary = archive.with_name(archive.name + '.' + uuid.uuid4().hex + '.tmp')
+    try:
+        with ZipFile(temporary, 'w', ZIP_DEFLATED) as package:
+            for member, content in members.items():
+                package.writestr(member, content)
+            package.writestr('release.json', json.dumps(manifest, sort_keys=True, indent=2) + '\n')
+        with ZipFile(temporary) as package:
+            if package.testzip() is not None:
+                raise ValueError('Resource player archive CRC differs')
+        os.replace(temporary, archive)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return archive
+
+
 def validate_player_archive(archive, name):
     plugin = 'bin/Heroes5Mods/Plugins/' + name + '.dll'
     expected = {plugin, 'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt', 'NOTICE.txt'}
