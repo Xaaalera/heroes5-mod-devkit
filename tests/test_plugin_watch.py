@@ -106,12 +106,20 @@ class PluginWatchBoundaries(unittest.TestCase):
             metadata = watch / 'diagnostic-owner.json'
             metadata.write_text(json.dumps(endpoint), encoding='utf-8')
             response = Mock(returncode=0, stdout='{"ready":true}\n{"status":0,"dispatch_returned":true}\n', stderr='')
-            with patch.object(plugin_core.subprocess, 'run', return_value=response) as run:
-                result = plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, 'help')
-                self.assertFalse(result['effect_verified'])
-                self.assertEqual(run.call_args.args[0][1], '--owned-command')
-                self.assertEqual(run.call_args.kwargs['input'], 'console help\nquit\n')
-                run.assert_called_once()
+            for kind, command, wire_input in (
+                    ('console', 'help', 'console help\nquit\n'),
+                    ('event', 'screenshot', 'game-event screenshot\nquit\n'),
+                    ('script', 'print(1)', 'game-script print(1)\nquit\n')):
+                with self.subTest(kind=kind), patch.object(plugin_core.subprocess, 'run', return_value=response) as run:
+                    result = plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, command, kind=kind)
+                    self.assertFalse(result['effect_verified'])
+                    self.assertEqual(run.call_args.args[0][1], '--owned-command')
+                    self.assertEqual(run.call_args.kwargs['input'], wire_input)
+                    run.assert_called_once()
+            with patch.object(plugin_core.subprocess, 'run') as run:
+                with self.assertRaisesRegex(ValueError, 'Unknown native game dispatch kind'):
+                    plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, 'help', kind='unknown')
+                run.assert_not_called()
             for command, owner in [('help\nexit', {'pid': 123, 'created': 456}),
                                    ('help', {'pid': 124, 'created': 456})]:
                 with self.subTest(command=command, owner=owner), patch.object(plugin_core.subprocess, 'run') as run:
@@ -130,12 +138,14 @@ class PluginWatchBoundaries(unittest.TestCase):
                     plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, 'help')
                 run.assert_not_called()
             response.stdout = '{"ready":true}\n{"status":104,"dispatch_returned":false}\n'
-            with patch.object(plugin_core, 'owned_core_endpoint', return_value={
-                    key: watch / key for key in ('controller', 'bridge')}), \
-                    patch.object(plugin_core.subprocess, 'run', return_value=response) as run:
-                with self.assertRaisesRegex(RuntimeError, 'unconfirmed'):
-                    plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, 'help')
-                run.assert_called_once()
+            for kind in ('console', 'event', 'script'):
+                with self.subTest(refused_kind=kind), \
+                        patch.object(plugin_core, 'owned_core_endpoint', return_value={
+                            key: watch / key for key in ('controller', 'bridge')}), \
+                        patch.object(plugin_core.subprocess, 'run', return_value=response) as run:
+                    with self.assertRaisesRegex(RuntimeError, 'unconfirmed'):
+                        plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, 'help', kind=kind)
+                    run.assert_called_once()
 
     def test_empty_source_failure_has_full_timing_without_build_or_game_request(self):
         with tempfile.TemporaryDirectory() as directory:
