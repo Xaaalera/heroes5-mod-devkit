@@ -193,7 +193,7 @@ class GameControlCommandTests(unittest.TestCase):
                         result = control.capture_screenshot(Mock(), 1)
                         with Image.open(result['image_file']) as image:
                             self.assertEqual(image.getpixel((0, 0)), (0, 0, 255))
-                    native_dispatch.assert_called_once_with(root, owner, 'screenshot', kind='event')
+                    native_dispatch.assert_called_once_with(root.resolve(), owner, 'screenshot', kind='event')
                     for call in mailbox.call_args_list:
                         self.assertEqual(len(call.args), 1)
                         self.assertEqual(call.kwargs, {'expected_owner': owner})
