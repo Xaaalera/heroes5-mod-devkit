@@ -9,8 +9,8 @@ EN: Live checks verify core/two-plugin replacement, added functions/core export,
 
 **Xaaalera Toolkit SDK** — инструменты разработки модов Heroes V Universe / tools for Heroes V Universe mod development.
 
-RU, 2026-10-08: опубликован [v0.1.1-preview.4](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.4). Для разработки установи xkit по инструкции ниже. Для игры с готовым модом устанавливать xkit, Python или компилятор не нужно: следуй README.txt пакета мода и запускай игру обычным способом. Общие DLL из нативного пакета подключаются автоматически; ресурсный H5U устанавливается в UserMODs.
-EN: [v0.1.1-preview.4](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.4) is published. Install xkit for development using the instructions below. To play with a ready mod, no xkit, Python or compiler installation is needed: follow the mod package README.txt and start the game normally. Shared DLLs from a native package load automatically; install a resource H5U in UserMODs.
+RU, 2026-10-08: опубликован [v0.1.1-preview.5](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.5). Для разработки установи xkit по инструкции ниже. Для игры с готовым модом устанавливать xkit, Python или компилятор не нужно: следуй README.txt пакета мода и запускай игру обычным способом. Общие DLL из нативного пакета подключаются автоматически; ресурсный H5U устанавливается в UserMODs.
+EN: [v0.1.1-preview.5](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.5) is published. Install xkit for development using the instructions below. To play with a ready mod, no xkit, Python or compiler installation is needed: follow the mod package README.txt and start the game normally. Shared DLLs from a native package load automatically; install a resource H5U in UserMODs.
 
 ## xkit: команда `xkit` / command `xkit`
 
@@ -21,9 +21,9 @@ RU: короткий человеческий вход в SDK на Typer. Уст
 
 Установи [uv](https://docs.astral.sh/uv/getting-started/installation/) один раз. Для отдельной установки скачай SDK вместе с библиотекой Game API:
 
-RU: Скачай `xkit-sdk.zip` из [выпуска preview.4](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.4): архив содержит исходники, Game API и готовую папку `runtime`. Распакуй его, открой папку `xkit` и выполни команды установки ниже. Git-зависимости из такого архива отдельно скачивать не нужно. Разработчик SDK собирает этот архив командой `xkit sdk release`.
+RU: Скачай `xkit-sdk.zip` из [выпуска preview.5](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.5): архив содержит исходники, Game API и готовую папку `runtime`. Распакуй его, открой папку `xkit` и выполни команды установки ниже. Git-зависимости из такого архива отдельно скачивать не нужно. Разработчик SDK собирает этот архив командой `xkit sdk release`.
 
-EN: Download `xkit-sdk.zip` from [preview.4](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.4): it includes sources, Game API and the ready runtime. Extract it, open `xkit`, and run the installation commands below. Its dependencies do not need a separate Git download. SDK maintainers generate this archive with `xkit sdk release`.
+EN: Download `xkit-sdk.zip` from [preview.5](https://github.com/Xaaalera/heroes5-mod-devkit/releases/tag/v0.1.1-preview.5): it includes sources, Game API and the ready runtime. Extract it, open `xkit`, and run the installation commands below. Its dependencies do not need a separate Git download. SDK maintainers generate this archive with `xkit sdk release`.
 
 Альтернатива архиву — клонирование Git / Alternative to the archive — Git clone:
 
@@ -152,8 +152,8 @@ RU: Готовая поставка SDK содержит папку `runtime` р
 
 EN: A prepared SDK includes `runtime` beside this README. It supplies the console and SDK host during H5U development without requiring a C++ compiler for resource authors. When building the SDK from source, `xkit sdk build` generates these files. Extract `xkit-runtime.zip` into the devkit folder, not the game. The published `xkit-sdk.zip` already includes them. Resource start validates files/source compatibility before game launch.
 
-RU: `xkit build` создаёт отдельный H5U. `xkit release` дополнительно создаёт ZIP для игрока: H5U, общая графическая DLL, лицензии и инструкция установки. В ZIP нет ядра SDK, консоли разработчика или контроллера. Игрок распаковывает пакет по README.txt и запускает игру обычным способом; xkit ему не нужен. Эта возможность пока находится в рабочей версии; архив preview.4 её не содержит.
-EN: `xkit build` produces a separate H5U. `xkit release` also creates a player ZIP containing the H5U, shared graphics DLL, notices and installation instructions. It contains no SDK core, developer console or controller. Players follow README.txt and start the game normally, without installing xkit. This addition is in the working tree; preview.4 does not include it.
+RU: `xkit build` создаёт отдельный H5U. `xkit release` дополнительно создаёт ZIP для игрока: H5U, общая графическая DLL, лицензии и инструкция установки. В ZIP нет ядра SDK, консоли разработчика или контроллера. Игрок распаковывает пакет по README.txt и запускает игру обычным способом; xkit ему не нужен. Эта возможность опубликована в preview.5; архив preview.4 её не содержит.
+EN: `xkit build` produces a separate H5U. `xkit release` also creates a player ZIP containing the H5U, shared graphics DLL, notices and installation instructions. It contains no SDK core, developer console or controller. Players follow README.txt and start the game normally, without installing xkit. This addition is published in preview.5; preview.4 does not include it.
 
 ```powershell
 xkit new my-resource-mod --resources
