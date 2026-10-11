@@ -1,0 +1,1930 @@
+{
+  "diffHash": "d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02",
+  "commitSha": "6984e9d2d2ff66755725850df918a63db0782570",
+  "perAgent": {
+    "craft": {
+      "reviewer": "/root/game_api_dimensions_craft",
+      "head": "6984e9d2d2ff66755725850df918a63db0782570",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02",
+      "verdict": "PASS",
+      "score": 10,
+      "findings": [],
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "craft",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "The exact SDK source publication diff introduces no established CRAFT defect."
+      },
+      "evidence": [
+        "Read SDK AGENTS.md, CONTRIBUTING.md, README.md, docs/commands.md, CRAFT contract and configured rules. Actual installed solid, ockham, conventions, ui-strings and responsive-layout guides were loaded earlier in this reviewer conversation and reused. JS conventions do not govern Python; no changed rendered UI prose/layout requires localization/viewport work.",
+        "Independently confirmed HEAD and read-only review:info base/diffHash. Cumulative86 paths accounted: git ls-tree comparison against published1b80835 establishes81 unchanged states, including one path absent in both trees, and five current deltas. Earlier Git rev-parse attempt on the absent path emitted expected missing-path errors; robust tree-entry comparison resolved that count without treating the errors as source defects.",
+        "Read actual prior1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef attestation: CRAFT PASS10 by /root/game_api_publication_craft atc239d4d2beba8a7976f0de0b0e6d30cb5fc75c08. Git diff verifies the only change betweenc239d4d and1b80835 was addition of this attestation. Prior CRAFT findings/evidence apply to verified unchanged bodies, rather than being presented as a fresh broad audit.",
+        "Inspected all five deltas: existing CoreClient.send/request optional timeout, colocated test, AGENTS image authorization, configured policy and Game API gitlink. Repository scripts/tests search confirms existing response queue, CoreClient command route and default caller paths are reused. No extra client, deadline module, duplicated transport or abandoned old method is introduced.",
+        "CoreClient keeps descriptive timeout/deadline/remaining/console_replacement names and performs deadline calculations within the existing send operation; request preserves its existing default invocation shape. The small conditional handles explicit versus existing budgets without speculative dispatch infrastructure.",
+        "Independently matched scripts/plugin_core.py SHA256a1807c9d62499c10202af1c958891c287a31da3514a66fecd4999c622ee4bb23 and tests/test_plugin_watch.py SHA256a29b0cdb13bdb4439848bf3b996810f54d931a61dc13d4a0b75bd15b2d40544f. Read supplied managed-session-transport architecture/security/tests followup receipts; their source identities and limits match this deadline delta.",
+        "Read sdk-deadline-deterministic-gates.json and retained gate log tails:214 unit tests PASS20.055s,9 native tests PASS4.95s,Node contract8/8PASS,explicit-base secretsPASS. Receipt process durations differ from inner test durations; they are not interchangeable. No gates were executed by this reviewer.",
+        "SDK gitlink now names256f8be968c27c3c591adb77867979ef6e2ba0f0, the parent-confirmed public Game API commit. Canonical API/inventory draft changes were separately critiqued in this session; source publication of SDK must precede their publication. Repository pointers remain canonical-site entry points.",
+        "Image policy requires explicit owner requests and programmatic oracles consistently; no screenshot evidence was used for this review."
+      ],
+      "limits": [
+        "Read-only tracked source and explicitly supplied evidence review; only requested private result JSON written. No tests/builds/game actions/input/images/commits/push/attestation writes.",
+        "Source publication verdict only; no player archive, full managed campaign, new live query or final artifact startup certification.",
+        "Optional deadlines reject late acceptance after blocking calls return; they do not forcibly interrupt OS writes or reads and do not promise hard real-time return. Unconfirmed calls remain uncertain and must not be replayed.",
+        "Canonical four article files remain draft pending SDK publication and website gates; this verdict does not claim deployment.",
+        "Whole cumulative scope is accounted through verified old-proof reuse plus five current deltas; unchanged history was not broadly reread."
+      ]
+    },
+    "architecture": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "Codex /root/release_native_arch_review",
+      "lens": "architecture",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "HEAD": "6984e9d2d2ff66755725850df918a63db0782570",
+      "diffHash": "d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02",
+      "findings": [],
+      "summary": {
+        "agent": "architecture",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "The cumulative SDK source preserves adapter/runtime/mod ownership; optional Python request budgets retain defaults and uncertain-call lifecycle semantics."
+      },
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged",
+          "evidence": "new bounded delta judged",
+          "sha256": "86fb4383b14d49a3c0d6177726060df825d4c2c4520453b7360e37c0392df00f"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "29e3eeaaf0e1a59b5da6800ad45d77304b02b2d1f16e18330d2bc69081de0ef3"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "34df83c665b434aaa14525caae8fbbcbc7c426280a55940a7f481a85a016d9a3"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a860c0f562f7bf46cd5ddf8cbf68f2b5a6a2575cb621bda2020dbc82f2180b62"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged",
+          "evidence": "prior validated attestation metadata inspected",
+          "sha256": "d48cd943a1f0d5e01044c0c82ddb8358e14a4c728ef10213706ba72f0fc67202"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "status": "deleted; unchanged since prior attested source"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "0907feb5b1d8094d909c6f042cef0a37591f5b4459f01734557818fd4a5bb14f"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged",
+          "evidence": "new bounded delta judged",
+          "sha256": "f499ad7b0c847444e432970c1e22d36404ea027e7e3cbf5bccf388198543a970"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "c852b126a097aabeeff8268f92fc15515d13ba33bcec8db1027ab213f4b1e086"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "d03d7169a4ba4b57d3b561fdd1468ecb54d55262f6b37a9561988a7cfdd35d69"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "72c92696c50db1ca6d448400435b5c37ce12f7f3da5d71f280974390bcf7dcae"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a6f61c5a4cb1ed066b99ef8e9fcf08ee4f518d601f25bacff3e16668d963af8b"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "1f0b9446c88a4589d91cce446d9fcbeb2403db0b74dabd8006ebc7f04f3d18d9"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged",
+          "evidence": "new bounded delta judged",
+          "gitlink": "256f8be968c27c3c591adb77867979ef6e2ba0f0"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "9b0172ca971092d6fc1ef15b24a44eb3435d6d47a503e2684fc343c58175a1e7"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "b5ced6d8d853208f7c38b98608f419c85ae04cb175dce049f4a4c7d64048893e"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "9a92fa9571e5d225219177fcf0d271c857e99efd6e5a5f60c5f5271bd5d4f8c8"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "14af8dc7839924a9a584607a878135672c2ad10f953cc345b6ed3f13d821a328"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "62965359f23032c5450dec04afb0757d2c32f42546c79d2417b15eef4713de93"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "2e4730fbdf70184ac9248cac531a692ebe38cd6d3c7f93476150dc23e99b4f97"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "ebfc63ca372edf6fdc9d734b952265b495db7e08f702bb65b5f74cc8eb6dfc76"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "b859e79758751b37e815937f5a3e513abfc6c1b186aa51d98a0931540334f893"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "3ba14da20947dccd7ec72996682e70892ed5b65345570cc568fc4619fcc99f6c"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "5b93131267b0df8e1d59f068fcfd81e2a0c1f5c314841e1eec8b002118947f55"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "c2655faabb21198065eddceae85342d0c3af189875c2b88cf9ee1109bb2ab39d"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "f2c0c98ade5a1b33e742e94bd895a37eb346dd2978f86ce50b03a50b9e362d88"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "cf8e48e3f723b657bd5431d80d777a0a06515ad361b1d3bbc268806985e581e3"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "0ed45c34207264e1082d4df31e0ada1f528886ed9406d828fe35aea7071c1e21"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "686164aa197c613ecf99bfff88dc95675b575a7e7052079c9b31173f2b84bc81"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "f2b2ad6f3e378347c3a725c563a330020e456c6fdd414b21846a21c5ddc84f80"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "d8f8bc458e117232c9b70843409de3fe4230540362cd2bc5d79042ecf2d9c7f0"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a5f867f5e77e76990a33238994e61ab371d496141bd21b3532f45ee4ec0b5d03"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "8e3b1072b3295f38f262f9251efab89af0071ef035baceb9ae1aa9feaa04c3c9"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "e898c92b6476986aff507a8aff73a7f3d0aea4b81685d2aaf35a5bf237cd18f1"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a753a907fbd8e6a154f1b429f85063f84ced0346bb1c74b35f09b0e16801b6a5"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "9266896566105857e0671c53048c2ab5ece6ee9c7f2fc9cb811cdaf47550ac4d"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "0f23f157eb4e62928bed49d05512c169d1d5b029e84c2774780c6e8ce379fbcd"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "9c751db93118b8cc0a46e86f482969e35ba75373423939e3dff652f5bb5a517d"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "181379d51af26c1e8deda0827384871d515abe9da5e8d331cded05c6993f79fb"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "71baec6ffbf8311ec8d726b5006a921b557f41e72da30b3f9c283bd8dc49bf82"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "bd4dc30d7e53645f150c3d4b36e052041eb398e2a68d3d86cd3a66bca14f7cb9"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "cdd095b7ef45c5f35dcbb42be568be6ee643d24c154552c36d15621fbe3086be"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "706e66b0af61a885c0e7d65f28dac55e91ba1f608a905b549c50594c637e55ec"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a08490a64fa35d76ac462f9806dd8e95450b4c46a50bc96128c07475bcbb1a2c"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "9cf2ad165bc8ae9c46f83492533925d92ce1aab01096ef902b1da622ac0b2828"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "c80661d06aeeaa6904b700e28ac03c14a0b23116b5f0cf66b064dce64ddb250d"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "4773673e425c77e37a2037bce89c8d4a87b702733eebacbeb46416ab66b99465"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "8a98fb9a057386be4d4c177f60d1d08ddd466e258e96ca3e4f80d62ccedd2a53"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "7e72b72a9a58c379cd4e2643fee7b5274d666153551f60959adeddbf41b070d1"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "cefa2da49cbbb578186b170de434569929045e8c2e6ac151919dc9faf33db5c4"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "0f11deb845dfb5abc3acd02542f17f51777ec6d2e52f15ee9afa0cea40567872"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "eb62ab3b111f65ca1346fc384bf850a4ccbe8be70b811f8dfcb1583befc31f5d"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "1ff0ec23d8e97ebba51add2cf7dddcdfa794ee35991319822bdb023de6f4e306"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "fd1b511544ac7bbe22896981b0940e8e2d0abb5bef344c2bb40df6673627ac1a"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "099e3e96bad0d5b7974482df095eefc5555cfc8148267df1cf1baa03cd5fb9ba"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "e6545fdd2fa9f045272e317281523b8407cbf0090ac3e0f757764df1c5147f20"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "8136483eff199d1219cdb69e2bc5077e8fa6d3589c47f7e14164bc75861ab6b0"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "e0eead9998dd4da96177ffb77574c2f244bb45f490e59b4edb93e941ded9b6e5"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "b98074ed57faa4589e0e03f73c4ce0a3b00a96035c5d9899887077c23a83ebe4"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "408b7693107a257b3b208423040d9a50a2c3edb196d868c47cebd1c8ed1a27f0"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "f3d6dd4756996d92ae5c479b319b1922275eebeb672797aa73ce790813ec6bd9"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "78064b24740c8a433b07ad017a2ce7a892e4d1fa42e8e8c8fd43a85cbdf510ed"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "6c32a1e0c6f0be82a505a9317990eafecbd660812820a13c7104473eb0786ba8"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "e68e0eee55c7379a445732ae5165fd1d0ccf67274a8e7eb0fbb45f94e155cab0"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "e2a551a2d056c4d2823c1d5efaec6121647dc4fea6b371b7ed9630be3680368c"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "0a8728f34db03ed15f81d188fe91382a66c67af7e9a70ec2e6818636176147fc"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged",
+          "evidence": "new bounded delta judged",
+          "sha256": "19c78a05e94cb402036e069c54b054b73f686958639f89d1f5032fe00964501d"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "677aaa34171f6e29734a456c038d48e3b4170c2da1156c4c9a38b675ab6c1cce"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "67eb054c1b63a02bb4daefc6967506856ea09115157127b6206b9038b274b25b"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "c424836dcebe35091ce80002da69cb72e744eca8f2298318c3cd0e6320ca26a8"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "89bd1d4103535b4c0980e23c57bef1a659cf312a15987caf864c5a75ca523b7d"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "227e244d57499f7cd0249639732f7b9184825860a448c70962d510b18528615a"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a2a9ec673337d6fba0e0f56ca86be5cddfc4aa6fa424fe9167956a81e1424a08"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "1ba42ffccddfdaea1701fc46cf0bb9ea33c240e3aee542a757bafc89638d35c1"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "b5f10ce9cc3867fc0d37b49ac752c820bfbdbd6e84404660e1f68b7c02e0d39e"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "30b82982eb74663bd3639dc7840e04cd9c236cbf5562af34ee37f57f2869141e"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "7b087d91af322fe31286499a8a4b11d2a324eccd5bbd6fd8dbc2ff5dfe61cd26"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "883d28a69143be8478f2cf9ea87720122a7582c155c3c01f6875b1d49d6c8262"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged",
+          "evidence": "new bounded delta judged",
+          "sha256": "e9d61bdd67b993dff4f26e25a298c00b119c39359788c04caeac2c44c856528b"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "9211dd45b5ef5823a2448d86900f570d0868ae0de173a5a75aba15bf26516ef5"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "96e63ef3ec99332acdf7d5ba2109f92c6d05606e13f4b3f8a8c6a0300114f04d"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "a62cfa05d8984375f4ccb00b1c9a9381da2833b81376b12df2b495681e8864d3"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "0018d529107a41e3a37bf29ea486d414b19209b5b1fbbb29f38564fb37a7d48b"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "49857f502eba9cf9206a3fa0b57e83c1e09585ec6823ed42e8d3b7ff28c8ed1b"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "3fd36fce56d946f0efd5e461b487754a3cf02a9bbf2d9045e2b60613fa7297ed"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged",
+          "evidence": "unchanged prior source/deletion and retained architecture judgment verified",
+          "sha256": "31bb2d98df61d1d5ff13348f5fc04dc837c3a89193990d6d498c71594b92dede"
+        }
+      ],
+      "scope": {
+        "paths": 86,
+        "documentation_paths": 5,
+        "configured_threshold": 8,
+        "published_baseline": "1b80835154e58a0ea356c816438d6d6a4a2c907d",
+        "prior_attested_source": "c239d4d2beba8a7976f0de0b0e6d30cb5fc75c08",
+        "prior_attestation": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+        "prior_report_sha256": "551341713500883c077521a3082c35e6cd283b4864d56dc6dd4382f0122e42be",
+        "unchanged_prior_regular_file_hashes_reverified": 79,
+        "unchanged_deleted_paths": [
+          ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json"
+        ],
+        "committed_source_sha256": {
+          ".claude/review.config.json": "86fb4383b14d49a3c0d6177726060df825d4c2c4520453b7360e37c0392df00f",
+          ".github/workflows/verify.yml": "29e3eeaaf0e1a59b5da6800ad45d77304b02b2d1f16e18330d2bc69081de0ef3",
+          ".gitignore": "34df83c665b434aaa14525caae8fbbcbc7c426280a55940a7f481a85a016d9a3",
+          ".gitmodules": "a860c0f562f7bf46cd5ddf8cbf68f2b5a6a2575cb621bda2020dbc82f2180b62",
+          ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json": "d48cd943a1f0d5e01044c0c82ddb8358e14a4c728ef10213706ba72f0fc67202",
+          ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json": "0907feb5b1d8094d909c6f042cef0a37591f5b4459f01734557818fd4a5bb14f",
+          "AGENTS.md": "f499ad7b0c847444e432970c1e22d36404ea027e7e3cbf5bccf388198543a970",
+          "CONTRIBUTING.md": "c852b126a097aabeeff8268f92fc15515d13ba33bcec8db1027ab213f4b1e086",
+          "NOTICE.md": "d03d7169a4ba4b57d3b561fdd1468ecb54d55262f6b37a9561988a7cfdd35d69",
+          "README.md": "72c92696c50db1ca6d448400435b5c37ce12f7f3da5d71f280974390bcf7dcae",
+          "docs/commands.md": "a6f61c5a4cb1ed066b99ef8e9fcf08ee4f518d601f25bacff3e16668d963af8b",
+          "examples/native-counter/plugin.cpp": "1f0b9446c88a4589d91cce446d9fcbeb2403db0b74dabd8006ebc7f04f3d18d9",
+          "locale/en/LC_MESSAGES/xalkit.mo": "9b0172ca971092d6fc1ef15b24a44eb3435d6d47a503e2684fc343c58175a1e7",
+          "locale/en/LC_MESSAGES/xalkit.po": "b5ced6d8d853208f7c38b98608f419c85ae04cb175dce049f4a4c7d64048893e",
+          "locale/ru/LC_MESSAGES/xalkit.mo": "9a92fa9571e5d225219177fcf0d271c857e99efd6e5a5f60c5f5271bd5d4f8c8",
+          "locale/ru/LC_MESSAGES/xalkit.po": "14af8dc7839924a9a584607a878135672c2ad10f953cc345b6ed3f13d821a328",
+          "native/CMakeLists.txt": "62965359f23032c5450dec04afb0757d2c32f42546c79d2417b15eef4713de93",
+          "native/animation_import.def": "2e4730fbdf70184ac9248cac531a692ebe38cd6d3c7f93476150dc23e99b4f97",
+          "native/animation_preload.cpp": "ebfc63ca372edf6fdc9d734b952265b495db7e08f702bb65b5f74cc8eb6dfc76",
+          "native/animation_preload.def": "b859e79758751b37e815937f5a3e513abfc6c1b186aa51d98a0931540334f893",
+          "native/animation_preload_fixture.cpp": "3ba14da20947dccd7ec72996682e70892ed5b65345570cc568fc4619fcc99f6c",
+          "native/animation_preload_test.cpp": "5b93131267b0df8e1d59f068fcfd81e2a0c1f5c314841e1eec8b002118947f55",
+          "native/console_activation_test.cpp": "c2655faabb21198065eddceae85342d0c3af189875c2b88cf9ee1109bb2ab39d",
+          "native/console_client.hpp": "f2c0c98ade5a1b33e742e94bd895a37eb346dd2978f86ce50b03a50b9e362d88",
+          "native/console_module.cmake": "cf8e48e3f723b657bd5431d80d777a0a06515ad361b1d3bbc268806985e581e3",
+          "native/console_module.cpp": "0ed45c34207264e1082d4df31e0ada1f528886ed9406d828fe35aea7071c1e21",
+          "native/console_module.hpp": "686164aa197c613ecf99bfff88dc95675b575a7e7052079c9b31173f2b84bc81",
+          "native/crash_fixture.cpp": "f2b2ad6f3e378347c3a725c563a330020e456c6fdd414b21846a21c5ddc84f80",
+          "native/diagnostic_bus.hpp": "d8f8bc458e117232c9b70843409de3fe4230540362cd2bc5d79042ecf2d9c7f0",
+          "native/diagnostic_bus_test.cpp": "a5f867f5e77e76990a33238994e61ab371d496141bd21b3532f45ee4ec0b5d03",
+          "native/engine_hook_fixture.cpp": "8e3b1072b3295f38f262f9251efab89af0071ef035baceb9ae1aa9feaa04c3c9",
+          "native/engine_hook_owner.hpp": "e898c92b6476986aff507a8aff73a7f3d0aea4b81685d2aaf35a5bf237cd18f1",
+          "native/engine_hook_owner_test.cpp": "a753a907fbd8e6a154f1b429f85063f84ced0346bb1c74b35f09b0e16801b6a5",
+          "native/engine_hook_protocol.hpp": "9266896566105857e0671c53048c2ab5ece6ee9c7f2fc9cb811cdaf47550ac4d",
+          "native/engine_hook_service_test.cpp": "0f23f157eb4e62928bed49d05512c169d1d5b029e84c2774780c6e8ce379fbcd",
+          "native/graphics_identity.cmake": "9c751db93118b8cc0a46e86f482969e35ba75373423939e3dff652f5bb5a517d",
+          "native/graphics_proxy.cpp": "181379d51af26c1e8deda0827384871d515abe9da5e8d331cded05c6993f79fb",
+          "native/graphics_proxy.def": "71baec6ffbf8311ec8d726b5006a921b557f41e72da30b3f9c283bd8dc49bf82",
+          "native/graphics_proxy_test.cpp": "bd4dc30d7e53645f150c3d4b36e052041eb398e2a68d3d86cd3a66bca14f7cb9",
+          "native/mod_loader.cpp": "cdd095b7ef45c5f35dcbb42be568be6ee643d24c154552c36d15621fbe3086be",
+          "native/module_catalog.hpp": "706e66b0af61a885c0e7d65f28dac55e91ba1f608a905b549c50594c637e55ec",
+          "native/module_catalog_test.cpp": "a08490a64fa35d76ac462f9806dd8e95450b4c46a50bc96128c07475bcbb1a2c",
+          "native/player_launch.hpp": "9cf2ad165bc8ae9c46f83492533925d92ce1aab01096ef902b1da622ac0b2828",
+          "native/player_launch_test.cpp": "c80661d06aeeaa6904b700e28ac03c14a0b23116b5f0cf66b064dce64ddb250d",
+          "native/player_plugin.cmake": "4773673e425c77e37a2037bce89c8d4a87b702733eebacbeb46416ab66b99465",
+          "native/plugin_bridge.cpp": "8a98fb9a057386be4d4c177f60d1d08ddd466e258e96ca3e4f80d62ccedd2a53",
+          "native/plugin_bridge_client.cpp": "7e72b72a9a58c379cd4e2643fee7b5274d666153551f60959adeddbf41b070d1",
+          "native/plugin_bridge_test.cpp": "cefa2da49cbbb578186b170de434569929045e8c2e6ac151919dc9faf33db5c4",
+          "native/plugin_runtime.hpp": "0f11deb845dfb5abc3acd02542f17f51777ec6d2e52f15ee9afa0cea40567872",
+          "native/plugin_runtime_fixture.cpp": "eb62ab3b111f65ca1346fc384bf850a4ccbe8be70b811f8dfcb1583befc31f5d",
+          "native/plugin_runtime_test.cpp": "1ff0ec23d8e97ebba51add2cf7dddcdfa794ee35991319822bdb023de6f4e306",
+          "native/sdk_launch_gate.cpp": "fd1b511544ac7bbe22896981b0940e8e2d0abb5bef344c2bb40df6673627ac1a",
+          "native/selector_runtime.hpp": "099e3e96bad0d5b7974482df095eefc5555cfc8148267df1cf1baa03cd5fb9ba",
+          "pyproject.toml": "e6545fdd2fa9f045272e317281523b8407cbf0090ac3e0f757764df1c5147f20",
+          "requirements.txt": "8136483eff199d1219cdb69e2bc5077e8fa6d3589c47f7e14164bc75861ab6b0",
+          "scripts/game-ui.ps1": "e0eead9998dd4da96177ffb77574c2f244bb45f490e59b4edb93e941ded9b6e5",
+          "scripts/game_control.py": "b98074ed57faa4589e0e03f73c4ce0a3b00a96035c5d9899887077c23a83ebe4",
+          "scripts/mod-dev.py": "408b7693107a257b3b208423040d9a50a2c3edb196d868c47cebd1c8ed1a27f0",
+          "scripts/native-probe.py": "f3d6dd4756996d92ae5c479b319b1922275eebeb672797aa73ce790813ec6bd9",
+          "scripts/native-ui-resources.py": "78064b24740c8a433b07ad017a2ce7a892e4d1fa42e8e8c8fd43a85cbdf510ed",
+          "scripts/plugin-check.py": "6c32a1e0c6f0be82a505a9317990eafecbd660812820a13c7104473eb0786ba8",
+          "scripts/plugin-control-check.py": "e68e0eee55c7379a445732ae5165fd1d0ccf67274a8e7eb0fbb45f94e155cab0",
+          "scripts/plugin-player-check.py": "e2a551a2d056c4d2823c1d5efaec6121647dc4fea6b371b7ed9630be3680368c",
+          "scripts/plugin-watch.py": "0a8728f34db03ed15f81d188fe91382a66c67af7e9a70ec2e6818636176147fc",
+          "scripts/plugin_core.py": "19c78a05e94cb402036e069c54b054b73f686958639f89d1f5032fe00964501d",
+          "scripts/sdk_console.py": "677aaa34171f6e29734a456c038d48e3b4170c2da1156c4c9a38b675ab6c1cce",
+          "scripts/sdk_console_commands.py": "67eb054c1b63a02bb4daefc6967506856ea09115157127b6206b9038b274b25b",
+          "scripts/sdk_diagnostics.py": "c424836dcebe35091ce80002da69cb72e744eca8f2298318c3cd0e6320ca26a8",
+          "scripts/sdk_logging.py": "89bd1d4103535b4c0980e23c57bef1a659cf312a15987caf864c5a75ca523b7d",
+          "scripts/sdk_storage.py": "227e244d57499f7cd0249639732f7b9184825860a448c70962d510b18528615a",
+          "scripts/test-map.py": "a2a9ec673337d6fba0e0f56ca86be5cddfc4aa6fa424fe9167956a81e1424a08",
+          "scripts/xalkit.py": "1ba42ffccddfdaea1701fc46cf0bb9ea33c240e3aee542a757bafc89638d35c1",
+          "scripts/xalkit_config.py": "b5f10ce9cc3867fc0d37b49ac752c820bfbdbd6e84404660e1f68b7c02e0d39e",
+          "scripts/xalkit_runtime.py": "30b82982eb74663bd3639dc7840e04cd9c236cbf5562af34ee37f57f2869141e",
+          "scripts/xalkit_ui.py": "7b087d91af322fe31286499a8a4b11d2a324eccd5bbd6fd8dbc2ff5dfe61cd26",
+          "tests/test_game_control.py": "883d28a69143be8478f2cf9ea87720122a7582c155c3c01f6875b1d49d6c8262",
+          "tests/test_plugin_watch.py": "e9d61bdd67b993dff4f26e25a298c00b119c39359788c04caeac2c44c856528b",
+          "tests/test_sdk_console.py": "9211dd45b5ef5823a2448d86900f570d0868ae0de173a5a75aba15bf26516ef5",
+          "tests/test_sdk_diagnostics.py": "96e63ef3ec99332acdf7d5ba2109f92c6d05606e13f4b3f8a8c6a0300114f04d",
+          "tests/test_sdk_logging.py": "a62cfa05d8984375f4ccb00b1c9a9381da2833b81376b12df2b495681e8864d3",
+          "tests/test_sdk_storage.py": "0018d529107a41e3a37bf29ea486d414b19209b5b1fbbb29f38564fb37a7d48b",
+          "tests/test_xalkit.py": "49857f502eba9cf9206a3fa0b57e83c1e09585ec6823ed42e8d3b7ff28c8ed1b",
+          "xalKit.cmd": "3fd36fce56d946f0efd5e461b487754a3cf02a9bbf2d9045e2b60613fa7297ed",
+          "xkit.cmd": "31bb2d98df61d1d5ff13348f5fc04dc837c3a89193990d6d498c71594b92dede"
+        },
+        "dependency_pins": {
+          "game-api": "256f8be968c27c3c591adb77867979ef6e2ba0f0"
+        },
+        "changed_raw_sha256": {
+          "tests/test_plugin_watch.py": "a29b0cdb13bdb4439848bf3b996810f54d931a61dc13d4a0b75bd15b2d40544f",
+          ".claude/review.config.json": "86fb4383b14d49a3c0d6177726060df825d4c2c4520453b7360e37c0392df00f",
+          "AGENTS.md": "f499ad7b0c847444e432970c1e22d36404ea027e7e3cbf5bccf388198543a970",
+          "scripts/plugin_core.py": "a1807c9d62499c10202af1c958891c287a31da3514a66fecd4999c622ee4bb23"
+        },
+        "guides_read": [
+          "actual AGENTS.md and its publication delta",
+          "CONTRIBUTING.md",
+          ".claude/review.config.json architecture rules",
+          ".agents/review/review-architecture.md actual role, byte-identical to already fully read role",
+          "installed solid/SKILL.md and ockham/SKILL.md previously loaded this reviewer session",
+          "canonical architecture-contract responsibilities/dependency/lifetime/two-modes table retained from prior full review"
+        ],
+        "retained_receipts_sha256": {
+          "managed-session-transport-architecture-followup.json": "d5a5c0911dedb2721bed566c7d17e2dcfe07029d1baf5d6baea8279e5203b95e",
+          "game-api-dimensions-architecture.json": "c1f149e3a8c0c08ba2438ad9cfbf86c6640d286c8fa470bde64f0451263b005f",
+          "sdk-deadline-deterministic-gates.json": "01e5ead8ca171e762c491607be84ad68cdd8c0dc0a0b31b17e1fae12d15082ee"
+        }
+      },
+      "evidence": [
+        "Read-only review:info independently regenerates fixed base71509e43 and currentd95aa89b at clean HEAD6984e9d. Exactly five paths differ from published1b80835; prior sourcec239d4d differs only by those five plus its validated attestation metadata.",
+        "79 prior regular-file SHA256 values match. Prior attestation deletion remains deleted. All86 cumulative paths, including the updated API Git dependency and attestation, are explicitly claimed; prior whole-source/runtime/lifecycle reviews reused only on unchanged blobs.",
+        "CoreClient.send/request raw hashes exactly match the prior bounded architecture followup. Optional timeout establishes one deadline before submission, supplies remaining response budget, rejects late write/reply using existing unconfirmed_keep_remote_code semantics and submits once. None/default behavior remains15s ordinary/50s console replacement; optional keyword preserves existing caller forwarding.",
+        "console_replacement_pending is set before submission and cleared only on an accepted reply. Uncertain/late calls retain the pending flag and existing longer cleanup/native-code retention path. No cancellation, replay or new unsafe native unload occurs.",
+        "New test uses fake clocks to inspect remaining-budget delivery, late-write/late-reply refusal, one command and invalid timeout rejection before write. Existing console-budget/cleanup test remains. Current retained log tails confirm214Python tests OK20.055s and9native tests PASS4.95s; these were run by parent, not this reviewer.",
+        "SDK native sources/ABI/exports/imports/runtime retirement/schema/source watcher/compiler/release packaging remain unchanged. The Python generic transport policy adds no mod-specific formula, payload logic or developer dependency to the player runtime. Prior complete source-layer and native lifecycle judgment remains applicable.",
+        "GameAPI Git dependency moves from public8eebef8 to public256f8be, containing the independently reviewed dimension-reader/policy/pointer-doc update and validated attestation. This is reusable native binding ownership, not predictor logic in shared runtime; no new SDK architecture layer or external technology is introduced.",
+        "AGENTS/config require explicit owner image requests and programmatic oracles. Architecture lane/base/threshold are unchanged. Canonical API/inventory draft publication remains separate and sequenced after SDK; no duplicate local manual or prematurely deployed player artifact is claimed.",
+        "No current architecture failure scenario or deduction identified; score10 follows actual configured severity calculation. This is source publication approval, not player-package or live273 acceptance."
+      ],
+      "limits": [
+        "No tests/build/game/input/images/process probing/edit/commit/publication performed. Read-only Git/review:info/source/receipt/log-tail inspection; only requested private report written.",
+        "Unchanged cumulative content covered through exact hashes/committed tree/deletion and previous judgments, not a new exhaustive SDK audit.",
+        "Deadline policy rejects late acceptance but does not forcibly interrupt blocking OS pipe writes/native reads. Unconfirmed callers must abort/cleanup under existing semantics; no response-channel resynchronization is added.",
+        "Supplied deterministic gates are scoped to current source; no fresh final artifact startup, managed campaign or standalone release acceptance inferred.",
+        "Canonical website drafts/five-critic publication are outside this source-gate artifact and must be published in the declared sequence."
+      ],
+      "timestamp_utc": "2026-10-11T11:26:14.009670+00:00"
+    },
+    "tests": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/release_native_tests_review",
+      "lens": "tests",
+      "head": "6984e9d2d2ff66755725850df918a63db0782570",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02",
+      "threshold": 7,
+      "findings": [],
+      "evidence": "Independent configured cumulative TESTS review at clean6984e9d2d2ff66755725850df918a63db0782570/hashd95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02. Verified all cumulative paths against published1b80835 and reused own approved1216198a full-base judgment only for unchanged Git objects. Five current deltas are optional CoreClient deadline/test, stricter image policy and published GameAPI256f8be pin. Python implementation/test hashes exactly match the previously closed deadline review. Independently inspected current retained Python214PASS20.055s,native9PASS4.95s,Node8PASS and secretsPASS logs. No findings; score10 exceeds7. No test rerun, game action or final player/campaign acceptance claimed.",
+      "summary": {
+        "agent": "tests",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "Current SDK publication delta has meaningful deadline regressions and passing deterministic source gates."
+      },
+      "scoreReason": "Reviewer contract:10 minus20*0 blockers minus3*0 majors minus0 minors.",
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged",
+          "evidence": "Direct deadline/test/image-policy/API-pin review",
+          "git_object": "2366c3307a9eba1fee9d66b25bcf35919ac7d6ae",
+          "sha256": "86fb4383b14d49a3c0d6177726060df825d4c2c4520453b7360e37c0392df00f"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "a24c979bbcb593ecf91a807751100639e9a84234",
+          "sha256": "29e3eeaaf0e1a59b5da6800ad45d77304b02b2d1f16e18330d2bc69081de0ef3"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "e5e53f97b3489e8fc29bd1030824a35dab46cb2e",
+          "sha256": "34df83c665b434aaa14525caae8fbbcbc7c426280a55940a7f481a85a016d9a3"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "fe94b313745a27fd28e52ca2943df0f76d43c149",
+          "sha256": "a860c0f562f7bf46cd5ddf8cbf68f2b5a6a2575cb621bda2020dbc82f2180b62"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "d35826d4da912798deb98e4adfc75c727fdb41db",
+          "sha256": "d48cd943a1f0d5e01044c0c82ddb8358e14a4c728ef10213706ba72f0fc67202"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": null,
+          "sha256": null
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "3985eebff1297839a4b47b0ea905367ae5185818",
+          "sha256": "0907feb5b1d8094d909c6f042cef0a37591f5b4459f01734557818fd4a5bb14f"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged",
+          "evidence": "Direct deadline/test/image-policy/API-pin review",
+          "git_object": "7a0c1550264d86b3696e40f58288d8ac06dedac9",
+          "sha256": "f499ad7b0c847444e432970c1e22d36404ea027e7e3cbf5bccf388198543a970"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "55f8fcdb476fba5b1139955e2102b9d46f9fea72",
+          "sha256": "c852b126a097aabeeff8268f92fc15515d13ba33bcec8db1027ab213f4b1e086"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "50dab109d53ca16885bf1df9d354d8d8b4228eb4",
+          "sha256": "d03d7169a4ba4b57d3b561fdd1468ecb54d55262f6b37a9561988a7cfdd35d69"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "e5b7e5d33d0da4f9a0bc45f2b0e13c961c59372e",
+          "sha256": "72c92696c50db1ca6d448400435b5c37ce12f7f3da5d71f280974390bcf7dcae"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "202fab95af8487f85320db51896ffa9103856fa3",
+          "sha256": "a6f61c5a4cb1ed066b99ef8e9fcf08ee4f518d601f25bacff3e16668d963af8b"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "002bfbe06f518365fc7351bfd3bffb1d4225c1dd",
+          "sha256": "1f0b9446c88a4589d91cce446d9fcbeb2403db0b74dabd8006ebc7f04f3d18d9"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged",
+          "evidence": "Direct deadline/test/image-policy/API-pin review",
+          "git_object": "256f8be968c27c3c591adb77867979ef6e2ba0f0",
+          "sha256": null
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "5aa05178b4cd35d11287f817df9a1d66d3ef4320",
+          "sha256": "9b0172ca971092d6fc1ef15b24a44eb3435d6d47a503e2684fc343c58175a1e7"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "78d62427ea731dc5282401201835a775b2d194e7",
+          "sha256": "b5ced6d8d853208f7c38b98608f419c85ae04cb175dce049f4a4c7d64048893e"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "761c0e5d67a78d3ff10560bd8b3576baef2c8784",
+          "sha256": "9a92fa9571e5d225219177fcf0d271c857e99efd6e5a5f60c5f5271bd5d4f8c8"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "8a622a8f7d10445f323ec887eef5a6ce240a6877",
+          "sha256": "14af8dc7839924a9a584607a878135672c2ad10f953cc345b6ed3f13d821a328"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "63250ca1ad52c784deef86a9bf27137562092acb",
+          "sha256": "62965359f23032c5450dec04afb0757d2c32f42546c79d2417b15eef4713de93"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "74ee8234b035e0157ba6928c1da69a1242d21e1a",
+          "sha256": "2e4730fbdf70184ac9248cac531a692ebe38cd6d3c7f93476150dc23e99b4f97"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "92fde012b04c1b12e826c6157e8f955c8fbbdf5b",
+          "sha256": "ebfc63ca372edf6fdc9d734b952265b495db7e08f702bb65b5f74cc8eb6dfc76"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "d3b64e0d504aed61884bf1ff47d353ccd64dca23",
+          "sha256": "b859e79758751b37e815937f5a3e513abfc6c1b186aa51d98a0931540334f893"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "85ce6e32f6ba1ddf89e860ee36cf65d6c5c23b71",
+          "sha256": "3ba14da20947dccd7ec72996682e70892ed5b65345570cc568fc4619fcc99f6c"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "4c722082bc7f9085c81b41d43a33d3d20b9abcfe",
+          "sha256": "5b93131267b0df8e1d59f068fcfd81e2a0c1f5c314841e1eec8b002118947f55"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "90d9d1ccc7572f733cd81494c4213dd406c4c639",
+          "sha256": "c2655faabb21198065eddceae85342d0c3af189875c2b88cf9ee1109bb2ab39d"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "9b6e47058168b672e56c42576e8575fe7f923a77",
+          "sha256": "f2c0c98ade5a1b33e742e94bd895a37eb346dd2978f86ce50b03a50b9e362d88"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "2309f10d24358a63e98bfa886d5b8ab3c491c890",
+          "sha256": "cf8e48e3f723b657bd5431d80d777a0a06515ad361b1d3bbc268806985e581e3"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "d80c508b2f0f0230bf0d581018a4397a7c14cd40",
+          "sha256": "0ed45c34207264e1082d4df31e0ada1f528886ed9406d828fe35aea7071c1e21"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "8f990c8a662f32f885213e1cc68dd2c7e60ea54b",
+          "sha256": "686164aa197c613ecf99bfff88dc95675b575a7e7052079c9b31173f2b84bc81"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "1770fa3768ed0b50927a3106b4961e75ffa0ea61",
+          "sha256": "f2b2ad6f3e378347c3a725c563a330020e456c6fdd414b21846a21c5ddc84f80"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "8f13595483d06ef1a345aff03447580254f5527f",
+          "sha256": "d8f8bc458e117232c9b70843409de3fe4230540362cd2bc5d79042ecf2d9c7f0"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "6da6c973993c469519c68ef4cccc3074a6925ff3",
+          "sha256": "a5f867f5e77e76990a33238994e61ab371d496141bd21b3532f45ee4ec0b5d03"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "42e51d3c9f0ff0f798190987a7899aa0defad74c",
+          "sha256": "8e3b1072b3295f38f262f9251efab89af0071ef035baceb9ae1aa9feaa04c3c9"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "f877199f0bb145e67434e9d9322b51bba22f2799",
+          "sha256": "e898c92b6476986aff507a8aff73a7f3d0aea4b81685d2aaf35a5bf237cd18f1"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "4a4fb2fefbf4c69a2b322195659f52f93cf946f6",
+          "sha256": "a753a907fbd8e6a154f1b429f85063f84ced0346bb1c74b35f09b0e16801b6a5"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "49bf2a406118740b911e132e2051605b416faadc",
+          "sha256": "9266896566105857e0671c53048c2ab5ece6ee9c7f2fc9cb811cdaf47550ac4d"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "865531e5c1dad4448fe05973cc64f8d294b3d6f6",
+          "sha256": "0f23f157eb4e62928bed49d05512c169d1d5b029e84c2774780c6e8ce379fbcd"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "1d9dd2aa4e0f8bbc6579df4be7cdf89fde4371c2",
+          "sha256": "9c751db93118b8cc0a46e86f482969e35ba75373423939e3dff652f5bb5a517d"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "007dff15ec85abfea9295c6245ee9a6218b09b1d",
+          "sha256": "181379d51af26c1e8deda0827384871d515abe9da5e8d331cded05c6993f79fb"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "c17662ecf8f91737120e081ce5ff087712f7d30c",
+          "sha256": "71baec6ffbf8311ec8d726b5006a921b557f41e72da30b3f9c283bd8dc49bf82"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "7d9a78e36144ef9e96613935c46e8d2d147631b0",
+          "sha256": "bd4dc30d7e53645f150c3d4b36e052041eb398e2a68d3d86cd3a66bca14f7cb9"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "f014e8710d1199b98ea797fb83a004c946e54b08",
+          "sha256": "cdd095b7ef45c5f35dcbb42be568be6ee643d24c154552c36d15621fbe3086be"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "6a83783dc2c518417725a48e93a9d0868f45d4b7",
+          "sha256": "706e66b0af61a885c0e7d65f28dac55e91ba1f608a905b549c50594c637e55ec"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "f64e30e50e2ed7aba1735b012e71df89f45e1bd9",
+          "sha256": "a08490a64fa35d76ac462f9806dd8e95450b4c46a50bc96128c07475bcbb1a2c"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "e38e470a9133a1910a744160aaae2b350c0ccf0d",
+          "sha256": "9cf2ad165bc8ae9c46f83492533925d92ce1aab01096ef902b1da622ac0b2828"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "fde3b5d5058dbc057b47f7ddb20f13480bfc139f",
+          "sha256": "c80661d06aeeaa6904b700e28ac03c14a0b23116b5f0cf66b064dce64ddb250d"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "b92b9966e0d1537247459c4745088638df85df9b",
+          "sha256": "4773673e425c77e37a2037bce89c8d4a87b702733eebacbeb46416ab66b99465"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "2035a72ffca66039b4f149b697abf6e97e0a55c6",
+          "sha256": "8a98fb9a057386be4d4c177f60d1d08ddd466e258e96ca3e4f80d62ccedd2a53"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "cd0389e0f164e15ad78194d84ef30fc8e4c972e1",
+          "sha256": "7e72b72a9a58c379cd4e2643fee7b5274d666153551f60959adeddbf41b070d1"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "9a6d4000d749813c70837315bbf092d738e15044",
+          "sha256": "cefa2da49cbbb578186b170de434569929045e8c2e6ac151919dc9faf33db5c4"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "07e68846afff59b8831870d8f5983624690ed81d",
+          "sha256": "0f11deb845dfb5abc3acd02542f17f51777ec6d2e52f15ee9afa0cea40567872"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "68b8091d5d982679abc27105abd2e6001413d171",
+          "sha256": "eb62ab3b111f65ca1346fc384bf850a4ccbe8be70b811f8dfcb1583befc31f5d"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "a12e2441d4b2632f0edfa40f5c6e7f5a187c515b",
+          "sha256": "1ff0ec23d8e97ebba51add2cf7dddcdfa794ee35991319822bdb023de6f4e306"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "50351b04df5df41a18769413e3df95dd8384762e",
+          "sha256": "fd1b511544ac7bbe22896981b0940e8e2d0abb5bef344c2bb40df6673627ac1a"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "6bf962f44f13622110544afd05afbd9bd15c22cd",
+          "sha256": "099e3e96bad0d5b7974482df095eefc5555cfc8148267df1cf1baa03cd5fb9ba"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "750f58452c66357edec65a43171ac3a1799a74df",
+          "sha256": "e6545fdd2fa9f045272e317281523b8407cbf0090ac3e0f757764df1c5147f20"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "19d9c76ea1b3ffceb4c2aa4f85a8aad241b7c593",
+          "sha256": "8136483eff199d1219cdb69e2bc5077e8fa6d3589c47f7e14164bc75861ab6b0"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "737b4ace56c09c919e41f29105c8412f124d4486",
+          "sha256": "e0eead9998dd4da96177ffb77574c2f244bb45f490e59b4edb93e941ded9b6e5"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "e92220780f836e41fed41594e2777bebb98738fe",
+          "sha256": "b98074ed57faa4589e0e03f73c4ce0a3b00a96035c5d9899887077c23a83ebe4"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "4309fe4507512601abe14cd51d5f2edca5fc0b3c",
+          "sha256": "408b7693107a257b3b208423040d9a50a2c3edb196d868c47cebd1c8ed1a27f0"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "b759ef91c846facb23e9159bb3f0462041722811",
+          "sha256": "f3d6dd4756996d92ae5c479b319b1922275eebeb672797aa73ce790813ec6bd9"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "55feca29848a13e02d196cbeea7330a15b8901ff",
+          "sha256": "78064b24740c8a433b07ad017a2ce7a892e4d1fa42e8e8c8fd43a85cbdf510ed"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "68574d73bb41bbdc269b2f5d7b7e9403579a6cd6",
+          "sha256": "6c32a1e0c6f0be82a505a9317990eafecbd660812820a13c7104473eb0786ba8"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "57f5a17593b8c8988c0a7f3a87f10d24e761fa6e",
+          "sha256": "e68e0eee55c7379a445732ae5165fd1d0ccf67274a8e7eb0fbb45f94e155cab0"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "0ead4c85bf626b8cf27b15813d6b11b4f23f06b4",
+          "sha256": "e2a551a2d056c4d2823c1d5efaec6121647dc4fea6b371b7ed9630be3680368c"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "63a6dc232684b32187c0416b3f19fcfea59dd1dd",
+          "sha256": "0a8728f34db03ed15f81d188fe91382a66c67af7e9a70ec2e6818636176147fc"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged",
+          "evidence": "Direct deadline/test/image-policy/API-pin review",
+          "git_object": "b18ec5e04a50858182d4b2782b0dcd0b83d892cf",
+          "sha256": "19c78a05e94cb402036e069c54b054b73f686958639f89d1f5032fe00964501d"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "0edd9e572454750f0b12dd188f2beed5d795a224",
+          "sha256": "677aaa34171f6e29734a456c038d48e3b4170c2da1156c4c9a38b675ab6c1cce"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "7cd002ff986e5a944b8e2a27e10944bbafc0a835",
+          "sha256": "67eb054c1b63a02bb4daefc6967506856ea09115157127b6206b9038b274b25b"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "1e912a06c13cd029951f9d7ed3a4ea688ce5f4c8",
+          "sha256": "c424836dcebe35091ce80002da69cb72e744eca8f2298318c3cd0e6320ca26a8"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "5ebaac3e76db551100ec85aa7d475f4e63400bdb",
+          "sha256": "89bd1d4103535b4c0980e23c57bef1a659cf312a15987caf864c5a75ca523b7d"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "7733a5a8c37d77e8ffb2426e3fb22c792c37c890",
+          "sha256": "227e244d57499f7cd0249639732f7b9184825860a448c70962d510b18528615a"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "6f89747040a667564797b34714e8ef71a44ebcd0",
+          "sha256": "a2a9ec673337d6fba0e0f56ca86be5cddfc4aa6fa424fe9167956a81e1424a08"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "806968b81af54d30b87cf704e6059056f47142d3",
+          "sha256": "1ba42ffccddfdaea1701fc46cf0bb9ea33c240e3aee542a757bafc89638d35c1"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "6ac3e8bcdf61cc0ae5b9b5933794eb563707001c",
+          "sha256": "b5f10ce9cc3867fc0d37b49ac752c820bfbdbd6e84404660e1f68b7c02e0d39e"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "1e2ee3aa95867292d01140a629dbdf5cc5cbf38e",
+          "sha256": "30b82982eb74663bd3639dc7840e04cd9c236cbf5562af34ee37f57f2869141e"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "ca652aed0227963a1c1ad47f388e03e9aca97b1a",
+          "sha256": "7b087d91af322fe31286499a8a4b11d2a324eccd5bbd6fd8dbc2ff5dfe61cd26"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "4536a6cedfbd969a506c93cab836f037bd135909",
+          "sha256": "883d28a69143be8478f2cf9ea87720122a7582c155c3c01f6875b1d49d6c8262"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged",
+          "evidence": "Direct deadline/test/image-policy/API-pin review",
+          "git_object": "9e816f06e5a828a9c7926471e6cfe050a787acac",
+          "sha256": "e9d61bdd67b993dff4f26e25a298c00b119c39359788c04caeac2c44c856528b"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "e7bbb0b26d9abdfba207c2820d5db292e705d625",
+          "sha256": "9211dd45b5ef5823a2448d86900f570d0868ae0de173a5a75aba15bf26516ef5"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "ded425b29b90b6425721ddb5087497c5e6a685ea",
+          "sha256": "96e63ef3ec99332acdf7d5ba2109f92c6d05606e13f4b3f8a8c6a0300114f04d"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "8807e17ab08f4c36e6a69971b6035baeae132eaa",
+          "sha256": "a62cfa05d8984375f4ccb00b1c9a9381da2833b81376b12df2b495681e8864d3"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "575a5cb7a3e44dee9ab6a044f70f88e5b3d3d772",
+          "sha256": "0018d529107a41e3a37bf29ea486d414b19209b5b1fbbb29f38564fb37a7d48b"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "02256b35f43147b1417051b260ce41e91d2f50e6",
+          "sha256": "49857f502eba9cf9206a3fa0b57e83c1e09585ec6823ed42e8d3b7ff28c8ed1b"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "432cf2c8bbc33cf37c78ebfa497477726393d68b",
+          "sha256": "3fd36fce56d946f0efd5e461b487754a3cf02a9bbf2d9045e2b60613fa7297ed"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged",
+          "evidence": "Reuse prior approved cumulative TESTS scope after exact published1b80835 Git object/deletion equality",
+          "git_object": "35d03e4e1aa8880300426dfe56d5fdcc6ad118ea",
+          "sha256": "31bb2d98df61d1d5ff13348f5fc04dc837c3a89193990d6d498c71594b92dede"
+        }
+      ],
+      "scope": {
+        "repository": "D:\\Pk\\Heroes5ModsFolder\\devkit",
+        "cumulative_paths": 86,
+        "documentation_paths": 5,
+        "current_delta_paths": [
+          ".claude/review.config.json",
+          "AGENTS.md",
+          "game-api",
+          "scripts/plugin_core.py",
+          "tests/test_plugin_watch.py"
+        ],
+        "published_baseline": "1b80835154e58a0ea356c816438d6d6a4a2c907d",
+        "prior_attested_source": "c239d4d2beba8a7976f0de0b0e6d30cb5fc75c08",
+        "prior_attestation_diffHash": "1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef",
+        "prior_attestation_sha256": "d48cd943a1f0d5e01044c0c82ddb8358e14a4c728ef10213706ba72f0fc67202",
+        "prior_tests_result": {
+          "verdict": "PASS",
+          "score": 10,
+          "reviewer": "/root/release_native_tests_review",
+          "evidence": [
+            "Loaded actual SDK AGENTS, configured tests lane and review-tests contract; applied installed tests-architecture. Score10 follows zero findings and meets threshold7.",
+            "Verified85-path cumulative scope.49 paths retain exact Git content since25e2de1;0eb364b..25e2de1 changes only policy and attestation metadata, so prior native/runtime/control/storage baseline review remains applicable.",
+            "Reviewed whole35-file SDK delta earlier, then current boundary fixes and pure manifest-helper extraction. Final bridge SHA5256a175cfa72e4d847a21b3768791d2c284e3e1f8b412b47e532b3e108aa088 matches reviewed source.",
+            "Creature late-result regression failed before the shared-deadline fix; all phases now use remaining budget and late matching results cannot report success.",
+            "Actual replace-export rollback regression injects owner-thread input during refresh failure; independent guard-removal and candidate-retirement-removal mutations both fail with their expected messages.",
+            "Generated native observer/interceptor, DLL generations, ownership/thread rejection, nested pure calls, POD noncommit, queued input, source replacement and final teardown have real native fixtures rather than call-only assertions.",
+            "Watcher/cache/package tests cover stale sources, includedCPP/header changes, invalid explicit sources, malformed real PE dependency tables, missing installer, unsupported dependencies and atomic failed-release preservation.",
+            "Redirected-directory test uses a real Windows junction; owned-loader restoration checks original bytes while retaining a foreign changed shared file.",
+            "Retained final native gate9/9 PASS3.65s and Python213/213 PASS20.885s were read previously; no suite rerun in this review. Pure core snapshot extraction was statically AST-equivalent to its previous method; supplied existing snapshot regression1/1 PASS0.017s.",
+            "Current RU/EN PO translation values independently match their compiled MO catalogs for207 messages each.",
+            "Candidate6 ZIP CRC, three x86 DLL identities and all current source/core manifest digests were independently checked. Corrected ordinary-startup recipe binds the actual ZIP/plugin and observes status2 before developer controller attachment.",
+            "Candidate6 normal/facts-only binaries independently preserve complete preStart reference bytes and match7/7 and2/2 neutral tuples including footprints, with zero script result observers; both receipts establish physical230x36 launcher clicks opening940x744 panels."
+          ],
+          "findings": []
+        }
+      },
+      "accepted": [
+        {
+          "area": "Optional deadline behavior",
+          "evidence": "CoreClient send starts an optional deadline before write/flush, supplies only remaining time to the response queue and refuses replies received after expiry. Invalid budgets0,-1,51,NaN are refused before any write. New test executes actual CoreClient with clock/pipe/queue seams, asserts remaining0.75 from a1-second budget, verifies single write/no replay and refuses late write or successful late reply. Source/test hashes match the closed transport followup."
+        },
+        {
+          "area": "Existing behavior and uncertainty",
+          "evidence": "timeout=None retains existing request->send call shape and ordinary response defaults; default console-replace remains50seconds. Console pending flag clears only after confirmed response; uncertainty retains it and the existing55-second cleanup path. Existing console compatibility case remains green and is included in the214-test full gate. No forced remote-code unload or timeout replay introduced."
+        },
+        {
+          "area": "API dependency change",
+          "evidence": "Gitlink now points to published256f8be. Its reviewed8237863 ancestor has source-publication TESTS PASS10 with canonical dimensions fixture and exact native header/test admission checks. Pin update adds a header reader and stricter policy/pointers without a new runtime ABI layout or unreviewed broad dependency change. Current nine native tests pass against the pin."
+        },
+        {
+          "area": "Cumulative unchanged source",
+          "evidence": "Full35-file earlier SDK native/runtime/HMR/watcher/package/ownership/path/teardown review and closed lifetime/deadline/manifest fixes remain applicable only for exact unchanged objects. Native source body, source/test configuration and existing CI mechanisms are unchanged by this five-file increment. Historical candidate6 player receipts in the old attestation remain historical; not transferred to this dependency pin or a new package."
+        },
+        {
+          "area": "Image authorization policy",
+          "evidence": "Current AGENTS/config require explicit owner image request and programmatic oracles for game state/UI properties. The reviewed evidence consists of deterministic logs/source/Win32/native fixtures. No new autonomous images or screenshot-derived numeric acceptance used."
+        }
+      ],
+      "guides_read": [
+        "Current SDK AGENTS.md,CONTRIBUTING.md and actual .claude/review.config.json TESTS lane/gates",
+        "Actual .agents/review/review-tests.md and project-review contract already loaded in this reviewer conversation",
+        "Installed tests-architecture guide including runtime-neutral unit/seam rules and case-space; JS/Vitest-only rules not mechanically imposed on Python/native tests"
+      ],
+      "gate_evidence": {
+        "receipt": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\sdk-deadline-deterministic-gates.json",
+        "receipt_sha256": "01e5ead8ca171e762c491607be84ad68cdd8c0dc0a0b31b17e1fae12d15082ee",
+        "stages": [
+          {
+            "stage": "unit-resumed",
+            "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\sdk-deadline-unit-resumed-gate.log",
+            "sha256": "de9b412fbf0eab79acb0e2591a2b096b020d9d02981f1a507c267e450e654698",
+            "exit_code": 0,
+            "command_elapsed_seconds": 21.03441060008481
+          },
+          {
+            "stage": "contract",
+            "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\sdk-deadline-contract-gate.log",
+            "sha256": "24a3e8e6f50400ffab5d50d6454e869e5d110fc392ad5257d6cb4d538580bf8a",
+            "exit_code": 0,
+            "command_elapsed_seconds": 0.6649051001295447
+          },
+          {
+            "stage": "native",
+            "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\sdk-deadline-native-gate.log",
+            "sha256": "70c646d694e8fe7328c5dc6bc620126f2a1cda6ffeef8f003c07c83e74a15cb5",
+            "exit_code": 0,
+            "command_elapsed_seconds": 10.38015710003674
+          },
+          {
+            "stage": "secrets",
+            "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\sdk-deadline-secrets-gate.log",
+            "sha256": "ee29e3cfa00516df4167c1464880ce4d6b5f2a5dd01fd7be3171912ff2e93f48",
+            "exit_code": 0,
+            "command_elapsed_seconds": 0.7200006998609751
+          }
+        ],
+        "full_wrapper_elapsed_seconds_parent_reported": 32.9001413,
+        "wrapper_recovery": "Parent reports the initial PowerShell wrapper aborted on normal unittest stderr under ErrorActionStop, with no remaining child; combined-stdout resumed wrapper completed. Current inspected unit log explicitly has214 tests/OK, so the wrapper interruption is not counted as a SDK test failure."
+      },
+      "prior_review_records": [
+        {
+          "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\managed-session-transport-tests-followup.json",
+          "sha256": "05218a814996777c3a482bc692df3586e2a514059f50e266e60ea4f7fab12704"
+        },
+        {
+          "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\game-api-dimensions-tests.json",
+          "sha256": "eec7ba90d156b9dbaba5d666e698e3a0b76930bcf306afb37982a9c5c4f4d6b5"
+        }
+      ],
+      "limits": [
+        "No tests, builds, game actions, input, images, runtime reads, source edits, commit or publication performed. Only this requested private report written; production review:info was read-only.",
+        "Retained deterministic source gates were independently read, not rerun. This judgment is source publication only.",
+        "Synchronous pipe writes/reads are checked for late acceptance after returning; optional timeout is not a forced OS-call interruption or native cancellation.",
+        "No new ordinary final-package startup, current player install/HMR or live campaign acceptance inferred. Old273 and prior player receipts do not transfer.",
+        "Prior cumulative content reused by exact Git equality, not represented as a new broad source/research audit."
+      ],
+      "written_utc": "2026-10-11T11:25:34.810805+00:00"
+    },
+    "docs": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/game_api_dimensions_docs",
+      "evidence": [
+        "Independent configured SDK DOCS reviewer /root/game_api_dimensions_docs; not the source author. Actual installed standard, wittgenstein and critique guides were loaded earlier in this conversation and applied without redundant rereads. SDK AGENTS, CONTRIBUTING, docs lane/config, validator, current diff and actual previous docs review were read.",
+        "Four exact reused blobs: CONTRIBUTING.md 55f8fcdb476fba5b1139955e2102b9d46f9fea72; NOTICE.md 50dab109d53ca16885bf1df9d354d8d8b4228eb4; README.md e5b7e5d33d0da4f9a0bc45f2b0e13c961c59372e; docs/commands.md 202fab95af8487f85320db51896ffa9103856fa3. Changed AGENTS.md current blob 7a0c1550264d86b3696e40f58288d8ac06dedac9 was directly reviewed.",
+        "Reviewed clean HEAD 6984e9d2d2ff66755725850df918a63db0782570 against configured fixed base 71509e43af0faf080d8a47ed5b3ff8c72da2a3e9; actual current info hash matches supplied target. Optional internal CoreClient deadlines and public Game API pin do not change the human command workflow.",
+        "Retained source-gate receipts are evidence only: no tests, builds, edits to reviewed sources, commits, focus/input use or game actions. Only this requested private JSON result is written. Zero findings yields score 10 under the configured deduction formula. Canonical website article publication remains separate and pending."
+      ],
+      "findings": [],
+      "review": {
+        "reviewer": "/root/game_api_dimensions_docs",
+        "files": [
+          "AGENTS.md",
+          "CONTRIBUTING.md",
+          "NOTICE.md",
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "README retains the xkit project creation, supported source-change/HMR and independent player-package purpose. Current AGENTS preserves SDK/adapter/runtime/mod ownership and explains verification authorization. CONTRIBUTING remains the canonical review-guide entry point; NOTICE retains provenance and third-party notices; docs/commands remains a canonical-site pointer."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "Current independently regenerated review:info lists exactly AGENTS.md, CONTRIBUTING.md, NOTICE.md, README.md and docs/commands.md; all five are in review.files. Four unchanged Markdown blobs match actual prior attested c239d4d2beba8a7976f0de0b0e6d30cb5fc75c08. Current AGENTS delta and surrounding rules were directly inspected. docs/commands retains Purpose/Operation/Limits/Verification and canonical links without duplicating a living manual."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "AGENTS opening RU/EN rules explicitly require an owner request for the image or visual comparison, prohibit autonomous UI capture, identify cells/grid/coordinates/window state as programmatic evidence, and require naming the property and oracle. Config matches the policy. The internal CoreClient.send/request optional timeout source specifies validation and an unconfirmed-call failure without replay; existing no-timeout calls retain previous behavior. No public command, setup parameter or mandatory user workflow changes."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "README submodule initialization command and canonical setup links are exact previously reviewed blobs. Current SDK gitlink pins published Game API 256f8be968c27c3c591adb77867979ef6e2ba0f0. The optional internal timeout adds no CLI step or prerequisite. Existing source verification steps reuse prior evidence within its limits; this reviewer executed no article commands, tests or game actions."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "Read actual perAgent.docs from .review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json and checked four unchanged blobs against its c239d4d commit. c239d4d..published 1b80835 adds only that attestation. Inspected the complete five-file incremental 1b80835..6984e9d source/config/gitlink delta. Independently regenerated fixed-base hash d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02. Read sdk-deadline-deterministic-gates.json and actual log tails: Python 214 OK, native 9/9, Node 8/8 with zero skips, explicit-base secrets PASS. No checks were rerun."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "README retains studied Universe/Windows support and separate mod/shared-dependency packaging limits. AGENTS preserves owned-session/input rules, dated prototype limits and the distinction between developer HMR and final player acceptance. Markdown scan found no raw memory addresses, disassembler address labels or personal machine paths. This is SDK source/documentation publication review only, not final artifact, live algorithm, universal battlefield or gameplay acceptance."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "Changed RU/EN AGENTS text agrees on explicit owner image requests, no autonomous capture, programmatic game facts, telemetry repair and reuse of last verified scenarios. English elaborates examples without weakening the Russian rule. Bilingual CONTRIBUTING, NOTICE, README and docs/commands reuse exact prior-reviewed blobs, including preserved required third-party notices."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "README, CONTRIBUTING, AGENTS and docs/commands retain knowledge/docs as the sole living-manual source. The updated API dependency purpose/version-source pairing is recorded in the canonical RU/EN API and inventory draft deltas, whose bounded newcomer reviews this identity performed separately. Parent reports all five independent article lenses approved final drafts; this SDK result does not certify the panel or deployed website. Website publication must follow SDK source publication; no new technology or duplicate version number was introduced."
+          }
+        },
+        "findings": []
+      },
+      "head": "6984e9d2d2ff66755725850df918a63db0782570",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02"
+    },
+    "security": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/player_article_newcomer",
+      "head": "6984e9d2d2ff66755725850df918a63db0782570",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02",
+      "findings": [],
+      "evidence": [
+        "Read SDK AGENTS, CONTRIBUTING, actual configured security lane and repository .agents/review/review-security.md; security skills empty, threshold9; applicable source guides already loaded in this session.",
+        "Clean worktree and exact HEAD independently confirmed. Read-only node scripts/review-check.mjs --info reproduces fixed base and exact final diffHash.",
+        "Read genuine old1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef perAgent.security: sourcec239d4d2beba8a7976f0de0b0e6d30cb5fc75c08, reviewer /root/release_native_security_review, PASS10 and zero findings over85 cumulative paths.",
+        "Current cumulative scope86 paths. git diff --raw old attested source..HEAD contains only the five current changed paths and addition of the old attestation;80 old cumulative paths remain exact Git blobs. Attestation blobd35826d4da912798deb98e4adfc75c727fdb41db already matches published1b80835 andHEAD.",
+        "Published1b80835..HEAD changes only scripts/plugin_core.py, tests/test_plugin_watch.py, AGENTS.md, .claude/review.config.json and game-api gitlink; no native ABI, command/controller ownership, filesystem/staging, package or dependency-manifest logic changes.",
+        "Core SHA256a1807c9d62499c10202af1c958891c287a31da3514a66fecd4999c622ee4bb23 and test SHA256a29b0cdb13bdb4439848bf3b996810f54d931a61dc13d4a0b75bd15b2d40544f exactly match my retained managed-session-transport-security-followup PASS10; re-read complete small source/test diff.",
+        "Optional command budget rejects invalid/nonpositive/NaN/>50 values before one write, bounds remaining response wait and refuses late response; default15/console50 behavior stays compatible. Failure retains unconfirmed_keep_remote_code and pending-console cleanup state, with no replay or free-on-unknown path.",
+        "Targeted regression verifies remaining wait0.75, exactly one submission on expiry/late reply, and no write for invalid budget; existing console timeout/cleanup test remains.",
+        "AGENTS/config delta requires explicit owner request before game images and programmatic oracles for numerical/state checks; it adds no credentials, private working paths, shell execution or active content.",
+        "SDK game-api pin now256f8be968c27c3c591adb77867979ef6e2ba0f0. Git ancestry confirms it contains reviewed3e37dff dimensions source;3e37dff..256f8be changes only two documentation pointers and publication attestation, as already independently reviewed in game-api-dimensions-security.json.",
+        "Read sdk-deadline-deterministic-gates.json: matching6984e9d/diffHash, passedtrue and unit-resumed,contract,native,secrets stages all exit0, with exact local log references. This is retained gate evidence, not a claim that I reran tests.",
+        "No new exposure, secret, ownership bypass, unsafe input-to-command path or hidden player dependency established by this bounded publication delta."
+      ],
+      "claims": [
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        }
+      ],
+      "limits": [
+        "Optional timeout is cooperative around blocking pipe/Win32 operations; no hard real-time interruption guarantee or proof that a timed-out remote command never ran.",
+        "Trusted local SDK caller/controller model remains; no hostile remote-service or arbitrary native-plugin isolation claim.",
+        "No tests, builds, game actions, images, source edits, commits or publication performed; only read-only info and requested private report write.",
+        "Final player artifact, ordinary startup and live273-battle acceptance remain separate; this is source publication SECURITY only."
+      ]
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-10-11T11:29:53.475Z"
+}
