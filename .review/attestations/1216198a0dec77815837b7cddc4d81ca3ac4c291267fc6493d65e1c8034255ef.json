@@ -1,0 +1,126 @@
+{
+  "diffHash": "1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef",
+  "commitSha": "c239d4d2beba8a7976f0de0b0e6d30cb5fc75c08",
+  "perAgent": {
+    "craft": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/game_api_publication_craft",
+      "evidence": [
+        "Cheap cumulative inventory contains85 paths. 25e2de1..HEAD contains36 changed paths, including the final compiler-free fingerprint helper extraction. Reused prior review only after exact Git blob comparison to its actual0eb364b commit.",
+        "Read current AGENTS, configured craft skills/rules and craft reviewer contract; guides were loaded in this reviewer conversation before judging. JS conventions were not imposed on native/Python ABI names.",
+        "Read source deltas for loader, native owner/protocol, runtime/context transport, bridge/client, catalog, selector helper, source watcher, staging, command backend/parser and packaging validation. Searched include/native/scripts/tests call sites before deciding reuse or dead-code concerns.",
+        "CoreBuild.snapshot delegates to core_source_snapshot, retaining its existing public interface while removing duplicate fingerprint code. Caller search confirms the helper is the canonical current implementation.",
+        "Native owner shares existing Game API observer storage, signature catalog and MinHook relocation; versioned request transport preserves old ABI identities. Test fixtures share production source and parameterized fixture builds rather than cloned implementations.",
+        "Watcher explicit native_sources extends the existing snapshot/cache path; shared_snapshot serves normal and bank collection. Command parser/backend reuse invalidates source/workspace changes; timeout code reads back without replaying mutations.",
+        "New catalog states and error descriptions route through existing gettext/resource generation with matching RU/EN PO keys. Console categories reuse existing ImGui list/tab controls, without a new layout mechanism. No viewport or physical rendering checks were performed.",
+        "README/docs remain canonical-site entry points; package instructions link player guides. No introduced raw numeric address explanation or parallel dependency infrastructure was established as a craft finding."
+      ],
+      "findings": []
+    },
+    "architecture": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/release_native_arch_review",
+      "evidence": [
+        "Clean committed HEAD, unchanged fixed base and regenerated read-only review-check --info hash independently verified.",
+        "Cumulative scope contains85 files. Prior attested source0eb364b8 uses the same fixed base; its delta to baseline25e2de1 is review metadata and AGENTS/config policy. Unchanged baseline Git blobs were verified before reusing the retained architecture judgment.",
+        "The35 regular-file delta from25e2de1 is covered by the prior whole-source architecture review and five-file boundary-fix review. All production/fix hashes match exactly; committed blobs match working source after EOL normalization.",
+        "Two PO inventory differences were independently reduced to EOL normalization plus removal of one trailing blank line; message content was rechecked and compiled MO hashes remain exact.",
+        "Finalf19ff628 differs from reviewed d4b5176 only by the API pin. API8eebef8 differs from reviewed5500635 only by its validated attestation file; no API production-code change was introduced.",
+        "ABI3 remains independently recognized; ABI4/5/6 use explicit size/version contracts. Legacy snapshot exports reject the smaller transport without writing it; V2 handoff includes resident schema and size.",
+        "Stable loader ownership, admitted native sites/continuations and acknowledged callback retirement bound unloads. Process-owned data remains distinct from borrowed contexts and payload code.",
+        "The transition guard blocks new native/window payload entries during replacement/stop. The runtime lifetime pin precedes dispatch-state inspection while already-admitted nested pure calls and cleanup remain possible.",
+        "Failed activation retires candidate resources/callbacks on the owner thread before rollback unload; refused cleanup retains the candidate. The reviewed regression reaches the production replacement path and distinguishes missing admission/retirement mutations.",
+        "Watcher/compiler/controller work stays in development tooling. Mod domain/UI behavior remains outside shared runtime; the separately reviewed predictor source confines SDK transport to its adapter.",
+        "Packaging selects one mod DLL with declared shared infrastructure and validates actual archive PE exports/imports/delayed imports and hashes. Resource-adapter staging/recovery is private-game tooling and preserves originals.",
+        "The creature command uses one remaining deadline budget and rejects late matching readback without replaying mutations.",
+        "Full213 Python and final9 native checks were reported for the prior f19 source; this final helper-only refresh does not claim those checks were rerun at c239.",
+        "Finalf19..c239 changes only scripts/plugin_core.py. Its exact working hash17d375 matches the bounded source-manifest follow-up; committed bytes differ only by EOL normalization. The extracted helper was AST-equivalent to the former CoreBuild.snapshot body, and the method delegates without creating a second graph.",
+        "The other84 cumulative paths and all runtime/native source blobs are unchanged from the formal f19 review. Final read-only review:info independently regenerated at c239 with the original fixed base."
+      ],
+      "findings": []
+    },
+    "tests": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/release_native_tests_review",
+      "evidence": [
+        "Loaded actual SDK AGENTS, configured tests lane and review-tests contract; applied installed tests-architecture. Score10 follows zero findings and meets threshold7.",
+        "Verified85-path cumulative scope.49 paths retain exact Git content since25e2de1;0eb364b..25e2de1 changes only policy and attestation metadata, so prior native/runtime/control/storage baseline review remains applicable.",
+        "Reviewed whole35-file SDK delta earlier, then current boundary fixes and pure manifest-helper extraction. Final bridge SHA5256a175cfa72e4d847a21b3768791d2c284e3e1f8b412b47e532b3e108aa088 matches reviewed source.",
+        "Creature late-result regression failed before the shared-deadline fix; all phases now use remaining budget and late matching results cannot report success.",
+        "Actual replace-export rollback regression injects owner-thread input during refresh failure; independent guard-removal and candidate-retirement-removal mutations both fail with their expected messages.",
+        "Generated native observer/interceptor, DLL generations, ownership/thread rejection, nested pure calls, POD noncommit, queued input, source replacement and final teardown have real native fixtures rather than call-only assertions.",
+        "Watcher/cache/package tests cover stale sources, includedCPP/header changes, invalid explicit sources, malformed real PE dependency tables, missing installer, unsupported dependencies and atomic failed-release preservation.",
+        "Redirected-directory test uses a real Windows junction; owned-loader restoration checks original bytes while retaining a foreign changed shared file.",
+        "Retained final native gate9/9 PASS3.65s and Python213/213 PASS20.885s were read previously; no suite rerun in this review. Pure core snapshot extraction was statically AST-equivalent to its previous method; supplied existing snapshot regression1/1 PASS0.017s.",
+        "Current RU/EN PO translation values independently match their compiled MO catalogs for207 messages each.",
+        "Candidate6 ZIP CRC, three x86 DLL identities and all current source/core manifest digests were independently checked. Corrected ordinary-startup recipe binds the actual ZIP/plugin and observes status2 before developer controller attachment.",
+        "Candidate6 normal/facts-only binaries independently preserve complete preStart reference bytes and match7/7 and2/2 neutral tuples including footprints, with zero script result observers; both receipts establish physical230x36 launcher clicks opening940x744 panels."
+      ],
+      "findings": []
+    },
+    "docs": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/game_api_publication_docs",
+      "evidence": null,
+      "findings": [],
+      "review": {
+        "reviewer": "/root/game_api_publication_docs",
+        "files": [
+          "AGENTS.md",
+          "CONTRIBUTING.md",
+          "NOTICE.md",
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "README identifies xkit project creation, source development/HMR and independent player packaging. Current AGENTS separates game, shared runtime, adapter, mod behavior and developer tools and states that migration does not authorize feature loss. CONTRIBUTING points to the canonical authoring and review rules."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "Current review:info independently lists exactly five Markdown paths, all assessed. Git blobs for CONTRIBUTING, NOTICE, README and docs/commands match attested baseline 0eb364b; current AGENTS and its delta were read. docs/commands is a concise source-to-site pointer with Purpose/Operation/Limits/Verification; no new living SDK manual duplicates knowledge/docs. SDK has no .claude/docs.config.json, so no nonexistent configured mechanism layer is claimed."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "AGENTS makes adapter dependency direction, mod-owned behavior, stable loader versus reloadable payload, independent mod DLL/H5U delivery and actual-final-package acceptance explicit. Inspected engine_hook_protocol, engine_hook_owner and plugin_runtime lifetime comments against canonical native-projects lifecycle requirements. Canonical native-projects explains static DLL entry-point/import checks and limits; plugin_core.validate_player_archive implements them and xkit release routes to player packaging."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "README provides direct pinned game-api submodule initialization and canonical installation links; game-api gitlink now points to published 8eebef8. Canonical devkit/native-projects provide setup, source edit/application observation, release, export inspection and recovery instructions. Generated RU/EN player README instructions specify backups, verified retained original graphics DLL, installation paths, ordinary Heroes/Lobby startup, expected result, compatibility recovery and independent plugin removal. Instructions were source checked, not executed here."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "Read current root handoff, exact candidate6-corrected-startup receipt, normal/facts receipts and source-manifest architecture follow-up. Corrected startup records exact ZIP/plugin hashes, status2, plain flags0, no startup patches and no controller before acceptance. Facts final receipt explicitly limits own quantities and records the resumed existing Start. Current plugin_core SHA256 17d375213012b8ee02088762cd95b26762ce9961b6124f22b09458d7d586fc4f matches the bounded follow-up. Historical SDK attestation/review was reused only after actual baseline-blob checks. No tests/builds/live actions were rerun or claimed."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "README and canonical guides restrict support to studied Universe on Windows and distinguish developer prerequisites from player dependencies. AGENTS retains explicitly dated old prototype observations rather than promoting them to current release acceptance. Candidate6 evidence is bounded; full migrated UI/feature parity, arbitrary hook safety, all maps/input and multiplayer are not certified. Canonical player page continues to offer experimental preview.2, not an invented new public package. Markdown scan found no numerical memory addresses or address-derived labels."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "Compared current RU/EN README, contribution and provenance material, AGENTS policy additions, canonical architecture/HMR sections, technology rows and generated package instructions. New gettext messages agree on project-found versus running-state evidence, resource preparation and invalid native_sources recovery. The key failure modes, ownership and installation/lifetime restrictions match across languages; required third-party license text remains intact."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "Repository entry points retain sole canonical ownership in knowledge/docs. Reviewed pefile==2024.8.26 addition and canonical RU/EN inventory updates naming PE entry-point/import checking and manifest version sources; nlohmann module-catalog usage is also recorded. Final core_source_snapshot extraction preserves the existing CoreBuild.snapshot graph and delegates to one helper without changing user commands or runtime behavior. New canonical article drafts retain their own publication/critic gate; neither old article records nor this source review certify them."
+          }
+        },
+        "findings": []
+      }
+    },
+    "security": {
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/release_native_security_review",
+      "evidence": "Independent configured SDK SECURITY review at clean HEAD c239d4d2beba8a7976f0de0b0e6d30cb5fc75c08, fixed base 71509e43af0faf080d8a47ed5b3ff8c72da2a3e9, independently recomputed current diff hash 1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef. The cumulative scope contains85 changed paths. Read actual security contract/config; skills list empty, threshold9. Score10 follows zero findings and the configured deduction formula. Verified48 existing unchanged Git blobs against25e2de1 and one already-absent deleted attestation path; no mismatches. The recorded prior attestation covers0eb364b8c1099fee9c0cff1e2cf5e55a53ec93b6 source, and0eb364b8..25e2de1 changes only review-policy/AGENTS/attestation metadata, which was inspected. Reused my whole35-file source review, five-file lifecycle/deadline correction review and pure snapshot-helper follow-up by current exact hashes. The two PO files have different raw hashes from the initial inventory, so their current benign four-message additions were re-inspected; their compiled MO hashes remain exactly reviewed. All other33 SDK files match the reviewed initial/fix/helper hash chain. The prior rollback lifetime Major is resolved: transition admission remains paused during replacement/stop, failed candidates retire on the owner thread before rollback unload, refused retirement retains code, and lifetime is pinned before inspecting the interceptor exemption. Earlier omission mutations and current source review establish bounded closure; no current finding remains. Reviewed source ownership/path guards, callbacks/native binding lifetime, shared input isolation, private staging/recovery, release validation/dependencies and source-fingerprint fail-closed behavior. Targeted scans across all present text files in the cumulative85-path scope found no credential literals, private keys or private machine paths. Latest f19ff62..c239d4d delta changes only scripts/plugin_core.py, SHA17d375213012b8ee02088762cd95b26762ce9961b6124f22b09458d7d586fc4f, the already-reviewed pure extraction. Inspected predictor-player-candidate6-corrected-startup.json: exact4179f8e099ed8c0e284b36817f13724f3f1cd50e34b2fe92dca11aa245bcbbc3 ordinary startup passed before developer-controller attachment; that separate receipt is not used to infer all artifact features. No tests, builds, game/input or reviewed-source edits performed; only read-only info and requested private result write. This verdict is source SECURITY acceptance, not universal runtime, all-plugin, all-artifact-feature or cryptographic reviewer authentication certification.",
+      "findings": []
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-10-11T06:11:19.437Z"
+}
