@@ -735,4 +735,3 @@ msgstr "Prototypes and SDK checks"
 
 msgid "xalkit.native_sources_invalid"
 msgstr "The native source list is invalid. Check native_sources in xalkit.json."
-
