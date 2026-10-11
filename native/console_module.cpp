@@ -2,6 +2,7 @@
 #include "graphics_build_identity.hpp"
 #include "console_module.hpp"
 #include "diagnostic_bus.hpp"
+#include "module_catalog.hpp"
 #include "../game-api/include/h5/build.hpp"
 #include <algorithm>
 #include <charconv>
@@ -369,6 +370,9 @@ DWORD WINAPI ConsoleThread(void*) {
         }
         nlohmann::json mirrored = nlohmann::json::array();
         nlohmann::json moduleStates = nlohmann::json::array();
+        nlohmann::json sourceModules = nlohmann::json::object();
+        nlohmann::json shownModules = nlohmann::json::array();
+        ULONGLONG nextModuleScan = 0;
         const auto restored = client.RestoreUiState();
         if (!restored.is_null()) {
             if (restored.at("version") != XALKIT_CONSOLE_STATE_VERSION || restored.at("owner") != catalog.at("owner")) {
@@ -517,6 +521,7 @@ DWORD WINAPI ConsoleThread(void*) {
                     if (!response.value("ok", false)) { stopping = true; }
                     else {
                         moduleStates = response.at("modules");
+                        shownModules=heroes5_sdk::MergeModuleCatalog(sourceModules,moduleStates);
                         for (const auto& event : response.at("events")) {
                             eventCursor = event.at("sequence").get<uint64_t>();
                             mirrored.push_back(event);
@@ -821,14 +826,36 @@ DWORD WINAPI ConsoleThread(void*) {
                 }
                 if (ImGui::BeginTabItem(modules.c_str(), nullptr, restoreTab == 2 ? ImGuiTabItemFlags_SetSelected : 0)) {
                     selectedTab = 2;
-                    if (moduleStates.empty()) { ImGui::TextUnformatted(empty.c_str()); }
-                    for (const auto& entry : moduleStates) {
+                    if (GetTickCount64()>=nextModuleScan) {
+                        nextModuleScan=GetTickCount64()+5000;
+                        wchar_t workspace[32768]{};
+                        const auto length=GetEnvironmentVariableW(L"H5_WORKSPACE",workspace,32768);
+                        if (length && length<32768) {
+                            try {
+                                sourceModules=heroes5_sdk::DiscoverModuleCatalog(workspace,
+                                    PRIMARYLANGID(GetThreadUILanguage())==LANG_RUSSIAN ? "ru" : "en");
+                                shownModules=heroes5_sdk::MergeModuleCatalog(sourceModules,moduleStates);
+                            } catch (const std::filesystem::filesystem_error&) {
+                                heroes5_sdk::Trace(heroes5_sdk::LogLevel::Warning,"console","Module catalog scan failed; retained previous list");
+                            }
+                        }
+                    }
+                    if (shownModules.empty()) { ImGui::TextUnformatted(empty.c_str()); }
+                    const auto renderModule=[&](const nlohmann::json& entry) {
                         const char* states[]{"loading", "active", "stopped", "failed", "unconfirmed"};
                         const auto state = entry.value("state", "");
                         const auto selected = std::find(std::begin(states), std::end(states), state);
-                        const auto label = 120 + static_cast<unsigned>(std::distance(std::begin(states), selected));
-                        const auto line = entry.at("name").get<std::string>() + " - " + Utf8(Label(label));
+                        const auto label = state=="available" ? 126u : 120u + static_cast<unsigned>(std::distance(std::begin(states), selected));
+                        const auto line = entry.value("display_name",entry.at("name").get<std::string>()) + " - " + Utf8(Label(label));
                         ImGui::TextUnformatted(line.c_str());
+                    };
+                    for (const auto& entry : shownModules) {
+                        if (entry.value("category","mod")=="mod") { renderModule(entry); }
+                    }
+                    if (ImGui::CollapsingHeader(Utf8(Label(127)).c_str())) {
+                        for (const auto& entry : shownModules) {
+                            if (entry.value("category","mod")!="mod") { renderModule(entry); }
+                        }
                     }
                     ImGui::EndTabItem();
                 }

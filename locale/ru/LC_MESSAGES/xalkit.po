@@ -724,3 +724,16 @@ msgstr "{name}: ресурсный мод с общей DLL для совмес�
 
 msgid "xalkit.agents"
 msgstr "# Project instructions / Рабочие правила\n\nRU: Текущие руководства находятся только на [сайте](https://xaaalera.github.io/heroes5-knowledge/); README содержит назначение и ссылки. При изменении поведения обновляй каноническую статью. Каждая новая или изменённая статья проходит пять независимых критиков: понятность новичку, точность, воспроизводимость, структура и перевод. Автор не считается критиком; сохраняй хеш текста и решения по замечаниям, максимум три раунда.\n\nEN: The website owns living documentation; README is a concise entry point. Update the canonical article when behavior changes. Each new or changed article needs five independent critics: newcomer clarity, accuracy, reproducibility, structure and translation. The author is not a critic; retain the content hash and finding dispositions, at most three rounds.\n\n[Canonical article standard](https://xaaalera.github.io/heroes5-knowledge/contributing/) · [SDK instructions](https://github.com/Xaaalera/heroes5-mod-devkit/blob/main/AGENTS.md)\n"
+# Native project source selection.
+msgid "xalkit.module_available"
+msgstr "Проект найден; запуск не подтверждён"
+
+msgid "xalkit.resource_adapter_prepare"
+msgstr "Моду {name} нужны подготовленные ресурсы. Запусти его через xkit start после завершения текущей сессии."
+
+msgid "xalkit.console_development_modules"
+msgstr "Прототипы и проверки SDK"
+
+msgid "xalkit.native_sources_invalid"
+msgstr "Список исходников недопустим. Проверь native_sources в xalkit.json."
+

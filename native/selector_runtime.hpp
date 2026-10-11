@@ -85,6 +85,28 @@ struct SelectorRequest {
     unsigned char* output = nullptr;
     uint32_t outputBytes = 0;
 };
+// The caller validates module provenance and package identity first. These
+// operations copy buffers; only later Bind/Attach/Invoke touch the game UI.
+inline DWORD ApplySelectorPayload(DWORD (WINAPI* control)(void*),const BankSelectorPayload& payload) {
+    if (!control) { return ERROR_NOT_SUPPORTED; }
+    SelectorRequest request;
+    DWORD result=control(&request);
+    if (result!=ERROR_SUCCESS && result!=ERROR_NOT_READY) { return result; }
+    request.expectedGeneration=request.generation;
+    request.sourceData=payload.sourceData;request.sourceCode=payload.sourceCode;request.dataSchema=payload.dataSchema;
+    if (result==ERROR_NOT_READY) {
+        request.action=SelectorAction::Initialize;
+        request.bytes=payload.initialData;request.byteCount=payload.dataBytes;
+        request.stateOffsets=payload.dataOffsets;request.stateOffsetCount=payload.dataOffsetCount;
+        result=control(&request);
+        if (result!=ERROR_SUCCESS) { return result; }
+        request.expectedGeneration=request.generation;
+    }
+    request.action=SelectorAction::Replace;request.bytes=payload.code;request.byteCount=payload.codeBytes;
+    request.codeFixups=payload.codeFixups;request.codeFixupCount=payload.codeFixupCount;
+    request.dataFixups=payload.dataFixups;request.dataFixupCount=payload.dataFixupCount;
+    return control(&request);
+}
 // Trusted x86 generated selectors only. This owns memory, not a game hook.
 // The resident host must stop hook admission and release game UI references
 // before destroying this object. Calls are serialized and must not re-enter.

@@ -3,10 +3,12 @@
 #include "diagnostic_bus.hpp"
 #include "console_module.hpp"
 #include "selector_runtime.hpp"
+#include "engine_hook_protocol.hpp"
 #include "../game-api/include/h5/script_observers.hpp"
 #include "../game-api/include/h5/camera_input.hpp"
 #include "../game-api/include/h5/build.hpp"
 #include "../game-api/include/h5/console.hpp"
+#include "../game-api/include/h5/resident_buffers.hpp"
 #include <atomic>
 #include <cwchar>
 #include <new>
@@ -17,8 +19,13 @@
 
 namespace {
 SRWLOCK bridgeLock = SRWLOCK_INIT;
+SRWLOCK runtimeLifetimeLock = SRWLOCK_INIT;
+volatile LONG nativeReentrantEvents = 0;
+bool nativeDispatchActive = false; // Bound game thread only.
+std::atomic<bool> payloadTransition{false};
 heroes5_sdk::PluginRuntime* runtime = nullptr;
 HHOOK mainHook = nullptr;
+HHOOK windowInputHook = nullptr;
 HWND mainWindow = nullptr;
 UINT dispatchMessage = 0;
 UINT exitMessage = 0;
@@ -37,7 +44,17 @@ std::array<uint32_t, 3> engineSettings{};
 uintptr_t originalEngineTarget = 0;
 h5::hooks::ScriptObservers* sharedObservers = nullptr;
 LONG* sharedObserverSlot = nullptr;
+heroes5_sdk::EngineSubscriptions nativeHookSettings{};
+std::array<LONG*, heroes5_sdk::EngineHookCapacity> nativeHookSlots{};
+using EngineHookControl = DWORD (WINAPI*)(void*);
+EngineHookControl engineHookControl = nullptr;
+EngineHookControl engineHookControlV2 = nullptr;
+EngineHookControl engineHookControlV3 = nullptr;
+heroes5_sdk::EngineInterceptions nativeInterceptionSettings{};
+std::array<LONG*,heroes5_sdk::EngineHookCapacity> nativeInterceptionSlots{};
 h5::hooks::CameraInputObservers* cameraInputObservers = nullptr;
+bool uiInputGateJoined = false;
+constexpr wchar_t UiInputGateUsers[] = L"Heroes5.UI.KeyGateUsers.v1";
 LONG* cameraInputSlot = nullptr;
 DWORD windowThread = 0;
 uint32_t uiSlot = 0;
@@ -62,6 +79,23 @@ struct ConsoleGuard {
 struct Guard {
     Guard() { AcquireSRWLockExclusive(&bridgeLock); }
     ~Guard() { ReleaseSRWLockExclusive(&bridgeLock); }
+};
+// bridgeLock serializes management workers; game-thread callbacks deliberately
+// bypass it. Pause their payload admission through retirement and activation.
+struct PayloadTransitionGuard {
+    PayloadTransitionGuard() { payloadTransition.store(true,std::memory_order_release); }
+    ~PayloadTransitionGuard() { payloadTransition.store(false,std::memory_order_release); }
+};
+struct RuntimeLifetimeGuard {
+    bool shared;
+    explicit RuntimeLifetimeGuard(bool read) : shared(read) {
+        if (shared) { AcquireSRWLockShared(&runtimeLifetimeLock); }
+        else { AcquireSRWLockExclusive(&runtimeLifetimeLock); }
+    }
+    ~RuntimeLifetimeGuard() {
+        if (shared) { ReleaseSRWLockShared(&runtimeLifetimeLock); }
+        else { ReleaseSRWLockExclusive(&runtimeLifetimeLock); }
+    }
 };
 bool AcquireUiClip() {
     const auto users = reinterpret_cast<uintptr_t>(GetPropW(mainWindow, ClipUsers));
@@ -92,12 +126,251 @@ void ReleaseUiClip() {
     }
     ownsUiClip = false;
 }
-void __cdecl OnEngineCall() {
+void __cdecl DispatchEngineFrame(const h5::hooks::X86ObserverFrame* frame) {
     if (GetCurrentThreadId() == windowThread && TryAcquireSRWLockExclusive(&bridgeLock)) {
         uint32_t result = 0;
-        if (runtime && engineSettings[2]) { runtime->Invoke(engineSettings[2], 0, result); }
+        if (runtime && engineSettings[2]) {
+            const auto resident = runtime->ResidentSettings();
+            if (!resident[0]) { runtime->Invoke(engineSettings[2], 0, result); }
+            else if (h5::resident::EnsureBuffer(mainWindow, uiSlot + 1, resident[0], resident[1])) {
+                h5::resident::BufferLease lease(mainWindow, uiSlot + 1, resident[0], true);
+                heroes5_sdk::EngineContext context;
+                context.callSite = engineSettings[0];
+                context.window = mainWindow;
+                context.residentSchema = resident[0];
+                context.residentBytes = lease.Bytes();
+                context.residentData = lease.WritableData();
+                if (frame) { context.hasRegisters = 1; context.registers = *frame; }
+                runtime->InvokeEngine(context, result);
+            }
+        }
         ReleaseSRWLockExclusive(&bridgeLock);
     }
+}
+// Only registered in the validated PUSHFD/PUSHAD resident dispatcher, whose
+// EBP points at its saved frame. The direct EngineCallThunk uses the same layout.
+__declspec(naked) void OnEngineCall() {
+    __asm {
+        push ebp
+        call DispatchEngineFrame
+        add esp, 4
+        ret
+    }
+}
+template<size_t Index> void __cdecl OnNativeEngineFrame(const h5::hooks::X86ObserverFrame* frame) {
+    if (!frame || GetCurrentThreadId() != windowThread) { return; }
+    if (nativeDispatchActive) { InterlockedIncrement(&nativeReentrantEvents); return; }
+    if (payloadTransition.load(std::memory_order_acquire)) { return; }
+    struct DispatchScope {
+        DispatchScope() { nativeDispatchActive = true; }
+        ~DispatchScope() { nativeDispatchActive = false; }
+    } dispatchScope;
+    // Transport may hold bridgeLock while synchronously waiting for this thread.
+    // Protect only runtime lifetime here; its own lock serializes payload swap.
+    RuntimeLifetimeGuard lifetime(true);
+    if (runtime && runtime->DispatchingOnCurrentThread()) {
+        // Reentry violates the current payload contract; do not deadlock or
+        // silently claim complete capture. A primitive collector is still needed.
+        InterlockedIncrement(&nativeReentrantEvents);
+        return;
+    }
+    if (runtime && Index < nativeHookSettings.count && nativeHookSlots[Index]) {
+        const auto resident = runtime->ResidentSettings();
+        if (h5::resident::EnsureBuffer(mainWindow, uiSlot + 1, resident[0], resident[1])) {
+            h5::resident::BufferLease lease(mainWindow, uiSlot + 1, resident[0], true);
+            heroes5_sdk::EngineContext context;
+            context.window = mainWindow;
+            context.callSite = nativeHookSettings.entries[Index].site;
+            context.residentSchema = resident[0]; context.residentBytes = lease.Bytes();
+            context.residentData = lease.WritableData();
+            context.hasRegisters = 1; context.registers = *frame;
+            uint32_t result = 0;
+            runtime->InvokeEngine(context, result);
+        }
+    }
+}
+constexpr std::array<heroes5_sdk::EngineObserver, heroes5_sdk::EngineHookCapacity> nativeCallbacks{
+    OnNativeEngineFrame<0>, OnNativeEngineFrame<1>, OnNativeEngineFrame<2>, OnNativeEngineFrame<3>,
+    OnNativeEngineFrame<4>, OnNativeEngineFrame<5>, OnNativeEngineFrame<6>, OnNativeEngineFrame<7>,
+    OnNativeEngineFrame<8>, OnNativeEngineFrame<9>, OnNativeEngineFrame<10>, OnNativeEngineFrame<11>,
+    OnNativeEngineFrame<12>, OnNativeEngineFrame<13>, OnNativeEngineFrame<14>, OnNativeEngineFrame<15>};
+template<size_t Index> uint32_t DispatchNativeInterception(heroes5_sdk::EngineCall* call) {
+    if (!runtime || Index>=nativeInterceptionSettings.count || !nativeInterceptionSlots[Index]) { return 0; }
+    const auto admitted=nativeInterceptionSettings.entries[Index];
+    if (runtime->DispatchingOnCurrentThread()) {
+        const auto* outer=runtime->CurrentEngineContext();
+        if (!admitted.readOnlyReentry || !outer) { InterlockedIncrement(&nativeReentrantEvents);return 0; }
+        auto context=*outer;
+        context.callSite=admitted.site;context.registers=call->frame;context.hasRegisters=1;
+        return runtime->InvokeInterceptor(context,*call,admitted)==heroes5_sdk::RuntimeResult::Ok ? 1u : 0u;
+    }
+    const auto resident=runtime->ResidentSettings();
+    if (!h5::resident::EnsureBuffer(mainWindow,uiSlot+1,resident[0],resident[1])) { return 0; }
+    h5::resident::BufferLease lease(mainWindow,uiSlot+1,resident[0],true);
+    heroes5_sdk::EngineContext context;
+    context.window=mainWindow;context.callSite=admitted.site;
+    context.residentSchema=resident[0];context.residentBytes=lease.Bytes();context.residentData=lease.WritableData();
+    context.hasRegisters=1;context.registers=call->frame;
+    return runtime->InvokeInterceptor(context,*call,admitted)==heroes5_sdk::RuntimeResult::Ok ? 1u : 0u;
+}
+template<size_t Index> uint32_t __cdecl OnNativeEngineInterception(heroes5_sdk::EngineCall* call) {
+    if (!call || GetCurrentThreadId()!=windowThread) { return 0; }
+    if (nativeDispatchActive) {
+        // The outer event already pins runtime and owns the writable buffer.
+        // Never recursively acquire either SRW lease for a nested pure handler.
+        return DispatchNativeInterception<Index>(call);
+    }
+    RuntimeLifetimeGuard lifetime(true);
+    // Preserve nested pure calls made by the already-admitted payload/finalizer.
+    if (payloadTransition.load(std::memory_order_acquire) &&
+        (!runtime || !runtime->DispatchingOnCurrentThread())) { return 0; }
+    struct DispatchScope {
+        DispatchScope() { nativeDispatchActive=true; }
+        ~DispatchScope() { nativeDispatchActive=false; }
+    } scope;
+    return DispatchNativeInterception<Index>(call);
+}
+constexpr std::array<heroes5_sdk::EngineInterceptor,heroes5_sdk::EngineHookCapacity> nativeInterceptors{
+    OnNativeEngineInterception<0>,OnNativeEngineInterception<1>,OnNativeEngineInterception<2>,OnNativeEngineInterception<3>,
+    OnNativeEngineInterception<4>,OnNativeEngineInterception<5>,OnNativeEngineInterception<6>,OnNativeEngineInterception<7>,
+    OnNativeEngineInterception<8>,OnNativeEngineInterception<9>,OnNativeEngineInterception<10>,OnNativeEngineInterception<11>,
+    OnNativeEngineInterception<12>,OnNativeEngineInterception<13>,OnNativeEngineInterception<14>,OnNativeEngineInterception<15>};
+DWORD SendEngineInterception(heroes5_sdk::EngineHookRequestV3& request) {
+    auto& base=request.signature.base;
+    base.callbackRetired=base.action==heroes5_sdk::EngineHookAction::Attach && !base.slot ? 1u : 0u;
+    if (!engineHookControlV3) { return ERROR_NOT_SUPPORTED; }
+    if (base.action==heroes5_sdk::EngineHookAction::Attach &&
+        (request.signature.expectedBytes<5 || request.signature.expectedBytes>16)) { return ERROR_NOT_SUPPORTED; }
+    return engineHookControlV3(&request);
+}
+bool ClearNativeInterceptions() {
+    for (uint32_t index=0;index<nativeInterceptionSettings.count;++index) {
+        if (!nativeInterceptionSlots[index]) { continue; }
+        if (GetCurrentThreadId()!=windowThread) { return false; }
+        heroes5_sdk::EngineHookRequestV3 request;
+        request.signature.base.action=heroes5_sdk::EngineHookAction::Detach;
+        request.signature.base.window=mainWindow;
+        request.signature.base.site=nativeInterceptionSettings.entries[index].site;
+        request.signature.base.slot=nativeInterceptionSlots[index];request.interceptor=nativeInterceptors[index];
+        const auto status=SendEngineInterception(request);
+        if (request.signature.base.callbackRetired) { nativeInterceptionSlots[index]=nullptr; }
+        if (status!=ERROR_SUCCESS || !request.signature.base.callbackRetired) { return false; }
+    }
+    nativeInterceptionSettings={};return true;
+}
+bool RefreshNativeInterceptions() {
+    const auto settings=runtime->InterceptionSettings();
+    if (!settings.count) { return true; }
+    if (GetCurrentThreadId()!=windowThread) { return false; }
+    if (!engineHookControlV3) {
+        const auto loader=GetModuleHandleW(L"dinput8.dll");
+        engineHookControlV3=loader ? reinterpret_cast<EngineHookControl>(GetProcAddress(loader,"Heroes5ModsEngineHookV3")) : nullptr;
+    }
+    if (!engineHookControlV3) {
+        heroes5_sdk::Trace(heroes5_sdk::LogLevel::Error,"native-hooks","The loader needs the function interception service.");
+        return false;
+    }
+    const auto resident=runtime->ResidentSettings();
+    if (!h5::resident::EnsureBuffer(mainWindow,uiSlot+1,resident[0],resident[1])) { return false; }
+    nativeInterceptionSettings=settings;
+    for (uint32_t index=0;index<settings.count;++index) {
+        const auto& entry=settings.entries[index];
+        heroes5_sdk::EngineHookRequestV3 request;
+        request.signature.base.window=mainWindow;request.signature.base.site=entry.site;
+        request.signature.expectedBytes=entry.sourceBytes;
+        memcpy(request.signature.expected,entry.sourceExpected,16);
+        request.policy=entry.policy;request.interceptor=nativeInterceptors[index];
+        request.branchBytes=entry.branchBytes;memcpy(request.branchExpected,entry.branchExpected,16);
+        const auto status=SendEngineInterception(request);
+        nativeInterceptionSlots[index]=request.signature.base.slot;
+        if (status!=ERROR_SUCCESS || !nativeInterceptionSlots[index]) {
+            if (request.signature.base.callbackRetired) { nativeInterceptionSlots[index]=nullptr; }
+            ClearNativeInterceptions();return false;
+        }
+    }
+    return true;
+}
+DWORD SendEngineHookRequest(heroes5_sdk::EngineHookRequest& request) {
+    if (!engineHookControlV2) { return engineHookControl ? engineHookControl(&request) : ERROR_NOT_READY; }
+    const auto expected = h5::hooks::EngineSiteSignature(request.site);
+    if (expected.empty() || expected.size() > 16) {
+        request.callbackRetired = request.action == heroes5_sdk::EngineHookAction::Attach && !request.slot ? 1u : 0u;
+        return ERROR_NOT_SUPPORTED;
+    }
+    heroes5_sdk::EngineHookRequestV2 transport;
+    transport.base = request;
+    transport.base.size = sizeof(transport); transport.base.version = 2;
+    transport.expectedBytes = static_cast<uint32_t>(expected.size());
+    memcpy(transport.expected, expected.data(), expected.size());
+    const auto status = engineHookControlV2(&transport);
+    request.slot = transport.base.slot;
+    request.callbackRetired = transport.base.callbackRetired;
+    return status;
+}
+bool ClearNativeEngineHooks() {
+    for (uint32_t index = 0; index < nativeHookSettings.count; ++index) {
+        if (!nativeHookSlots[index]) { continue; }
+        if (!engineHookControl || GetCurrentThreadId() != windowThread) { return false; }
+        heroes5_sdk::EngineHookRequest request;
+        request.action = heroes5_sdk::EngineHookAction::Detach;
+        request.window = mainWindow; request.site = nativeHookSettings.entries[index].site;
+        request.callback = nativeCallbacks[index]; request.slot = nativeHookSlots[index];
+        const auto status = SendEngineHookRequest(request);
+        if (request.callbackRetired) { nativeHookSlots[index] = nullptr; }
+        if (status != ERROR_SUCCESS || !request.callbackRetired) { return false; }
+    }
+    nativeHookSettings = {};
+    return true;
+}
+bool RefreshNativeObservers() {
+    const auto settings = runtime->HookSettings();
+    bool complete = settings == nativeHookSettings;
+    for (uint32_t index = 0; index < settings.count; ++index) { complete = complete && nativeHookSlots[index]; }
+    if (complete) { return true; }
+    if (!ClearNativeEngineHooks()) { return false; }
+    if (!settings.count) { return true; }
+    if (GetCurrentThreadId() != windowThread) { return false; }
+    if (!engineHookControl) {
+        const auto loader = GetModuleHandleW(L"dinput8.dll");
+        engineHookControl = loader ? reinterpret_cast<EngineHookControl>(GetProcAddress(loader, "Heroes5ModsEngineHook")) : nullptr;
+        engineHookControlV2 = loader ? reinterpret_cast<EngineHookControl>(GetProcAddress(loader, "Heroes5ModsEngineHookV2")) : nullptr;
+    }
+    if (!engineHookControl) {
+        heroes5_sdk::Trace(heroes5_sdk::LogLevel::Error, "native-hooks", "The loader has no native event service.");
+        return false;
+    }
+    const auto resident = runtime->ResidentSettings();
+    if (!h5::resident::EnsureBuffer(mainWindow, uiSlot + 1, resident[0], resident[1])) { return false; }
+    nativeHookSettings = settings;
+    for (uint32_t index = 0; index < settings.count; ++index) {
+        heroes5_sdk::EngineHookRequest request;
+        request.window = mainWindow; request.site = settings.entries[index].site;
+        request.callback = nativeCallbacks[index];
+        const auto status = SendEngineHookRequest(request);
+        nativeHookSlots[index] = request.slot;
+        if (status != ERROR_SUCCESS || !request.slot) {
+            const auto message = std::string("Placement event subscription rejected; Windows status ") + std::to_string(status) + ".";
+            heroes5_sdk::Trace(heroes5_sdk::LogLevel::Error, "native-hooks", message.c_str());
+            if (request.callbackRetired) { nativeHookSlots[index] = nullptr; }
+            // Any remaining slots stay recorded; failed cleanup prevents unload.
+            ClearNativeEngineHooks();
+            return false;
+        }
+    }
+    return true;
+}
+bool RefreshNativeEngineHooks() {
+    const auto observers=runtime->HookSettings();
+    const auto interceptions=runtime->InterceptionSettings();
+    bool complete=observers==nativeHookSettings && interceptions==nativeInterceptionSettings;
+    for (uint32_t index=0;index<observers.count;++index) { complete=complete && nativeHookSlots[index]; }
+    for (uint32_t index=0;index<interceptions.count;++index) { complete=complete && nativeInterceptionSlots[index]; }
+    if (complete) { return true; }
+    // Retire both old modes before rebinding sites which change their contract.
+    if (!ClearNativeInterceptions() || !ClearNativeEngineHooks()) { return false; }
+    if (!RefreshNativeObservers()) { return false; }
+    if (!RefreshNativeInterceptions()) { ClearNativeEngineHooks();return false; }
+    return true;
 }
 __declspec(naked) void EngineCallThunk() {
     __asm {
@@ -187,28 +460,19 @@ bool RefreshEngineHook() {
     sharedObservers = observers; sharedObserverSlot = slot; engineSettings = settings;
     return true;
 }
-void __cdecl CaptureConsoleCameraInput() {
-    const auto panel = static_cast<HWND>(GetPropW(mainWindow, L"XalKit.Console.Frame.v1"));
-    if (!cameraInputObservers || !panel || !IsWindowVisible(panel)) { return; }
-    DWORD owner = 0;
-    const auto thread = GetWindowThreadProcessId(panel, &owner);
-    if (owner != GetCurrentProcessId()) { return; }
-    RECT bounds{};
-    POINT pointer{};
-    bool mouse = false;
-    if (GetWindowRect(panel, &bounds) && GetCursorPos(&pointer) && PtInRect(&bounds, pointer)) {
-        const auto hovered = WindowFromPoint(pointer);
-        mouse = hovered == panel || IsChild(panel, hovered);
-    }
-    GUITHREADINFO input{};
-    input.cbSize = sizeof(input);
-    const bool keyboard = GetGUIThreadInfo(thread, &input) &&
-        (input.hwndFocus == panel || IsChild(panel, input.hwndFocus));
-    mouse = mouse || input.hwndMoveSize == panel || input.hwndCapture == panel || IsChild(panel, input.hwndCapture);
-    h5::hooks::CaptureCameraInput(*cameraInputObservers, mouse, keyboard);
+h5::ui::InputPanelCapture ReadUiCapture() {
+    auto capture = h5::ui::ReadInputPanels(mainWindow);
+    h5::ui::ReadPanelCapture(static_cast<HWND>(GetPropW(mainWindow, L"XalKit.Console.Frame.v1")), capture);
+    h5::ui::PublishKeyboardFocus(mainWindow, capture);
+    return capture;
+}
+void __cdecl CaptureUiCameraInput() {
+    if (!cameraInputObservers) { return; }
+    const auto capture = ReadUiCapture();
+    h5::hooks::CaptureCameraInput(*cameraInputObservers, capture.mouse, capture.keyboard);
 }
 bool RefreshCameraInput() {
-    if (cameraInputSlot || !GetPropW(mainWindow, L"XalKit.Console.Frame.v1")) { return true; }
+    if (cameraInputSlot) { return true; }
     const auto& site = h5::hooks::AdventureCameraInput;
     auto* storage = h5::hooks::FindCameraInputObservers(site.address);
     if (!storage) {
@@ -227,13 +491,13 @@ bool RefreshCameraInput() {
         if (!WriteCall(static_cast<uint32_t>(site.address), original, replacement)) { return false; }
     }
     cameraInputObservers = storage;
-    cameraInputSlot = h5::hooks::AddScriptObserver(storage->observers, CaptureConsoleCameraInput);
+    cameraInputSlot = h5::hooks::AddScriptObserver(storage->observers, CaptureUiCameraInput);
     return cameraInputSlot != nullptr;
 }
 bool ClearCameraInput() {
     if (!cameraInputSlot) { return true; }
     if (h5::hooks::FindCameraInputObservers(h5::hooks::AdventureCameraInput.address) != cameraInputObservers ||
-        !h5::hooks::RemoveScriptObserver(cameraInputSlot, CaptureConsoleCameraInput)) { return false; }
+        !h5::hooks::RemoveScriptObserver(cameraInputSlot, CaptureUiCameraInput)) { return false; }
     cameraInputSlot = nullptr;
     cameraInputObservers = nullptr;
     return true;
@@ -262,8 +526,24 @@ LRESULT CALLBACK WindowEventHook(int code, WPARAM parameter, LPARAM data) {
     return CallNextHookEx(nullptr, code, parameter, data);
 }
 bool ClearEvents() {
+    if (!ClearNativeInterceptions()) { return false; }
+    if (!ClearNativeEngineHooks()) { return false; }
     if (!ClearCameraInput()) { return false; }
     if (!ClearEngineHook()) { return false; }
+    if (uiInputGateJoined) {
+        const auto users = reinterpret_cast<uintptr_t>(GetPropW(mainWindow, UiInputGateUsers));
+        if (users > 1) {
+            if (!SetPropW(mainWindow, UiInputGateUsers, reinterpret_cast<HANDLE>(users - 1))) { return false; }
+        }
+        else {
+            RemovePropW(mainWindow, UiInputGateUsers);
+            RemovePropW(mainWindow, h5::ui::KeyboardFocusProperty);
+            if (auto* gate = h5::hooks::FindAdventureInputGate(h5::hooks::AdventureInputTail.address, h5::hooks::AdventureInputTarget)) {
+                wcscpy_s(gate->property, L"XalKit.Console.Frame.v1");
+            }
+        }
+        uiInputGateJoined = false;
+    }
     if (eventHook && !UnhookWindowsHookEx(eventHook)) { return false; }
     eventHook = nullptr;
     if (resultWindow && !DestroyWindow(resultWindow)) { return false; }
@@ -272,26 +552,53 @@ bool ClearEvents() {
     return true;
 }
 bool RefreshEvents() {
-    const auto panel=static_cast<HWND>(GetPropW(mainWindow,L"XalKit.Console.Frame.v1"));
-    if (panel) {
+    const auto& inputSite = h5::hooks::AdventureInputTail;
+    const bool gameInputSupported = h5::hooks::FindAdventureInputGate(inputSite.address, h5::hooks::AdventureInputTarget) ||
+        (h5::hooks::ObserverMemory(inputSite.address, sizeof(inputSite.expected), PAGE_EXECUTE_READ) &&
+         !std::memcmp(reinterpret_cast<void*>(inputSite.address), inputSite.expected, sizeof(inputSite.expected)));
+    if (!gameInputSupported && ReadUiCapture().present) { return false; }
+    if (gameInputSupported) {
         if (GetCurrentThreadId()!=windowThread) { return false; }
         const auto& site=h5::hooks::AdventureInputTail;
         auto* gate=h5::hooks::FindAdventureInputGate(site.address,h5::hooks::AdventureInputTarget);
-        if (!gate) {
-            if (std::memcmp(reinterpret_cast<void*>(site.address),site.expected,sizeof(site.expected))) { return false; }
+        if (gate && gate->gameWindow!=reinterpret_cast<uintptr_t>(mainWindow)) { return false; }
+        const auto priorCode=gate ? reinterpret_cast<uintptr_t>(gate)-h5::hooks::ScriptObserverDescriptorOffset : 0;
+        const auto currentCode=gate ? h5::hooks::AdventureInputCode(priorCode,reinterpret_cast<uintptr_t>(gate),
+            h5::hooks::AdventureInputTarget) : std::vector<unsigned char>{};
+        if (!gate || std::memcmp(reinterpret_cast<void*>(priorCode),currentCode.data(),currentCode.size())) {
+            std::array<unsigned char,5> original{};
+            if (gate) {
+                original=CallBytes(static_cast<uint32_t>(site.address),priorCode);
+                original[0]=0xe9;
+            }
+            else {
+                std::memcpy(original.data(),site.expected,original.size());
+            }
+            if (std::memcmp(reinterpret_cast<void*>(site.address),original.data(),original.size())) { return false; }
             gate=h5::hooks::CreateAdventureInputGate(h5::hooks::AdventureInputTarget,mainWindow);
             if (!gate) { return false; }
             const auto code=reinterpret_cast<uintptr_t>(gate)-h5::hooks::ScriptObserverDescriptorOffset;
-            std::array<unsigned char,5> original{};
-            std::memcpy(original.data(),site.expected,original.size());
             auto replacement=CallBytes(static_cast<uint32_t>(site.address),code);
             replacement[0]=0xe9;
             if (!WriteCall(static_cast<uint32_t>(site.address),original,replacement)) { return false; }
+            // Owner-thread replacement leaves the prior sealed allocation intact.
+            // No callback or code pointer into a replaceable module is retained.
         }
         if (gate->gameWindow!=reinterpret_cast<uintptr_t>(mainWindow)) { return false; }
+        if (!uiInputGateJoined) {
+            const auto users = reinterpret_cast<uintptr_t>(GetPropW(mainWindow, UiInputGateUsers));
+            if (users >= 1024 || !SetPropW(mainWindow, UiInputGateUsers, reinterpret_cast<HANDLE>(users + 1))) { return false; }
+            uiInputGateJoined = true;
+        }
+        wcscpy_s(gate->property, h5::ui::KeyboardFocusProperty);
+        ReadUiCapture();
     }
-    if (!RefreshCameraInput()) { return false; }
-    if (!RefreshEngineHook()) { return false; }
+    if (gameInputSupported && !RefreshCameraInput()) { return false; }
+    if (!RefreshEngineHook()) {
+        heroes5_sdk::Trace(heroes5_sdk::LogLevel::Error, "native-hooks", "The game-loop observer could not attach.");
+        return false;
+    }
+    if (!RefreshNativeEngineHooks()) { return false; }
     const auto settings = runtime->EventSettings();
     if (settings == eventSettings) { return true; }
     if (eventHook && !UnhookWindowsHookEx(eventHook)) { return false; }
@@ -352,13 +659,73 @@ DWORD ControlBankSelectorOnMain(heroes5_sdk::SelectorAction action, uint32_t* re
     }
     return control(&binding);
 }
+bool FinalizePayloadOnMain(bool replacing = false) {
+    if (!runtime || GetCurrentThreadId()!=windowThread) { return false; }
+    if (!runtime->HasEngineFinalizer()) { return true; }
+    const auto resident=runtime->ResidentSettings();
+    heroes5_sdk::EngineContext context;context.window=mainWindow;
+    context.residentSchema=resident[0];context.residentBytes=resident[1];
+    if (!resident[0]) { return runtime->FinalizeEngine(context,replacing)==heroes5_sdk::RuntimeResult::Ok; }
+    if (!h5::resident::EnsureBuffer(mainWindow,uiSlot+1,resident[0],resident[1])) { return false; }
+    h5::resident::BufferLease lease(mainWindow,uiSlot+1,resident[0],true);
+    context.residentData=lease.WritableData();context.residentBytes=lease.Bytes();
+    return runtime->FinalizeEngine(context,replacing)==heroes5_sdk::RuntimeResult::Ok;
+}
+void DispatchWindowInputOnMain(const CWPSTRUCT& message) {
+    if (mainWindow && GetCurrentThreadId() == windowThread &&
+        (message.message == WM_SETFOCUS || message.message == WM_KILLFOCUS ||
+         message.message == WM_SHOWWINDOW || message.message == WM_NCDESTROY ||
+         message.message == WM_LBUTTONDOWN)) {
+        auto capture = ReadUiCapture();
+        if (message.hwnd == mainWindow && message.message == WM_LBUTTONDOWN && capture.keyboard && !capture.mouse) {
+            SetFocus(mainWindow); ReadUiCapture();
+        }
+    }
+    if (message.hwnd!=mainWindow || message.message!=WM_LBUTTONDBLCLK ||
+        GetCurrentThreadId()!=windowThread || nativeDispatchActive ||
+        payloadTransition.load(std::memory_order_acquire) ||
+        heroes5_sdk::PluginRuntime::CallingPayloadOnCurrentThread()) { return; }
+    // Transport may be waiting for this thread while owning bridgeLock.
+    // Pin lifetime independently, just as native engine callbacks do.
+    RuntimeLifetimeGuard lifetime(true);
+    if (runtime && !runtime->DispatchingOnCurrentThread()) {
+        struct DispatchScope {
+            DispatchScope() { nativeDispatchActive=true; }
+            ~DispatchScope() { nativeDispatchActive=false; }
+        } dispatchScope;
+        const auto resident=runtime->ResidentSettings();
+        if (resident[0] && h5::resident::EnsureBuffer(mainWindow,uiSlot+1,resident[0],resident[1])) {
+            h5::resident::BufferLease lease(mainWindow,uiSlot+1,resident[0],true);
+            heroes5_sdk::WindowInputContext context;context.engine.window=mainWindow;
+            context.engine.residentSchema=resident[0];context.engine.residentData=lease.WritableData();
+            context.engine.residentBytes=lease.Bytes();context.message=message.message;
+            context.wparam=message.wParam;context.lparam=message.lParam;
+            runtime->InvokeWindowInput(context);
+        }
+    }
+}
+LRESULT CALLBACK WindowInputHook(int code, WPARAM parameter, LPARAM data) {
+    if (code>=0 && parameter==PM_REMOVE && data) {
+        const auto& message=*reinterpret_cast<const MSG*>(data);
+        const CWPSTRUCT event{message.lParam,message.wParam,message.message,message.hwnd};
+        DispatchWindowInputOnMain(event);
+    }
+    return CallNextHookEx(nullptr,code,parameter,data);
+}
 LRESULT CALLBACK MainThreadHook(int code, WPARAM parameter, LPARAM data) {
+    if (code>=0 && data) { DispatchWindowInputOnMain(*reinterpret_cast<const CWPSTRUCT*>(data)); }
     const auto request = pending.load(std::memory_order_acquire);
     if (code >= 0 && request) {
         const auto* message = reinterpret_cast<const CWPSTRUCT*>(data);
         if (message->hwnd == mainWindow && (message->message == dispatchMessage ||
             message->message == exitMessage || message->message == consoleMessage || message->message == selectorMessage) &&
             message->lParam == reinterpret_cast<LPARAM>(request)) {
+            // A native UI call can pump messages while payload/runtime locks
+            // are held. Decline management reentry instead of reacquiring them.
+            if (nativeDispatchActive || (runtime && runtime->DispatchingOnCurrentThread())) {
+                pendingStatus.store(ERROR_BUSY,std::memory_order_release);
+                return CallNextHookEx(nullptr,code,parameter,data);
+            }
             if (message->message == exitMessage) {
                 const auto& exit = h5::hooks::ExitRequest;
                 if (GetCurrentThreadId() != windowThread ||
@@ -391,7 +758,7 @@ LRESULT CALLBACK MainThreadHook(int code, WPARAM parameter, LPARAM data) {
             }
             DWORD status = 0;
             switch (request[0]) {
-            case UINT32_MAX: status = ClearEvents() ? 0u : 104u; break;
+            case UINT32_MAX: status = request[1] && !FinalizePayloadOnMain(request[1]==2) ? 104u : (ClearEvents() ? 0u : 104u); break;
             case UINT32_MAX - 1: status = RefreshEvents() ? 0u : 104u; break;
             default:
                 status = !RefreshEvents() ? 104u : static_cast<DWORD>(runtime->Invoke(request[0], request[1], request[2]));
@@ -419,6 +786,7 @@ BOOL CALLBACK FindMainWindow(HWND window, LPARAM candidatesAddress) {
     return candidates.size() < 2;
 }
 bool AttachMainWindowHook() {
+    if (mainHook || windowInputHook) { return mainHook && windowInputHook; }
     std::vector<HWND> candidates;
     EnumWindows(FindMainWindow, reinterpret_cast<LPARAM>(&candidates));
     if (candidates.size() != 1) { return false; }
@@ -428,7 +796,15 @@ bool AttachMainWindowHook() {
     if (!thread || process != GetCurrentProcessId()) { return false; }
     const auto hook = SetWindowsHookExW(WH_CALLWNDPROC, MainThreadHook, nullptr, thread);
     if (!hook) { return false; }
-    mainWindow = window; mainHook = hook; windowThread = thread;
+    const auto input=SetWindowsHookExW(WH_GETMESSAGE,WindowInputHook,nullptr,thread);
+    if (!input) {
+        if (!UnhookWindowsHookEx(hook)) {
+            // Retain ownership of a callback whose rollback is unconfirmed.
+            mainWindow=window;mainHook=hook;windowThread=thread;
+        }
+        return false;
+    }
+    mainWindow = window; mainHook = hook; windowInputHook=input; windowThread = thread;
     return true;
 }
 DWORD WINAPI HookOwner(void*) {
@@ -438,6 +814,8 @@ DWORD WINAPI HookOwner(void*) {
     }
     SetEvent(hookReady);
     WaitForSingleObject(hookStop, INFINITE);
+    if (windowInputHook && !UnhookWindowsHookEx(windowInputHook)) { return 103; }
+    windowInputHook=nullptr;
     if (mainHook && !UnhookWindowsHookEx(mainHook)) { return 103; }
     mainHook = nullptr; mainWindow = nullptr;
     return 0;
@@ -453,19 +831,38 @@ DWORD SendToMain(uint32_t* request, bool exitRequest = false, bool consoleReques
 }
 extern "C" DWORD WINAPI Heroes5PluginReplace(void* path) {
     Guard guard;
+    PayloadTransitionGuard transition;
     if (!path) { return static_cast<DWORD>(heroes5_sdk::RuntimeResult::LoadFailed); }
     try {
         // The resident core keeps POD history alive across complete payload
         // unload and HMR; the bus never retains the payload's code pointers.
         heroes5_sdk::Diagnostics();
-        if (!runtime) { runtime = new heroes5_sdk::PluginRuntime; }
+        if (!runtime) {
+            RuntimeLifetimeGuard lifetime(false);
+            runtime = new heroes5_sdk::PluginRuntime;
+        }
         const auto nextPath = std::filesystem::absolute(static_cast<const wchar_t*>(path));
+        // Payload-owned windows and callbacks must retire on their game thread
+        // before Replace can unload the previous image. Core replacement already
+        // uses this boundary; ordinary source HMR needs the same lifetime rule.
+        if (mainHook && runtime->HasEngineFinalizer()) {
+            uint32_t retirement[4]{UINT32_MAX, 2, 0, 0};
+            if (SendToMain(retirement) != 0) { return 104; }
+        }
         const auto replaced = runtime->Replace(nextPath);
-        if (replaced != heroes5_sdk::RuntimeResult::Ok) { return static_cast<DWORD>(replaced); }
+        if (replaced != heroes5_sdk::RuntimeResult::Ok) {
+            uint32_t refresh[4]{UINT32_MAX - 1, 0, 0, 0};
+            if (mainHook && SendToMain(refresh) != 0) { return 104; }
+            return static_cast<DWORD>(replaced);
+        }
         if (mainHook) {
             uint32_t request[4]{UINT32_MAX - 1, 0, 0, 0};
             if (SendToMain(request) != 0) {
-                if (activePath.empty() || runtime->Replace(activePath) != heroes5_sdk::RuntimeResult::Ok ||
+                // A partially activated candidate may own native UI/resources.
+                // Retire it and clear its callbacks before any rollback unload.
+                uint32_t retirement[4]{UINT32_MAX, 2, 0, 0};
+                if (SendToMain(retirement) != 0 || activePath.empty() ||
+                    runtime->Replace(activePath) != heroes5_sdk::RuntimeResult::Ok ||
                     SendToMain(request) != 0) { return 106; }
                 return 104;
             }
@@ -510,7 +907,7 @@ DWORD EnsureMainThreadHook(bool withConsole = true) {
         }
     }
     if (WaitForSingleObject(hookReady, 4000) != WAIT_OBJECT_0) { return 101; }
-    if (!mainHook || !IsWindow(mainWindow)) { return 101; }
+    if (!mainHook || !windowInputHook || !IsWindow(mainWindow)) { return 101; }
     wchar_t consolePath[32768]{};
     if (withConsole && GetEnvironmentVariableW(L"XALKIT_CONSOLE_PATH", consolePath, 32768)) {
         ConsoleGuard consoleGuard;
@@ -546,6 +943,7 @@ extern "C" DWORD WINAPI Heroes5PluginConnect(void* memory) {
     if (mode == 2) { return runtime && runtime->Generation() == 0 && activePath.empty() ? 0 : 108; }
     if (mode == 1 && (hookThread || (runtime && runtime->Generation() != 0))) { return 108; }
     if (!runtime) {
+        RuntimeLifetimeGuard lifetime(false);
         runtime = new (std::nothrow) heroes5_sdk::PluginRuntime;
         if (!runtime) { return ERROR_NOT_ENOUGH_MEMORY; }
     }
@@ -650,19 +1048,8 @@ extern "C" DWORD WINAPI Heroes5PluginReplaceBank(void* memory) {
                 const auto loader = GetModuleHandleW((gameBin / L"dinput8.dll").c_str());
                 const auto control = loader ? reinterpret_cast<Control>(GetProcAddress(loader, "Heroes5BankSelectorControl")) : nullptr;
                 if (control) {
-                    heroes5_sdk::SelectorRequest request;
-                    result = control(&request);
-                    if (result == ERROR_SUCCESS) {
-                        request.action = heroes5_sdk::SelectorAction::Replace;
-                        request.expectedGeneration = request.generation;
-                        request.bytes = payload->code; request.byteCount = payload->codeBytes;
-                        request.sourceCode = payload->sourceCode; request.sourceData = payload->sourceData;
-                        request.dataSchema = payload->dataSchema;
-                        request.codeFixups = payload->codeFixups; request.codeFixupCount = payload->codeFixupCount;
-                        request.dataFixups = payload->dataFixups; request.dataFixupCount = payload->dataFixupCount;
-                        result = control(&request);
-                        replacement.applied = result == ERROR_SUCCESS;
-                    }
+                    result=heroes5_sdk::ApplySelectorPayload(control,*payload);
+                    replacement.applied=result==ERROR_SUCCESS;
                 } else { result = ERROR_NOT_SUPPORTED; }
             }
         }
@@ -748,10 +1135,16 @@ extern "C" DWORD WINAPI Heroes5PluginReplaceConsole(void* memory) {
 #pragma comment(linker, "/EXPORT:Heroes5PluginReplaceConsole=_Heroes5PluginReplaceConsole@4")
 namespace {
 DWORD StopRuntime(heroes5_sdk::PluginSnapshot* snapshot) {
+    if (heroes5_sdk::PluginRuntime::CallingPayloadOnCurrentThread() ||
+        (GetCurrentThreadId() == windowThread && nativeDispatchActive)) { return ERROR_BUSY; }
     Guard guard;
+    PayloadTransitionGuard transition;
+    const bool requiresFinalization=!snapshot && runtime && runtime->HasEngineFinalizer();
+    if (!hookThread && (nativeHookSettings.count || nativeInterceptionSettings.count || requiresFinalization)) { return 104; }
     if (hookThread) {
-        if (mainHook && (eventHook || resultWindow || engineSettings[0] || cameraInputSlot)) {
-            uint32_t request[4]{UINT32_MAX, 0, 0, 0};
+        if (requiresFinalization && !mainHook) { return 104; }
+        if (mainHook && (requiresFinalization || eventHook || resultWindow || engineSettings[0] || cameraInputSlot || nativeHookSettings.count || nativeInterceptionSettings.count)) {
+            uint32_t request[4]{UINT32_MAX, snapshot ? 0u : 1u, 0, 0};
             if (SendToMain(request) != 0) { return 104; }
         }
         SetEvent(hookStop);
@@ -768,23 +1161,38 @@ DWORD StopRuntime(heroes5_sdk::PluginSnapshot* snapshot) {
             *snapshot = heroes5_sdk::PluginSnapshot{};
         } else if (result != heroes5_sdk::RuntimeResult::Ok) { return static_cast<DWORD>(result); }
     }
-    delete runtime;
-    runtime = nullptr;
+    {
+        RuntimeLifetimeGuard lifetime(false);
+        delete runtime;
+        runtime = nullptr;
+    }
     activePath.clear();
     return 0;
 }
 }
 extern "C" DWORD WINAPI Heroes5PluginStop(void*) { return StopRuntime(nullptr); }
-extern "C" DWORD WINAPI Heroes5PluginSuspend(void* memory) {
+// Legacy controllers allocate the smaller snapshot v1. Refuse without touching
+// their buffer or retiring active code. Versioned exports fix the wire size.
+extern "C" DWORD WINAPI Heroes5PluginSuspend(void*) {
+    return static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState);
+}
+extern "C" DWORD WINAPI Heroes5PluginRestore(void*) {
+    return static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState);
+}
+#pragma comment(linker, "/EXPORT:Heroes5PluginSuspend=_Heroes5PluginSuspend@4")
+#pragma comment(linker, "/EXPORT:Heroes5PluginRestore=_Heroes5PluginRestore@4")
+extern "C" DWORD WINAPI Heroes5PluginSuspendV2(void* memory) {
     if (!memory) { return static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState); }
     return StopRuntime(static_cast<heroes5_sdk::PluginSnapshot*>(memory));
 }
-extern "C" DWORD WINAPI Heroes5PluginRestore(void* memory) {
+extern "C" DWORD WINAPI Heroes5PluginRestoreV2(void* memory) {
+    if (heroes5_sdk::PluginRuntime::CallingPayloadOnCurrentThread() ||
+        (GetCurrentThreadId() == windowThread && nativeDispatchActive)) { return ERROR_BUSY; }
     Guard guard;
     if (!runtime || !memory) { return static_cast<DWORD>(heroes5_sdk::RuntimeResult::NotLoaded); }
     // Restore before enabling callbacks; otherwise counters/game events could
     // be overwritten by an older snapshot while they are executing.
-    if (mainHook || eventHook || engineSettings[0]) { return 108; }
+    if (mainHook || eventHook || engineSettings[0] || nativeHookSettings.count || nativeInterceptionSettings.count) { return 108; }
 #ifdef H5_CORE_REJECT_RESTORE
     return static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState);
 #endif
@@ -796,6 +1204,7 @@ extern "C" DWORD WINAPI Heroes5PluginRestore(void* memory) {
         const heroes5_sdk::PluginSnapshot empty;
         return snapshot.magic == empty.magic && snapshot.version == empty.version &&
             snapshot.schema == 0 && snapshot.bytes == 0 && snapshot.generation == 0 &&
+            snapshot.residentSchema == 0 && snapshot.residentBytes == 0 &&
             std::all_of(snapshot.data.begin(), snapshot.data.end(), [](unsigned char value) { return value == 0; })
             ? 0 : static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState);
     }
@@ -809,7 +1218,7 @@ extern "C" DWORD WINAPI Heroes5PluginPostEvent(void* memory) {
 }
 extern "C" DWORD WINAPI Heroes5PluginSetSlot(void* memory) {
     Guard guard;
-    if (!memory || resultWindow || *static_cast<uint32_t*>(memory) >= 64) { return 107; }
+    if (!memory || resultWindow || nativeHookSettings.count || nativeInterceptionSettings.count || *static_cast<uint32_t*>(memory) >= 64) { return 107; }
     uiSlot = *static_cast<uint32_t*>(memory);
     return 0;
 }
@@ -835,8 +1244,8 @@ extern "C" DWORD WINAPI Heroes5PluginNewFeature(void*) { return H5_CORE_FEATURE_
 #pragma comment(linker, "/EXPORT:Heroes5PluginStop=_Heroes5PluginStop@4")
 #pragma comment(linker, "/EXPORT:Heroes5PluginPostEvent=_Heroes5PluginPostEvent@4")
 #pragma comment(linker, "/EXPORT:Heroes5PluginSetSlot=_Heroes5PluginSetSlot@4")
-#pragma comment(linker, "/EXPORT:Heroes5PluginSuspend=_Heroes5PluginSuspend@4")
-#pragma comment(linker, "/EXPORT:Heroes5PluginRestore=_Heroes5PluginRestore@4")
+#pragma comment(linker, "/EXPORT:Heroes5PluginSuspendV2=_Heroes5PluginSuspendV2@4")
+#pragma comment(linker, "/EXPORT:Heroes5PluginRestoreV2=_Heroes5PluginRestoreV2@4")
 #pragma comment(linker, "/EXPORT:Heroes5PluginCoreVersion=_Heroes5PluginCoreVersion@4")
 #pragma comment(linker, "/EXPORT:Heroes5PluginReadDiagnostics=_Heroes5PluginReadDiagnostics@4")
 #pragma comment(linker, "/EXPORT:Heroes5PluginRequestExit=_Heroes5PluginRequestExit@4")

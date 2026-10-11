@@ -8,7 +8,8 @@ parser.add_argument('output', type=Path)
 options = parser.parse_args()
 keys = ('console_button', 'console_logs', 'console_commands', 'console_modules',
         'console_empty', 'console_help', 'console_pending_commands', 'console_pending_modules', 'console_clear', 'console_filter', 'console_connection_lost', 'console_run', 'console_input_too_long', 'console_complete', 'console_history', 'console_no_matches', 'console_close', 'console_input_hint', 'console_completion_pending', 'console_unknown_command',
-        'module_loading', 'module_active', 'module_stopped', 'module_failed', 'module_unconfirmed', 'module_unknown')
+        'module_loading', 'module_active', 'module_stopped', 'module_failed', 'module_unconfirmed', 'module_unknown',
+        'module_available', 'console_development_modules')
 lines = ['#pragma code_page(65001)', '#include <windows.h>']
 for language, language_id in (('en', 'LANG_ENGLISH'), ('ru', 'LANG_RUSSIAN')):
     catalog = gettext.translation('xalkit', localedir=Path(__file__).resolve().parents[1] / 'locale',

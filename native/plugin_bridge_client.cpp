@@ -151,7 +151,7 @@ int wmain(int count, wchar_t** arguments) {
         Require(local != nullptr, "bridge_load_failed");
         for (const auto* name : {"Heroes5PluginReplace", "Heroes5PluginInvoke", "Heroes5PluginStop",
             "Heroes5PluginInvokeMain", "Heroes5PluginPostEvent", "Heroes5PluginSetSlot",
-            "Heroes5PluginSuspend", "Heroes5PluginRestore", "Heroes5PluginCoreVersion"}) {
+            "Heroes5PluginSuspendV2", "Heroes5PluginRestoreV2", "Heroes5PluginCoreVersion"}) {
             Require(GetProcAddress(local, name) != nullptr, "bridge_export_missing");
         }
         uintptr_t base = reinterpret_cast<uintptr_t>(local);
@@ -183,8 +183,8 @@ int wmain(int count, wchar_t** arguments) {
         const auto invokeMain = resolve("Heroes5PluginInvokeMain");
         const auto postEvent = resolve("Heroes5PluginPostEvent");
         const auto setSlot = resolve("Heroes5PluginSetSlot");
-        const auto suspend = resolve("Heroes5PluginSuspend");
-        const auto restore = resolve("Heroes5PluginRestore");
+        const auto suspend = resolve("Heroes5PluginSuspendV2");
+        const auto restore = resolve("Heroes5PluginRestoreV2");
         const auto coreVersion = resolve("Heroes5PluginCoreVersion");
         const auto connectExport = GetProcAddress(local, "Heroes5PluginConnect");
         const auto connectSdk = connectExport ? base + (reinterpret_cast<uintptr_t>(connectExport) -
@@ -222,7 +222,7 @@ int wmain(int count, wchar_t** arguments) {
             if (line == "quit") { break; }
             Require(!diagnosticReader || line.rfind("trace ", 0) == 0, "diagnostic_reader_command_rejected");
             Require(!consoleController || line.rfind("console-replace ", 0) == 0, "console_controller_command_rejected");
-            Require(!gameCommandController || line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0,
+            Require(!gameCommandController || line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0 || line.rfind("invoke ",0)==0 || line.rfind("main ",0)==0,
                     "game_command_controller_command_rejected");
             DWORD status = 0; uint32_t request[4]{};
             std::string stateSnapshot;
@@ -359,9 +359,14 @@ int wmain(int count, wchar_t** arguments) {
                               remote ? buffer : const_cast<wchar_t*>(path.c_str()), "replacement", consoleReplacement ? 45000 : 10000);
             } else {
                 std::istringstream input(line); std::string command;
+                std::string trailing;
+                Require(!gameCommandController ||
+                    line.find_first_not_of("0123456789 ", line.rfind("main ",0)==0 ? 5 : 7) == std::string::npos,
+                    "invalid_client_command");
                 Require(static_cast<bool>(input >> command >> request[0] >> request[1]) &&
                     (command == "invoke" || command == "main" || command == "event" || command == "slot"),
                     "invalid_client_command");
+                Require(!(input >> trailing), "invalid_client_command");
                 mainUsed = mainUsed || command == "main";
                 if (remote) {
                     SIZE_T written = 0;
@@ -379,7 +384,8 @@ int wmain(int count, wchar_t** arguments) {
             }
             std::cout << "{\"status\":" << status << ",\"result\":" << request[2]
                 << ",\"generation\":" << request[3];
-            if (line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0) {
+            if (line.rfind("console ", 0) == 0 || line.rfind("game-event ",0)==0 || line.rfind("game-script ",0)==0 ||
+                (gameCommandController && (line.rfind("invoke ",0)==0 || line.rfind("main ",0)==0))) {
                 std::cout << ",\"dispatch_returned\":" << (status == 0 ? "true" : "false");
             }
             if (line.rfind("bank-reload ", 0) == 0) {

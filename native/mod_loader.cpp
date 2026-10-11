@@ -9,6 +9,8 @@
 #include <cwchar>
 #include "../game-api/include/h5/hooks.hpp"
 #include <MinHook.h>
+#include "engine_hook_owner.hpp"
+#include "engine_hook_protocol.hpp"
 
 namespace {
 using CreateInput = HRESULT (WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
@@ -25,6 +27,8 @@ uint64_t selectorGeneration = 0;
 std::array<unsigned char, 32> selectorDataSchema{};
 DWORD selectorInvocationThread = 0;
 HWND selectorGameWindow = nullptr;
+heroes5_sdk::EngineHookOwner* engineHookOwner = nullptr;
+HWND engineHookWindow = nullptr;
 bool selectorHookActive = false;
 bool selectorHookUncertain = false;
 bool selectorHookCreated = false;
@@ -32,8 +36,126 @@ uintptr_t selectorStockRootGlobal = 0;
 uintptr_t selectorResume = h5::hooks::BankLayout.Resume();
 volatile LONG selectorExecutingThread = 0;
 volatile LONG verifiedGameStartupThread = 0;
+bool MatchesSelectorWindow(HWND window, DWORD startupThread);
 // Startup classification: zero is unknown, -1 is a non-game forwarding host.
 }
+
+namespace {
+DWORD BindEngineHookOwner(HWND window, heroes5_sdk::EngineHookAction action) {
+    using namespace heroes5_sdk;
+    const auto startup = InterlockedCompareExchange(&verifiedGameStartupThread,0,0);
+    if (startup <= 0 || GetCurrentThreadId() != static_cast<DWORD>(startup) ||
+        !MatchesSelectorWindow(window,static_cast<DWORD>(startup))) { return ERROR_INVALID_PARAMETER; }
+    if (!engineHookOwner) {
+        if (action != EngineHookAction::Attach) { return ERROR_NOT_READY; }
+        engineHookOwner = new (std::nothrow) EngineHookOwner(window);
+        if (!engineHookOwner) { return ERROR_NOT_ENOUGH_MEMORY; }
+        engineHookWindow = window;
+    }
+    return engineHookWindow == window ? ERROR_SUCCESS : ERROR_INVALID_WINDOW_HANDLE;
+}
+DWORD DispatchEngineHook(heroes5_sdk::EngineHookRequest& request,
+    std::span<const unsigned char> expected) {
+    using namespace heroes5_sdk;
+    request.callbackRetired = request.action == EngineHookAction::Attach && !request.slot ? 1u : 0u;
+    if (!request.callback) { return ERROR_INVALID_PARAMETER; }
+    const auto admission = BindEngineHookOwner(request.window,request.action);
+    if (admission != ERROR_SUCCESS) { return admission; }
+    if (request.action == EngineHookAction::Detach) {
+        if (!engineHookOwner->Retire(request.site, request.slot, request.callback)) { return ERROR_INVALID_PARAMETER; }
+        request.callbackRetired = 1;
+        request.slot = nullptr;
+        return ERROR_SUCCESS;
+    }
+    if (request.action != EngineHookAction::Attach || request.slot) { return ERROR_INVALID_PARAMETER; }
+    auto* observers = engineHookOwner->Prepare(request.site, expected);
+    if (!observers) { return ERROR_INVALID_DATA; }
+    if (!engineHookOwner->CanObserve(request.site)) { return ERROR_SHARING_VIOLATION; }
+    auto* slot = h5::hooks::AddContextObserver(*observers, request.callback);
+    if (!slot) { return ERROR_NOT_ENOUGH_MEMORY; }
+    request.callbackRetired = 0;
+    if (!engineHookOwner->SetEnabled(request.site, true)) {
+        request.callbackRetired = engineHookOwner->Retire(request.site, slot, request.callback) ? 1u : 0u;
+        if (!request.callbackRetired) { request.slot = slot; }
+        return ERROR_INVALID_DATA;
+    }
+    request.slot = slot;
+    return ERROR_SUCCESS;
+}
+
+
+}
+extern "C" DWORD WINAPI Heroes5ModsEngineHook(void* memory) {
+    using namespace heroes5_sdk;
+    if (!memory) { return ERROR_INVALID_PARAMETER; }
+    auto& request = *static_cast<EngineHookRequest*>(memory);
+    if (request.size != sizeof(request) || request.version != 1) { return ERROR_INVALID_PARAMETER; }
+    request.callbackRetired = request.action == EngineHookAction::Attach && !request.slot ? 1u : 0u;
+    const auto expected = h5::hooks::EngineSiteSignature(request.site);
+    if (expected.empty()) { return ERROR_NOT_SUPPORTED; }
+    return DispatchEngineHook(request, expected);
+}
+extern "C" DWORD WINAPI Heroes5ModsEngineHookV2(void* memory) {
+    using namespace heroes5_sdk;
+    if (!memory) { return ERROR_INVALID_PARAMETER; }
+    auto& request = *static_cast<EngineHookRequestV2*>(memory);
+    if (request.base.size != sizeof(request) || request.base.version != 2) { return ERROR_INVALID_PARAMETER; }
+    request.base.callbackRetired = request.base.action == EngineHookAction::Attach && !request.base.slot ? 1u : 0u;
+    if (!EngineImageSite(request.base.site, request.expectedBytes)) { return ERROR_INVALID_DATA; }
+    for (uint32_t index = request.expectedBytes; index < sizeof(request.expected); ++index) {
+        if (request.expected[index]) { return ERROR_INVALID_PARAMETER; }
+    }
+    return DispatchEngineHook(request.base, {request.expected, request.expectedBytes});
+}
+extern "C" DWORD WINAPI Heroes5ModsEngineHookV3(void* memory) {
+    using namespace heroes5_sdk;
+    if (!memory) { return ERROR_INVALID_PARAMETER; }
+    auto& request = *static_cast<EngineHookRequestV3*>(memory);
+    auto& base = request.signature.base;
+    if (base.size != sizeof(request) || base.version != 3) { return ERROR_INVALID_PARAMETER; }
+    base.callbackRetired = base.action == EngineHookAction::Attach && !base.slot ? 1u : 0u;
+    if (!request.interceptor || base.callback) { return ERROR_INVALID_PARAMETER; }
+    if (base.action == EngineHookAction::Detach) {
+        const auto admission = BindEngineHookOwner(base.window,base.action);
+        if (admission != ERROR_SUCCESS) { return admission; }
+        if (!engineHookOwner->RetireInterceptor(base.site,base.slot,request.interceptor)) { return ERROR_INVALID_PARAMETER; }
+        base.callbackRetired = 1;base.slot = nullptr;return ERROR_SUCCESS;
+    }
+    if (request.policy.allowReturn > 1 ||
+        request.policy.stackPopBytes > 64 || request.policy.stackPopBytes % 4 ||
+        (!request.policy.allowReturn && request.policy.stackPopBytes)) { return ERROR_INVALID_PARAMETER; }
+    if (!EngineImageSite(base.site,request.signature.expectedBytes)) { return ERROR_INVALID_DATA; }
+    for (uint32_t index=request.signature.expectedBytes;index<16;++index) {
+        if (request.signature.expected[index]) { return ERROR_INVALID_PARAMETER; }
+    }
+    if (request.policy.branch) {
+        if (!EngineImageSite(request.policy.branch,request.branchBytes) ||
+            memcmp(reinterpret_cast<const void*>(request.policy.branch),request.branchExpected,request.branchBytes)) {
+            return ERROR_INVALID_DATA;
+        }
+    } else if (request.branchBytes) { return ERROR_INVALID_PARAMETER; }
+    for (uint32_t index=request.branchBytes;index<16;++index) {
+        if (request.branchExpected[index]) { return ERROR_INVALID_PARAMETER; }
+    }
+    const auto admission = BindEngineHookOwner(base.window,base.action);
+    if (admission != ERROR_SUCCESS) { return admission; }
+    if (base.action != EngineHookAction::Attach || base.slot) { return ERROR_INVALID_PARAMETER; }
+    if (!engineHookOwner->Prepare(base.site,{request.signature.expected,request.signature.expectedBytes})) {
+        return ERROR_INVALID_DATA;
+    }
+    auto* slot = engineHookOwner->SetInterceptor(base.site,request.policy,request.interceptor);
+    if (!slot) { return ERROR_SHARING_VIOLATION; }
+    base.callbackRetired = 0;
+    if (!engineHookOwner->SetEnabled(base.site,true)) {
+        base.callbackRetired = engineHookOwner->RetireInterceptor(base.site,slot,request.interceptor) ? 1u : 0u;
+        if (!base.callbackRetired) { base.slot=slot; }
+        return ERROR_INVALID_DATA;
+    }
+    base.slot = slot;return ERROR_SUCCESS;
+}
+#pragma comment(linker, "/EXPORT:Heroes5ModsEngineHookV3=_Heroes5ModsEngineHookV3@4")
+#pragma comment(linker, "/EXPORT:Heroes5ModsEngineHookV2=_Heroes5ModsEngineHookV2@4")
+#pragma comment(linker, "/EXPORT:Heroes5ModsEngineHook=_Heroes5ModsEngineHook@4")
 
 // Diagnostic state only; the game never needs to call this export.
 extern "C" {

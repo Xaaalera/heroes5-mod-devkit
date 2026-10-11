@@ -84,10 +84,61 @@ __declspec(naked) void SeedAndCall() {
 void Require(bool condition, const char* reason) {
     if (!condition) { throw std::runtime_error(reason); }
 }
+bool reentrantLifecycleRefused = false;
+void __cdecl ProbeReentrantLifecycle() {
+    heroes5_sdk::PluginSnapshot snapshot;
+    snapshot.schema = 123;
+    reentrantLifecycleRefused = heroes5_sdk::PluginRuntime::CallingPayloadOnCurrentThread() &&
+        Heroes5PluginStop(nullptr) == ERROR_BUSY && Heroes5PluginSuspendV2(&snapshot) == ERROR_BUSY &&
+        Heroes5PluginRestoreV2(&snapshot) == ERROR_BUSY && snapshot.schema == 123;
+}
+void VerifyCoreDllHandoff(const wchar_t* payload, const wchar_t* firstPath, const wchar_t* secondPath) {
+    using Entry = DWORD (WINAPI*)(void*);
+    const auto first = LoadLibraryW(firstPath);
+    Require(first != nullptr, "First actual core DLL did not load");
+    const auto firstReplace = reinterpret_cast<Entry>(GetProcAddress(first, "Heroes5PluginReplace"));
+    const auto firstInvoke = reinterpret_cast<Entry>(GetProcAddress(first, "Heroes5PluginInvoke"));
+    const auto firstSuspend = reinterpret_cast<Entry>(GetProcAddress(first, "Heroes5PluginSuspendV2"));
+    Require(firstReplace && firstInvoke && firstSuspend, "First core handoff exports missing");
+    Require(firstReplace(const_cast<wchar_t*>(payload)) == 0, "First actual core rejected context payload");
+    uint32_t request[4]{1, 7, 0, 0};
+    Require(firstInvoke(request) == 0 && request[2] == 7, "First actual core counter did not execute");
+    const auto legacySuspend = reinterpret_cast<Entry>(GetProcAddress(first, "Heroes5PluginSuspend"));
+    const auto legacyRestore = reinterpret_cast<Entry>(GetProcAddress(first, "Heroes5PluginRestore"));
+    Require(legacySuspend && legacyRestore &&
+        legacySuspend(reinterpret_cast<void*>(1)) == static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState) &&
+        legacyRestore(reinterpret_cast<void*>(1)) == static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState),
+        "Old controller snapshot call touched an incompatible buffer");
+    request[1] = 0;
+    Require(firstInvoke(request) == 0 && request[2] == 7, "Old controller rejection retired active payload");
+    heroes5_sdk::PluginSnapshot snapshot;
+    Require(firstSuspend(&snapshot) == 0 && snapshot.version == 2 &&
+        snapshot.residentSchema == 1 && snapshot.residentBytes == 65536,
+        "Actual core suspend omitted resident contract");
+    Require(FreeLibrary(first) != 0 && !GetModuleHandleW(firstPath), "Suspended actual core did not unload");
+    const auto second = LoadLibraryW(secondPath);
+    Require(second != nullptr, "Second actual core DLL did not load");
+    const auto replace = reinterpret_cast<Entry>(GetProcAddress(second, "Heroes5PluginReplace"));
+    const auto invoke = reinterpret_cast<Entry>(GetProcAddress(second, "Heroes5PluginInvoke"));
+    const auto restore = reinterpret_cast<Entry>(GetProcAddress(second, "Heroes5PluginRestoreV2"));
+    const auto stop = reinterpret_cast<Entry>(GetProcAddress(second, "Heroes5PluginStop"));
+    Require(replace && invoke && restore && stop, "Second core handoff exports missing");
+    Require(replace(const_cast<wchar_t*>(payload)) == 0, "Second actual core payload admission failed");
+    auto incompatible = snapshot;
+    ++incompatible.residentSchema;
+    Require(restore(&incompatible) == static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState),
+        "Actual new core accepted incompatible resident schema");
+    Require(restore(&snapshot) == 0, "Actual new core rejected compatible resident contract");
+    request[1] = 0;
+    Require(invoke(request) == 0 && request[2] == 7 && request[3] == snapshot.generation + 1,
+        "Actual new core lost payload state or reused generation");
+    Require(stop(nullptr) == 0 && FreeLibrary(second) != 0 && !GetModuleHandleW(secondPath),
+        "Actual new core stop/unload failed");
+}
 }
 int wmain(int count, wchar_t** arguments) {
     try {
-        Require(count == 2, "Expected payload path");
+        Require(count == 5, "Expected basic/context payloads and two core DLL paths");
         heroes5_sdk::BankReplaceRequest unavailable;
         wcscpy_s(unavailable.path, L"fixture.dll");
         unavailable.applied = 1; unavailable.moduleReleased = 1;
@@ -129,10 +180,11 @@ int wmain(int count, wchar_t** arguments) {
             "Hidden game window selected as dispatch target");
         ShowWindow(gameWindow, SW_SHOWNOACTIVATE);
         Require(AttachMainWindowHook() && mainWindow == gameWindow &&
-            windowThread == GetCurrentThreadId() && mainHook,
+            windowThread == GetCurrentThreadId() && mainHook && windowInputHook,
             "Visible game window was not selected");
         Require(UnhookWindowsHookEx(mainHook) != 0, "Window fixture hook cleanup failed");
-        mainHook = nullptr; mainWindow = nullptr; windowThread = 0;
+        Require(UnhookWindowsHookEx(windowInputHook) != 0, "Window fixture input hook cleanup failed");
+        mainHook = nullptr; windowInputHook = nullptr; mainWindow = nullptr; windowThread = 0;
         const auto universeWindow = CreateWindowW(L"H5UNI", L"Universe fixture", WS_POPUP | WS_VISIBLE,
             0, 0, 1, 1, nullptr, nullptr, instance, nullptr);
         Require(universeWindow != nullptr, "Universe fixture creation failed");
@@ -140,9 +192,10 @@ int wmain(int count, wchar_t** arguments) {
             "Ambiguous game windows accepted");
         ShowWindow(gameWindow, SW_HIDE);
         Require(AttachMainWindowHook() && mainWindow == universeWindow &&
-            windowThread == GetCurrentThreadId() && mainHook, "Universe main window rejected");
+            windowThread == GetCurrentThreadId() && mainHook && windowInputHook, "Universe main window rejected");
         Require(UnhookWindowsHookEx(mainHook) != 0, "Universe hook cleanup failed");
-        mainHook = nullptr; mainWindow = nullptr; windowThread = 0;
+        Require(UnhookWindowsHookEx(windowInputHook) != 0, "Universe input hook cleanup failed");
+        mainHook = nullptr; windowInputHook = nullptr; mainWindow = nullptr; windowThread = 0;
         DestroyWindow(universeWindow);
         DestroyWindow(gameWindow);
         DestroyWindow(auxiliaryWindow);
@@ -151,8 +204,8 @@ int wmain(int count, wchar_t** arguments) {
         uint32_t prepare = 1;
         Require(Heroes5PluginConnect(&prepare) == 0, "Empty host prepare failed");
         heroes5_sdk::PluginSnapshot empty;
-        Require(Heroes5PluginRestore(&empty) == 0, "Canonical empty snapshot rejected");
-        for (unsigned field = 0; field < 6; ++field) {
+        Require(Heroes5PluginRestoreV2(&empty) == 0, "Canonical empty snapshot rejected");
+        for (unsigned field = 0; field < 8; ++field) {
             auto corrupted = empty;
             if (field == 0) { corrupted.magic ^= 1; }
             if (field == 1) { ++corrupted.version; }
@@ -160,13 +213,35 @@ int wmain(int count, wchar_t** arguments) {
             if (field == 3) { ++corrupted.bytes; }
             if (field == 4) { ++corrupted.generation; }
             if (field == 5) { corrupted.data[0] = 1; }
-            Require(Heroes5PluginRestore(&corrupted) == static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState),
+            if (field == 6) { ++corrupted.residentSchema; }
+            if (field == 7) { ++corrupted.residentBytes; }
+            Require(Heroes5PluginRestoreV2(&corrupted) == static_cast<DWORD>(heroes5_sdk::RuntimeResult::IncompatibleState),
                 "Malformed empty snapshot accepted");
         }
         Require(Heroes5PluginStop(nullptr) == 0, "Empty host cleanup failed");
         runtime = new heroes5_sdk::PluginRuntime;
         Require(runtime->Replace(arguments[1]) == heroes5_sdk::RuntimeResult::Ok, "Payload load failed");
         windowThread = GetCurrentThreadId();
+        const auto transportHeld = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        const auto payloadReturned = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        Require(transportHeld && payloadReturned, "Reentrant transport fixture events failed");
+        bool transportCompleted = false;
+        std::thread transport([&] {
+            AcquireSRWLockExclusive(&bridgeLock); SetEvent(transportHeld);
+            transportCompleted = WaitForSingleObject(payloadReturned, 3000) == WAIT_OBJECT_0;
+            ReleaseSRWLockExclusive(&bridgeLock);
+        });
+        const bool transportReady = WaitForSingleObject(transportHeld, 3000) == WAIT_OBJECT_0;
+        uint32_t lifecycleResult = 0;
+        auto lifecycleStatus = heroes5_sdk::RuntimeResult::CallRejected;
+        if (transportReady) {
+            lifecycleStatus = runtime->Invoke(12, static_cast<uint32_t>(reinterpret_cast<uintptr_t>(ProbeReentrantLifecycle)), lifecycleResult);
+        }
+        SetEvent(payloadReturned); transport.join();
+        CloseHandle(transportHeld); CloseHandle(payloadReturned);
+        Require(transportReady && transportCompleted && reentrantLifecycleRefused &&
+            lifecycleStatus == heroes5_sdk::RuntimeResult::Ok && lifecycleResult == 12,
+            "Lifecycle reentry blocked transport or touched suspended state");
         engineSettings[2] = 7;
         originalEngineTarget = reinterpret_cast<uintptr_t>(OriginalTarget);
         selectedTarget = originalEngineTarget;
@@ -231,6 +306,48 @@ int wmain(int count, wchar_t** arguments) {
             "Empty resident owner stopped forwarding original calls");
         Require(WriteCall(site, ownerCall, original), "Local test owner detach failed");
         VirtualFree(reinterpret_cast<void*>(ownerCode), 0, MEM_RELEASE);
+        delete runtime;
+        runtime = new heroes5_sdk::PluginRuntime;
+        Require(runtime->Replace(arguments[2]) == heroes5_sdk::RuntimeResult::Ok, "Context payload load failed");
+        mainWindow = CreateWindowExW(0, L"STATIC", L"Owned engine context", 0,
+            0, 0, 1, 1, nullptr, nullptr, instance, nullptr);
+        Require(mainWindow != nullptr, "Context game-window fixture failed");
+        engineSettings = {1, 2, 9};
+        selectedTarget = reinterpret_cast<uintptr_t>(EngineCallThunk);
+        SeedAndCall();
+        {
+            h5::resident::BufferLease lease(mainWindow, uiSlot + 1, 1, false);
+            Require(lease.Data() && lease.Bytes() == 65536, "Context callback did not allocate host state");
+            const auto* words = reinterpret_cast<const uint32_t*>(lease.Data());
+            Require(words[0] == 1 && words[10] == 1 &&
+                std::memcmp(words + 1, baselineRegisters.data(), sizeof(observedRegisters)) == 0 &&
+                words[9] == baselineFlags, "Actual engine registers did not reach context payload");
+        }
+        Require(returned == 0x1234abcd && observedFlags == baselineFlags &&
+            std::memcmp(baselineRegisters.data(), observedRegisters, sizeof(observedRegisters)) == 0 &&
+            std::memcmp(baselineFx.data(), observedFx, sizeof(observedFx)) == 0,
+            "Context payload changed game registers, flags, arguments or FPU/SSE");
+        auto* contextOwner = h5::hooks::CreateScriptObserverStorage(1, originalEngineTarget);
+        Require(contextOwner != nullptr, "Context shared owner allocation failed");
+        auto* contextCallback = h5::hooks::AddScriptObserver(*contextOwner, OnEngineCall);
+        Require(contextCallback != nullptr, "Context callback could not share legacy owner");
+        selectedTarget = reinterpret_cast<uintptr_t>(contextOwner) - h5::hooks::ScriptObserverDescriptorOffset;
+        SeedAndCall();
+        {
+            h5::resident::BufferLease lease(mainWindow, uiSlot + 1, 1, false);
+            const auto* words = reinterpret_cast<const uint32_t*>(lease.Data());
+            Require(words && words[0] == 2 && words[10] == 1 &&
+                std::memcmp(words + 1, baselineRegisters.data(), sizeof(observedRegisters)) == 0,
+                "Shared legacy dispatcher did not deliver captured registers");
+        }
+        Require(h5::hooks::RemoveScriptObserver(contextCallback, OnEngineCall), "Context callback removal failed");
+        Require(DestroyWindow(mainWindow) != 0, "Context window cleanup failed");
+        mainWindow = nullptr; engineSettings = {};
+        VirtualFree(reinterpret_cast<void*>(selectedTarget), 0, MEM_RELEASE);
+        delete runtime;
+        runtime = new heroes5_sdk::PluginRuntime;
+        Require(runtime->Replace(arguments[1]) == heroes5_sdk::RuntimeResult::Ok,
+            "Basic payload restore after context test failed");
         // Exit uses a separate message and cannot reinterpret a payload command.
         uint32_t highCommand[4]{UINT32_MAX - 2, 0, 0, 0};
         mainWindow = reinterpret_cast<HWND>(1);
@@ -247,6 +364,7 @@ int wmain(int count, wchar_t** arguments) {
         Require(region.Protect == PAGE_EXECUTE_READ, "Code protection not restored");
         VirtualFree(code, 0, MEM_RELEASE);
         delete runtime; runtime = nullptr;
+        VerifyCoreDllHandoff(arguments[2], arguments[3], arguments[4]);
         std::cout << "PASS: thunk/native-owner GPR/ESP/flags/x87/SSE, stack argument, independent subscribers and guards\n";
         return 0;
     } catch (const std::exception& error) {

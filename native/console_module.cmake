@@ -64,4 +64,7 @@ target_compile_definitions(xalkit_console PRIVATE UNICODE _UNICODE NOMINMAX WIN3
 target_compile_options(xalkit_console PRIVATE /utf-8)
 target_link_libraries(xalkit_console PRIVATE user32 gdi32 imm32 dwmapi bcrypt ws2_32 nlohmann_json::nlohmann_json)
 add_executable(console_activation_test console_activation_test.cpp)
+add_executable(module_catalog_test module_catalog_test.cpp)
+target_link_libraries(module_catalog_test PRIVATE nlohmann_json::nlohmann_json)
+add_test(NAME console_module_catalog COMMAND module_catalog_test)
 add_test(NAME console_requires_sdk COMMAND console_activation_test $<TARGET_FILE:xalkit_console>)
