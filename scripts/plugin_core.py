@@ -61,9 +61,12 @@ def dispatch_owned_console(root, owner, command, *, kind='console'):
     if (not isinstance(command, str) or not command or any(value in command for value in ('\0', '\r', '\n')) or
             len(command.encode('utf-16-le')) > 8190):
         raise ValueError('Invalid bounded console command')
-    prefixes={'console':'console ', 'event':'game-event ', 'script':'game-script '}
+    prefixes={'console':'console ', 'event':'game-event ', 'script':'game-script ', 'plugin':'invoke ', 'plugin-main':'main '}
     if kind not in prefixes:
         raise ValueError('Unknown native game dispatch kind')
+    if kind in ('plugin', 'plugin-main') and (not re.fullmatch(r'[0-9]+ [0-9]+', command) or
+            any(int(value) > 0xffffffff for value in command.split())):
+        raise ValueError('Expected two unsigned plugin command values')
     cancelled = owner.get('_cancelled')
     if cancelled is not None and cancelled.is_set():
         raise RuntimeError('SDK command session was disconnected')
@@ -78,8 +81,11 @@ def dispatch_owned_console(root, owner, command, *, kind='console'):
     if (result.returncode or len(replies) != 2 or replies[0] != {'ready': True} or
             replies[1].get('status') != 0 or replies[1].get('dispatch_returned') is not True):
         raise RuntimeError('Native console dispatch failed or unconfirmed: ' + result.stderr)
-    return {'pid': owner['pid'], 'status': 'dispatched', 'dispatch_returned': True,
-            'effect_verified': False}
+    response = {'pid': owner['pid'], 'status': 'dispatched', 'dispatch_returned': True,
+                'effect_verified': False}
+    if kind in ('plugin', 'plugin-main'):
+        response.update(result=replies[1]['result'], generation=replies[1]['generation'])
+    return response
 
 
 def load_sdk_runtime(sdk, generation=None):
@@ -250,6 +256,8 @@ def package_resource_player(sdk, resource, name, archive):
 
 
 def validate_player_archive(archive, name):
+    import pefile
+
     plugin = 'bin/Heroes5Mods/Plugins/' + name + '.dll'
     expected = {plugin, 'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt', 'NOTICE.txt'}
     if len(archive.namelist()) != len(expected) or set(archive.namelist()) != expected or archive.testzip() is not None:
@@ -261,6 +269,48 @@ def validate_player_archive(archive, name):
                         ('bin/d3d9.dll', 'graphics_facade_sha256')):
         if hashlib.sha256(archive.read(member)).hexdigest() != manifest.get(key):
             raise ValueError('Native player archive checksum differs: ' + member)
+    # These packages declare only the two included shared DLLs and Windows APIs.
+    # Unknown imports must not silently become requirements on a developer PC.
+    system_libraries = {
+        'kernel32.dll', 'kernelbase.dll', 'ntdll.dll', 'user32.dll', 'gdi32.dll',
+        'advapi32.dll', 'bcrypt.dll', 'crypt32.dll', 'ole32.dll', 'oleaut32.dll',
+        'shell32.dll', 'shlwapi.dll', 'comdlg32.dll', 'comctl32.dll', 'ws2_32.dll',
+        'winmm.dll', 'imm32.dll', 'version.dll', 'msvcrt.dll', 'ucrtbase.dll',
+    }
+    packaged_libraries = {'dinput8.dll', 'd3d9.dll'}
+    for member, entry_point in ((plugin, b'Heroes5PluginInstall'),
+                                ('bin/dinput8.dll', b'DirectInput8Create'),
+                                ('bin/d3d9.dll', b'Direct3DCreate9')):
+        try:
+            with pefile.PE(data=archive.read(member), fast_load=True) as image:
+                if (image.FILE_HEADER.Machine != 0x14c or image.OPTIONAL_HEADER.Magic != 0x10b
+                        or not image.FILE_HEADER.Characteristics & 0x2000):
+                    raise ValueError('Player package requires an x86 DLL: ' + member)
+                initial_warnings = tuple(image.get_warnings())
+                image.parse_data_directories(directories=[
+                    pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_EXPORT'],
+                    pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT'],
+                    pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT'],
+                ])
+                if tuple(image.get_warnings()) != initial_warnings:
+                    raise ValueError('Player DLL could not be parsed completely: ' + member)
+                for directory in ('DIRECTORY_ENTRY_IMPORT', 'DIRECTORY_ENTRY_DELAY_IMPORT'):
+                    declared = image.OPTIONAL_HEADER.DATA_DIRECTORY[
+                        pefile.DIRECTORY_ENTRY['IMAGE_' + directory]]
+                    if declared.VirtualAddress and not getattr(image, directory, None):
+                        raise ValueError('Player DLL dependency table is unreadable: ' + member)
+                symbols = getattr(getattr(image, 'DIRECTORY_ENTRY_EXPORT', None), 'symbols', [])
+                if not any(symbol.name == entry_point and symbol.address and not symbol.forwarder
+                           for symbol in symbols):
+                    raise ValueError('Player DLL lacks loader entry point ' + entry_point.decode('ascii') + ': ' + member)
+                for directory in ('DIRECTORY_ENTRY_IMPORT', 'DIRECTORY_ENTRY_DELAY_IMPORT'):
+                    for dependency in getattr(image, directory, []):
+                        library = dependency.dll.decode('ascii').lower()
+                        if (library not in system_libraries | packaged_libraries and
+                                not re.fullmatch(r'(?:api-ms-win-|ext-ms-win-)[a-z0-9-]+\.dll', library)):
+                            raise ValueError('Player DLL has an undeclared dependency ' + library + ': ' + member)
+        except (pefile.PEFormatError, UnicodeDecodeError) as failure:
+            raise ValueError('Invalid player DLL: ' + member) from failure
     return manifest
 
 

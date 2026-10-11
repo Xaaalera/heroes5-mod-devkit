@@ -21,6 +21,93 @@ specification.loader.exec_module(watch_module)
 
 
 class PluginWatchBoundaries(unittest.TestCase):
+    def test_supervisor_routes_resource_adapter_beside_native_plugin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve();plugins=root/'plugins';native=plugins/'predictor';bank=root/'mods/army-reference'
+            native.mkdir(parents=True);bank.mkdir(parents=True)
+            (native/'plugin.cpp').write_text('fixture');(native/'xalkit.json').write_text('{"kind":"native"}')
+            (bank/'bank.cpp').write_text('fixture');(bank/'mod.json').write_text('{"native_adapter":"bank-selector"}')
+            package=root/'.local/test-state/army-reference.h5u';package.parent.mkdir(parents=True);package.write_bytes(b'package')
+            installed=root/'.local/test-game/UserMODs/workshop-army-reference.h5u';installed.parent.mkdir(parents=True);installed.write_bytes(package.read_bytes())
+            graphics=root/'.local/test-game/bin/d3d9.dll';graphics.parent.mkdir();graphics.write_bytes(b'graphics')
+            bridge=root/'bridge.dll';bridge.write_bytes(b'bridge');owner=root/'owner.json';owner.write_text('{}')
+            options=SimpleNamespace(plugins=plugins,output=root/'workers',toolchain=root/'vcvars.bat',
+                client=root/'client.exe',bridge=bridge,owned_game=True,session_state=owner,main_thread=True,
+                control_stdin=False,core_source=None,log_format='json',log_session=None,managed_projects=True,
+                console_build=None,console_project=None,bank_package=None,bank_graphics=None,bank_cmake=root/'cmake.exe')
+            process=Mock();process.poll.return_value=None;process.wait.return_value=0
+            with patch.object(watch_module,'compiler_environment',return_value=(root/'cl.exe',{})), \
+                    patch.object(watch_module.subprocess,'Popen',return_value=process) as spawn, \
+                    patch.object(watch_module.threading,'Thread'), \
+                    patch.object(watch_module.time,'sleep',side_effect=KeyboardInterrupt), \
+                    patch('sys.stdout',new=io.StringIO()):
+                watch_module.supervise_plugins(options)
+            self.assertEqual(spawn.call_count,2)
+            commands=[call.args[0] for call in spawn.call_args_list]
+            bank_command=next(command for command in commands if '--bank-project' in command)
+            self.assertEqual(bank_command[bank_command.index('--bank-project')+1],str(bank))
+            self.assertEqual(bank_command[bank_command.index('--bank-package')+1],str(package))
+            native_command=next(command for command in commands if '--bank-project' not in command)
+            self.assertEqual(native_command[native_command.index('--plugin-id')+1],'predictor')
+            installed.unlink()
+            process=Mock();process.poll.return_value=None;process.wait.return_value=0
+            with patch.object(watch_module,'compiler_environment',return_value=(root/'cl.exe',{})), \
+                    patch.object(watch_module.subprocess,'Popen',return_value=process) as spawn, \
+                    patch.object(watch_module.threading,'Thread'), \
+                    patch.object(watch_module.time,'sleep',side_effect=KeyboardInterrupt), \
+                    patch('sys.stdout',new=io.StringIO()) as output:
+                watch_module.supervise_plugins(options)
+            self.assertEqual(spawn.call_count,1)
+            self.assertIn('resource_setup_required',output.getvalue())
+
+    def test_explicit_sources_exclude_legacy_units_and_track_shared_headers_and_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'project'; source.mkdir()
+            (source / 'src').mkdir()
+            (source / 'src/managed.cpp').write_text('managed')
+            (source / 'src/legacy.cpp').write_text('legacy')
+            (source / 'src/common.hpp').write_text('shared')
+            (source / 'include').mkdir()
+            (source / 'include/outside-src.hpp').write_text('other header')
+            marker = source / 'xalkit.json'
+            marker.write_text(json.dumps({'native_sources': ['src/managed.cpp']}))
+            watcher = watch_module.PluginWatch(source, Path(directory) / 'output', Path('cl.exe'), {}, None)
+            before = watcher.snapshot()
+            self.assertIn(str(Path('src/managed.cpp')), before)
+            self.assertNotIn(str(Path('src/legacy.cpp')), before)
+            self.assertIn('@watch/src/legacy.cpp', before)
+            (source / 'src/legacy.cpp').write_text('changed included implementation')
+            self.assertNotEqual(before, watcher.snapshot())
+            before = watcher.snapshot()
+            self.assertIn(str(Path('src/common.hpp')), before)
+            (source / 'include/outside-src.hpp').write_text('changed include')
+            self.assertNotEqual(before, watcher.snapshot())
+            before = watcher.snapshot()
+            (source / 'src/common.hpp').write_text('changed')
+            self.assertNotEqual(before, watcher.snapshot())
+            marker.write_text(json.dumps({'native_sources': ['src/legacy.cpp']}))
+            self.assertIn(str(Path('src/legacy.cpp')), watcher.snapshot())
+            self.assertNotIn(str(Path('src/managed.cpp')), watcher.snapshot())
+
+    def test_invalid_explicit_sources_return_registered_error_without_building(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'project'; source.mkdir()
+            (source / 'managed.cpp').write_text('managed')
+            watcher = watch_module.PluginWatch(source, Path(directory) / 'output', Path('cl.exe'), {}, None)
+            for selected in (None, [], 'managed.cpp', ['../outside.cpp'], ['missing.cpp'], ['managed.cpp', 'managed.cpp'], ['bad\0.cpp']):
+                with self.subTest(selected=selected):
+                    (source / 'xalkit.json').write_text(json.dumps({'native_sources': selected}))
+                    with self.assertRaises(watch_module.CommandFailure) as caught:
+                        watcher.snapshot()
+                    self.assertEqual(caught.exception.payload['status'], 'INVALID_ARGUMENT')
+                    self.assertEqual(caught.exception.payload['details'][0]['reason'], 'SDK_NATIVE_SOURCES_INVALID')
+            watcher.ready = Path(directory) / 'previous.dll'
+            self.assertIsNone(watcher.observe())
+            self.assertEqual(watcher.ready, Path(directory) / 'previous.dll')
+            (source / 'xalkit.json').write_text(json.dumps({'native_sources': ['managed.cpp']}))
+            self.assertIn('managed.cpp', watcher.observe())
+            self.assertIsNone(watcher.source_error)
+
     def test_core_controller_isolates_parent_console_signal_group(self):
         import plugin_core
         with tempfile.TemporaryDirectory() as directory:
@@ -105,17 +192,27 @@ class PluginWatchBoundaries(unittest.TestCase):
                 endpoint[key + '_sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()
             metadata = watch / 'diagnostic-owner.json'
             metadata.write_text(json.dumps(endpoint), encoding='utf-8')
-            response = Mock(returncode=0, stdout='{"ready":true}\n{"status":0,"dispatch_returned":true}\n', stderr='')
+            response = Mock(returncode=0, stdout='{"ready":true}\n{"status":0,"dispatch_returned":true,"result":7,"generation":2}\n', stderr='')
             for kind, command, wire_input in (
                     ('console', 'help', 'console help\nquit\n'),
                     ('event', 'screenshot', 'game-event screenshot\nquit\n'),
-                    ('script', 'print(1)', 'game-script print(1)\nquit\n')):
+                    ('script', 'print(1)', 'game-script print(1)\nquit\n'),
+                    ('plugin', '18 1', 'invoke 18 1\nquit\n'),
+                    ('plugin-main', '36 1', 'main 36 1\nquit\n')):
                 with self.subTest(kind=kind), patch.object(plugin_core.subprocess, 'run', return_value=response) as run:
                     result = plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, command, kind=kind)
                     self.assertFalse(result['effect_verified'])
+                    if kind in ('plugin', 'plugin-main'):
+                        self.assertEqual((result['result'], result['generation']), (7, 2))
                     self.assertEqual(run.call_args.args[0][1], '--owned-command')
                     self.assertEqual(run.call_args.kwargs['input'], wire_input)
                     run.assert_called_once()
+            for kind in ('plugin', 'plugin-main'):
+                for command in ('-1 0', '18 -1', '4294967296 0', '18 4294967296', '18 1 extra', 'reload anything'):
+                    with self.subTest(invalid_plugin_command=command, kind=kind), patch.object(plugin_core.subprocess, 'run') as run:
+                        with self.assertRaisesRegex(ValueError, 'unsigned plugin command'):
+                            plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, command, kind=kind)
+                        run.assert_not_called()
             with patch.object(plugin_core.subprocess, 'run') as run:
                 with self.assertRaisesRegex(ValueError, 'Unknown native game dispatch kind'):
                     plugin_core.dispatch_owned_console(root, {'pid': 123, 'created': 456}, 'help', kind='unknown')
@@ -502,6 +599,25 @@ class PluginWatchBoundaries(unittest.TestCase):
                 generator.write_text('generator v3')
             return SimpleNamespace(returncode=0, stdout='', stderr='')
         with patch.object(watch_module, 'DEVKIT', sdk):
+            # The common supervisor passes the project root as source. Generated
+            # headers there must not create a self-triggering rebuild loop.
+            self.watcher.source = project
+            (project / '.local/generated').mkdir(parents=True)
+            (project / '.local/generated/bank_payload.hpp').write_text('generated v1')
+            (project / 'src/selector.cpp').write_text('selector v1')
+            (sdk / 'native').mkdir()
+            (sdk / 'native/contract.hpp').write_text('contract v1')
+            before = self.watcher.bank_snapshot(project)
+            (project / '.local/generated/bank_payload.hpp').write_text('generated v2')
+            self.assertEqual(before, self.watcher.bank_snapshot(project))
+            for name in ('src/selector.cpp', 'CMakeLists.txt', 'scripts/build-player.py'):
+                with self.subTest(dependency=name):
+                    before = self.watcher.bank_snapshot(project)
+                    (project / name).write_text('changed')
+                    self.assertNotEqual(before, self.watcher.bank_snapshot(project))
+            before = self.watcher.bank_snapshot(project)
+            (sdk / 'native/contract.hpp').write_text('contract v2')
+            self.assertNotEqual(before, self.watcher.bank_snapshot(project))
             before = self.watcher.bank_snapshot(project)
             generator.write_text('generator v2')
             self.assertNotEqual(before, self.watcher.bank_snapshot(project))
@@ -557,6 +673,9 @@ class PluginWatchBoundaries(unittest.TestCase):
             self.assertEqual(result['status'], 'superseded')
             apply.assert_not_called()
     def test_compiler_uses_short_output_names_and_resolvable_cached_objects(self):
+        (self.source / 'xalkit.json').write_text(json.dumps({'native_sources': ['plugin.cpp']}))
+        included = self.source / 'included.cpp'
+        included.write_text('included implementation one', encoding='utf-8')
         definition = self.source / 'plugin.def'
         definition.write_text('EXPORTS\nAddedFunction\n', encoding='utf-8')
         generation = self.watcher.output / ('generation-' + 'a' * 32)
@@ -574,6 +693,14 @@ class PluginWatchBoundaries(unittest.TestCase):
         with patch.object(watch_module.subprocess, 'run', side_effect=compile_output) as run:
             result, compiled = self.watcher.build([self.entry], self.watcher.snapshot(),
                                                   generation, payload, False)
+            self.assertEqual(compiled, 1)
+            unchanged, reused = self.watcher.build([self.entry], self.watcher.snapshot(), generation, payload, False)
+            self.assertEqual(unchanged.returncode, 0)
+            self.assertEqual(reused, 0)
+            included.write_text('included implementation two', encoding='utf-8')
+            changed, rebuilt = self.watcher.build([self.entry], self.watcher.snapshot(), generation, payload, False)
+            self.assertEqual(changed.returncode, 0)
+            self.assertEqual(rebuilt, 1)
         self.assertEqual(result.returncode, 0)
         self.assertEqual(compiled, 1)
         link_arguments = run.call_args.args[0]
@@ -981,9 +1108,21 @@ class PluginWatchBoundaries(unittest.TestCase):
                     self.assertEqual(repeated.cache, selected_cache)
                     self.assertEqual(previous_cache.read_text(encoding='utf-8'), previous)
 
-    def test_release_has_one_plugin_and_both_shared_dependencies_with_matching_hashes(self):
+    @patch('pefile.PE')
+    def test_release_has_one_plugin_and_both_shared_dependencies_with_matching_hashes(self, parse_image):
         from zipfile import ZipFile
         import hashlib
+        image = parse_image.return_value.__enter__.return_value
+        image.FILE_HEADER.Machine = 0x14c
+        image.FILE_HEADER.Characteristics = 0x2000
+        image.OPTIONAL_HEADER.Magic = 0x10b
+        image.OPTIONAL_HEADER.DATA_DIRECTORY = [SimpleNamespace(VirtualAddress=0) for _ in range(16)]
+        image.get_warnings.return_value = []
+        image.DIRECTORY_ENTRY_EXPORT.symbols = [
+            SimpleNamespace(name=name, address=1, forwarder=None)
+            for name in (b'Heroes5PluginInstall', b'DirectInput8Create', b'Direct3DCreate9')]
+        image.DIRECTORY_ENTRY_IMPORT = [SimpleNamespace(dll=b'KERNEL32.dll')]
+        image.DIRECTORY_ENTRY_DELAY_IMPORT = []
         loader = self.root / 'dinput8.dll'
         graphics = self.root / 'd3d9.dll'
         loader.write_bytes(b'input-bootstrap')
@@ -1006,13 +1145,43 @@ class PluginWatchBoundaries(unittest.TestCase):
             self.assertEqual(manifest['graphics_facade_sha256'], hashlib.sha256(archive.read('bin/d3d9.dll')).hexdigest())
             self.assertNotIn('bin/d3d9.universe.dll', archive.namelist())
             members = {name: archive.read(name) for name in archive.namelist()}
-        for scenario in ('missing_notice', 'changed_graphics'):
+        for scenario in ('missing_notice', 'changed_graphics', 'development_payload', 'forwarded_entry',
+                         'empty_entry', 'wrong_architecture', 'developer_import', 'delayed_developer_import',
+                         'partial_parse', 'unparsed_imports', 'unparsed_delayed_imports'):
             with self.subTest(scenario=scenario):
                 modified = dict(members)
+                image.FILE_HEADER.Machine = 0x14c
+                image.DIRECTORY_ENTRY_EXPORT.symbols[0].name = b'Heroes5PluginInstall'
+                image.DIRECTORY_ENTRY_EXPORT.symbols[0].forwarder = None
+                image.DIRECTORY_ENTRY_EXPORT.symbols[0].address = 1
+                image.DIRECTORY_ENTRY_IMPORT = []
+                image.DIRECTORY_ENTRY_DELAY_IMPORT = []
+                image.get_warnings.return_value = []
+                image.get_warnings.side_effect = None
+                image.OPTIONAL_HEADER.DATA_DIRECTORY[1].VirtualAddress = 0
+                image.OPTIONAL_HEADER.DATA_DIRECTORY[13].VirtualAddress = 0
                 if scenario == 'missing_notice':
                     del modified['NOTICE.txt']
-                else:
+                elif scenario == 'changed_graphics':
                     modified['bin/d3d9.dll'] = b'changed graphics'
+                elif scenario == 'development_payload':
+                    image.DIRECTORY_ENTRY_EXPORT.symbols[0].name = b'Heroes5PluginQuery'
+                elif scenario == 'forwarded_entry':
+                    image.DIRECTORY_ENTRY_EXPORT.symbols[0].forwarder = b'developer.Heroes5PluginInstall'
+                elif scenario == 'empty_entry':
+                    image.DIRECTORY_ENTRY_EXPORT.symbols[0].address = 0
+                elif scenario == 'wrong_architecture':
+                    image.FILE_HEADER.Machine = 0x8664
+                elif scenario == 'developer_import':
+                    image.DIRECTORY_ENTRY_IMPORT = [SimpleNamespace(dll=b'python310.dll')]
+                elif scenario == 'delayed_developer_import':
+                    image.DIRECTORY_ENTRY_DELAY_IMPORT = [SimpleNamespace(dll=b'heroes5_plugin_bridge.dll')]
+                elif scenario == 'partial_parse':
+                    image.get_warnings.side_effect = [[], ['Import table could not be parsed completely']]
+                elif scenario == 'unparsed_imports':
+                    image.OPTIONAL_HEADER.DATA_DIRECTORY[1].VirtualAddress = 1
+                elif scenario == 'unparsed_delayed_imports':
+                    image.OPTIONAL_HEADER.DATA_DIRECTORY[13].VirtualAddress = 1
                 data = io.BytesIO()
                 with ZipFile(data, 'w') as altered:
                     for name, content in modified.items():
@@ -1021,4 +1190,76 @@ class PluginWatchBoundaries(unittest.TestCase):
                 with ZipFile(data) as altered:
                     with self.assertRaises(ValueError):
                         validate_player_archive(altered, 'one-plugin')
+        # A rejected build must neither emit a success nor replace an earlier ZIP.
+        previous_archive = Path(result['archive']).read_bytes()
+        image.OPTIONAL_HEADER.DATA_DIRECTORY[13].VirtualAddress = 0
+        image.DIRECTORY_ENTRY_EXPORT.symbols[0].name = b'Heroes5PluginQuery'
+        with patch.object(watch_module.shutil, 'which', return_value=str(self.entry)), \
+                patch.object(watch_module.CoreBuild, 'release', side_effect=release_fixture):
+            with self.assertRaisesRegex(ValueError, 'Heroes5PluginInstall'):
+                self.watcher.update(self.watcher.snapshot(), time.perf_counter(), 'one-plugin', loader)
+        self.assertEqual(Path(result['archive']).read_bytes(), previous_archive)
+        self.assertFalse(Path(result['archive']).with_suffix('.zip.tmp').exists())
         self.watcher.request.assert_not_called()
+
+    def test_player_archive_rejects_real_malformed_dependency_tables(self):
+        import base64
+        import zlib
+        import pefile
+        from zipfile import ZipFile
+        from plugin_core import validate_player_archive
+
+        # MSVC x86 /NOENTRY /NODEFAULTLIB fixture: exported installer returns
+        # GetCurrentProcessId()!=0. No game files or executable test loading.
+        library = zlib.decompress(base64.b64decode(
+            'eNrzjZrAwMzAwMACxP//MzDsYIAABwbC4AIQ88nv4mPYwnlWcQejz1nFkIzMYoWCovz0osRcheTEvLz8EoWkVIWi0jyFzDwFF/9ghdz8lFQ9Xl4uFagZlyUYjk6vzJsGw+9+5E+fAmbnT5sGpLk+ZE+H0HlQOgdMB2UmZ4DUo7spwJWBwYeRmYFb6GQWTOwBA5MiNyOfDgMT1KMwIADEClAWiA2UZ4NKwWhwQED1MDE4sII1CUA1CyCMMQCaEwOkKxQZGDTwBZoBAwMPkOIAqpdhIAEA1XPgkdYrSa0oAdKqMAeh+xViRIJeUUpiSSIDwxlGqN+ZkD0L97KDXlFqTn4yxK0gN4PVcWCoc2IYBUMahHa/CfwvCkwJAq0HSjiPu/4BpYvX7EAGSLbb9U/309jDo8E0bMEKRQQbVmbyAvEZIF4DLB/WsGHq+f8fVFMwMCQB5UHJBYYjQGUgqJBRgJRBpeCytSCxqDi1SDcts6KktChVLyUnh8EjtSg/tdg0IKc0PTPPM6+4JBEoyMAgAcTMDcwNMHuWwMo8AWi5hsQGl3cquXnIZaNeJqhsUzFlgJavoHIYVt7Byme9VAi/RwFS/EHkVcryc0pyU6B+PoMQr6qqSklKh5brIgg7jEB29KCKGYPEFiiiuMUEFsYqCDEzmDoY2KcIr4dwxo8Nk3tqiXNpUVFqXklAUX5yanGxZwqDt2uQn6uPsRE4VMkDApAyns1gNC+MRAAAxcCmWA=='))
+        export_name = b'Heroes5PluginInstall\0'
+        base_members = {
+            'bin/Heroes5Mods/Plugins/fixture.dll': library,
+            'bin/dinput8.dll': library.replace(export_name, b'DirectInput8Create\0'.ljust(len(export_name), b'\0')),
+            'bin/d3d9.dll': library.replace(export_name, b'Direct3DCreate9\0'.ljust(len(export_name), b'\0')),
+            'README.txt': b'Parser fixture only', 'NOTICE.txt': b'Generated from our minimal fixture',
+        }
+        for scenario in ('valid', 'broken_import', 'broken_delayed_import', 'partially_parsed_import'):
+            with self.subTest(scenario=scenario):
+                members = dict(base_members)
+                if scenario != 'valid':
+                    with pefile.PE(data=library) as image:
+                        if scenario == 'broken_import':
+                            image.DIRECTORY_ENTRY_IMPORT[0].struct.Name = 0xfffffff0
+                        elif scenario == 'broken_delayed_import':
+                            image.OPTIONAL_HEADER.DATA_DIRECTORY[13].VirtualAddress = 0xfffffff0
+                            image.OPTIONAL_HEADER.DATA_DIRECTORY[13].Size = 32
+                        else:
+                            directory = image.OPTIONAL_HEADER.DATA_DIRECTORY[1]
+                            section = image.sections[-1]
+                            offset = section.PointerToRawData + section.SizeOfRawData - 80
+                            self.assertEqual(library[offset:offset + 60], bytes(60))
+                            descriptor = image.DIRECTORY_ENTRY_IMPORT[0].struct.__pack__()
+                            invalid_descriptor = bytearray(descriptor)
+                            struct.pack_into('<I', invalid_descriptor, 0, 0xfffffff0)
+                            struct.pack_into('<I', invalid_descriptor, 16, 0xfffffff0)
+                            image.set_bytes_at_offset(offset, descriptor + invalid_descriptor + bytes(20))
+                            directory.VirtualAddress = section.VirtualAddress + offset - section.PointerToRawData
+                            directory.Size = 60
+                        members['bin/Heroes5Mods/Plugins/fixture.dll'] = image.write()
+                    if scenario == 'partially_parsed_import':
+                        with pefile.PE(data=members['bin/Heroes5Mods/Plugins/fixture.dll']) as partial:
+                            self.assertEqual(len(partial.DIRECTORY_ENTRY_IMPORT), 1)
+                            self.assertTrue(partial.get_warnings())
+                manifest = {'abi': 3}
+                for name, key in (('bin/Heroes5Mods/Plugins/fixture.dll', 'plugin_sha256'),
+                                  ('bin/dinput8.dll', 'loader_sha256'), ('bin/d3d9.dll', 'graphics_facade_sha256')):
+                    manifest[key] = hashlib.sha256(members[name]).hexdigest()
+                members['release.json'] = json.dumps(manifest).encode('utf-8')
+                data = io.BytesIO()
+                with ZipFile(data, 'w') as archive:
+                    for name, content in members.items():
+                        archive.writestr(name, content)
+                data.seek(0)
+                with ZipFile(data) as archive:
+                    if scenario == 'valid':
+                        self.assertEqual(validate_player_archive(archive, 'fixture'), manifest)
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'parsed completely|dependency table is unreadable'):
+                            validate_player_archive(archive, 'fixture')

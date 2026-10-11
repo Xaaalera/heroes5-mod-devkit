@@ -18,6 +18,33 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from workspace import DEVKIT, workspace_root
 from plugin_core import CoreBuild, CoreClient
 from sdk_logging import EventLog
+from xalkit_ui import CommandFailure, error, text
+
+def project_adapter(source):
+    marker=Path(source)/'mod.json'
+    if not marker.is_file():
+        return None
+    metadata=json.loads(marker.read_text(encoding='utf-8'))
+    return metadata.get('native_adapter') if isinstance(metadata,dict) else None
+
+
+def discover_projects(directory,managed):
+    directory=Path(directory)
+    discovered={}
+    roots=[directory]
+    if managed:
+        roots.append(directory.parent/'mods')
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for source in root.iterdir():
+            if not source.is_dir() or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',source.name):
+                continue
+            if managed and not (source/'xalkit.json').is_file() and not (source/'mod.json').is_file():
+                continue
+            if any(file.suffix.lower()=='.cpp' for file in source.rglob('*') if file.is_file()):
+                discovered.setdefault(source.name,source)
+    return discovered
 
 
 def supervise_plugins(options):
@@ -37,6 +64,7 @@ def supervise_plugins(options):
     core_transaction = None
     events = EventLog(output / 'logs', console=options.log_format == 'console', session=options.log_session)
     children = {}
+    rejected_resources = {}
     owner_snapshot = None
     if options.owned_game:
         owner = options.session_state or workspace_root() / '.local/test-state/native-probe.json'
@@ -140,10 +168,7 @@ def supervise_plugins(options):
                               'duration_seconds': time.perf_counter() - transaction['started_at'],
                               'timing_scope': 'source_scan_to_verified_plugin_observations'})
                     core_transaction = None
-            discovered = {path.name: path for path in directory.iterdir()
-                          if path.is_dir() and re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', path.name)
-                          and (not options.managed_projects or (path / 'xalkit.json').is_file())
-                          and any(file.suffix.lower() == '.cpp' for file in path.rglob('*') if file.is_file())}
+            discovered = discover_projects(directory,options.managed_projects)
             for name, child in list(children.items()):
                 # Removal waits until the whole core handoff or rollback ends.
                 if name not in discovered and core_transaction is None:
@@ -170,6 +195,38 @@ def supervise_plugins(options):
                     break
                 if name in children:
                     continue
+                try:
+                    adapter=project_adapter(source)
+                except (OSError,ValueError) as failure:
+                    if rejected_resources.get(name)!=str(failure):
+                        emit({'status':'plugin_failed','plugin':name,'reason':'invalid_adapter_manifest'})
+                        rejected_resources[name]=str(failure)
+                    continue
+                if adapter not in (None,'bank-selector') or (adapter is None and not (source/'xalkit.json').is_file() and options.managed_projects):
+                    if name not in rejected_resources or rejected_resources.get(name)!=adapter:
+                        emit({'status':'plugin_failed','plugin':name,'reason':'unsupported_adapter'})
+                        rejected_resources[name]=adapter
+                    continue
+                bank_arguments=[]
+                if adapter=='bank-selector':
+                    workspace=directory.parent
+                    package=Path(getattr(options,'bank_package',None) or workspace/'.local/test-state'/f'{name}.h5u')
+                    installed=workspace/'.local/test-game/UserMODs'/f'workshop-{name}.h5u'
+                    fingerprint=tuple(path.stat().st_mtime_ns if path.is_file() else None for path in (package,installed))
+                    if not options.owned_game or not package.is_file() or not installed.is_file() or \
+                            hashlib.sha256(package.read_bytes()).digest()!=hashlib.sha256(installed.read_bytes()).digest():
+                        if rejected_resources.get(name)!=fingerprint:
+                            emit({'status':'plugin_failed','plugin':name,'reason':'resource_setup_required',
+                                  'message':text('resource_adapter_prepare',name=name)})
+                            rejected_resources[name]=fingerprint
+                        continue
+                    rejected_resources.pop(name,None)
+                    graphics=Path(getattr(options,'bank_graphics',None) or workspace/'.local/test-game/bin/d3d9.dll')
+                    cmake=getattr(options,'bank_cmake',None) or (core_builder.cmake if core_builder else None)
+                    if not cmake or not graphics.is_file():
+                        raise ValueError('Resource adapter requires prepared graphics and CMake')
+                    bank_arguments=['--bank-project',str(source),'--bank-package',str(package),
+                                    '--bank-graphics',str(graphics),'--bank-cmake',str(cmake)]
                 used_slots = {child['slot'] for child in children.values()}
                 slot = next((number for number in range(64) if number not in used_slots), None)
                 if slot is None:
@@ -185,6 +242,7 @@ def supervise_plugins(options):
                              '--bridge', str(bridge), '--control-stdin', '--slot', str(slot),
                              '--prepared-compiler', str(compiler), '--log-session', events.session,
                              '--plugin-id', name, '--instance', instance]
+                arguments += bank_arguments
                 if options.owned_game:
                     arguments += ['--owned-game', '--session-state', str(owner_snapshot)]
                 if options.main_thread:
@@ -309,12 +367,75 @@ class PluginWatch:
         self.invoke_command = 'main' if main_thread else 'invoke'
         self.last_attempt = None
         self.ready = None
+        self.source_error = None
+
+    def observe(self):
+        try:
+            snapshot = self.snapshot()
+            self.source_error = None
+            return snapshot
+        except CommandFailure as failure:
+            self.source_error = failure.payload
+            return None
 
     def snapshot(self):
-        paths = sorted(path for path in self.source.rglob('*')
-                       if path.is_file() and path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.def'))
+        marker = self.source / 'xalkit.json'
+        selected = None
+        explicit_selection = False
+        if marker.is_file():
+            try:
+                metadata = json.loads(marker.read_text(encoding='utf-8'))
+                selected = metadata.get('native_sources')
+                explicit_selection = 'native_sources' in metadata
+            except (ValueError, AttributeError) as failure:
+                raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='manifest_json')) from failure
+        if not explicit_selection:
+            paths = sorted(path for path in self.source.rglob('*')
+                           if path.is_file() and path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.def'))
+        else:
+            if not isinstance(selected, list) or not selected or any(not isinstance(name, str) for name in selected):
+                raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='source_list'))
+            paths = []
+            for name in selected:
+                try:
+                    relative = Path(name)
+                    path = (self.source / relative).resolve()
+                except (ValueError, OSError) as failure:
+                    raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='source_path', source=name)) from failure
+                if relative.is_absolute() or relative.drive or '..' in relative.parts or not path.is_relative_to(self.source) or \
+                        not path.is_file() or path.suffix.lower() != '.cpp' or path in paths:
+                    raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='source_path', source=name))
+                paths.append(path)
+            paths.extend(path for path in self.source.rglob('*') if path.is_file() and
+                         path.suffix.lower() in ('.h', '.hpp', '.inl', '.def') and
+                         path.resolve().is_relative_to(self.source) and
+                         not any(part in ('.local', '.git', '.venv', 'node_modules')
+                                 for part in path.relative_to(self.source).parts))
+            paths = sorted(set(paths))
         snapshot = {str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
                     for path in paths}
+        if explicit_selection:
+            # A selected translation unit may include another .cpp during a
+            # legacy migration. Watch local sources without compiling them twice.
+            for path in self.source.rglob('*.cpp'):
+                if path in paths or not path.is_file() or not path.resolve().is_relative_to(self.source) or \
+                        any(part in ('.local', '.git', '.venv', 'node_modules')
+                            for part in path.relative_to(self.source).parts):
+                    continue
+                name = '@watch/' + path.relative_to(self.source).as_posix()
+                if name in snapshot:
+                    raise ValueError('Source path conflicts with reserved watch dependency namespace')
+                snapshot[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        if marker.is_file():
+            snapshot['xalkit.json'] = hashlib.sha256(marker.read_bytes()).hexdigest()
+        for name, digest in self.shared_snapshot().items():
+            if name in snapshot:
+                raise ValueError('Source path conflicts with reserved shared dependency namespace')
+            snapshot[name] = digest
+        return snapshot
+
+    def shared_snapshot(self):
+        snapshot = {}
         for path in (DEVKIT / 'native').glob('*.hpp'):
             name = '@sdk/' + path.name
             if name in snapshot:
@@ -363,7 +484,7 @@ class PluginWatch:
                      if path.is_file() and path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.def'))
         snapshot = {'@bank/' + path.relative_to(project).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                     for path in paths}
-        snapshot.update(self.snapshot())
+        snapshot.update(self.shared_snapshot())
         snapshot['@sdk-generator/native-probe.py'] = hashlib.sha256((DEVKIT / 'scripts/native-probe.py').read_bytes()).hexdigest()
         return snapshot
 
@@ -491,7 +612,8 @@ class PluginWatch:
         """Cache translation units; conservatively invalidate all on header edits."""
         cache = self.intermediates / 'objects'
         cache.mkdir(exist_ok=True)
-        headers = {name: digest for name, digest in snapshot.items() if Path(name).suffix.lower() not in ('.cpp', '.def')}
+        headers = {name: digest for name, digest in snapshot.items()
+                   if name.startswith('@watch/') or Path(name).suffix.lower() not in ('.cpp', '.def')}
         options = ['/nologo', '/O2', '/MT', '/EHsc', '/std:c++20', '/I' + str(DEVKIT / 'native'),
                    '/I' + str(DEVKIT / 'game-api/include')]
         toolchain = {'compiler': str(self.compiler),
@@ -531,7 +653,8 @@ class PluginWatch:
     def update(self, snapshot, observed_at, release_name=None, loader=None, core_source=None):
         started = time.perf_counter()
         self.last_attempt = snapshot
-        sources = [self.source / name for name in snapshot if Path(name).suffix.lower() == '.cpp']
+        sources = [self.source / name for name in snapshot
+                   if not name.startswith('@watch/') and Path(name).suffix.lower() == '.cpp']
         if not sources:
             return {'status': 'build_failed', 'reason': 'no_cpp_sources',
                     'duration_seconds': time.perf_counter() - started,
@@ -583,9 +706,12 @@ class PluginWatch:
                     'Установка',
                     '1. Закрой игру.',
                     '2. Распакуй архив в отдельную папку.',
+                    'Перед заменой сохрани существующие dinput8.dll, d3d9.dll и d3d9.universe.dll (если есть) в отдельную резервную папку.',
                     '3. При первой установке xkit переименуй исходный bin/d3d9.dll игры в d3d9.universe.dll. Если d3d9.universe.dll уже есть, сохрани его без изменений.',
+                    'Существующий d3d9.universe.dll должен быть проверенным оригиналом поддерживаемой Universe, сохранённым при предыдущей установке наших модов. Если происхождение файла неизвестно, останови установку до копирования: сохрани файлы и восстанови оригинал из своей проверенной установки Universe.',
                     '4. Скопируй папку bin из архива в папку игры: общие DLL должны оказаться рядом с H5_Game.exe.',
                     '5. Запусти игру через Heroes/Lobby обычным способом. SDK и Python игроку не нужны.',
+                    'Ожидаемый результат: игра запускается обычным способом, функции установленного мода доступны по его руководству. При ошибке совместимости верни резервные копии; не заменяй оригинал файлом из случайного архива.',
                     '',
                     'Сохрани резервную копию существующего dinput8.dll перед заменой. Исходный d3d9.universe.dll не заменяй и не удаляй.',
                     'Совместимость с другими модами проверяй отдельно. Для нескольких модов xkit используй одну версию общих DLL.',
@@ -596,15 +722,25 @@ class PluginWatch:
                     'Installation',
                     '1. Close the game.',
                     '2. Extract the archive into a separate folder.',
+                    'Before replacement, back up existing dinput8.dll, d3d9.dll and d3d9.universe.dll (if present) into a separate folder.',
                     '3. On first xkit installation, rename the game bin/d3d9.dll to d3d9.universe.dll. Keep an existing d3d9.universe.dll unchanged.',
+                    'An existing d3d9.universe.dll must be the verified original from the supported Universe build, retained during an earlier installation of our mods. If its origin is unknown, stop before copying: keep backups and restore the original from your verified Universe installation.',
                     '4. Copy the archive bin folder into the game folder; shared DLLs belong beside H5_Game.exe.',
                     '5. Start Heroes/Lobby normally. Players need neither the SDK nor Python.',
+                    'Expected result: normal game startup and the installed mod features described in its guide. On a compatibility error, restore your backups; do not replace the original with a file from an unknown archive.',
                     'Back up existing dinput8.dll before replacement. Never overwrite or remove the retained original d3d9.universe.dll.',
                     'Use the same shared DLL version for multiple xkit plugins.',
                     'Uninstall: close the game and remove bin/Heroes5Mods/Plugins/' + release_name + '.dll.',
                     'Keep shared DLLs used by other mods.',
                     'After removing every xkit mod, remove its d3d9.dll and rename the retained original back to d3d9.dll; restore your dinput8.dll backup.',
                     '',
+                    'Руководства / Player guides: https://xaaalera.github.io/heroes5-knowledge/players/mods/ | https://xaaalera.github.io/heroes5-knowledge/en/players/mods/',
+                    'Предиктор / Predictor: https://xaaalera.github.io/heroes5-knowledge/players/deployment-preview/ | https://xaaalera.github.io/heroes5-knowledge/en/players/deployment-preview/',
+                    'Справочник / Bank reference: https://xaaalera.github.io/heroes5-knowledge/players/bank-reference/ | https://xaaalera.github.io/heroes5-knowledge/en/players/bank-reference/',
+                    'Predictor source: https://github.com/Xaaalera/heroes5-deployment-preview',
+                    'Bank reference source: https://github.com/Xaaalera/heroes5-bank-reference',
+                    'Knowledge source: https://github.com/Xaaalera/heroes5-knowledge',
+                    'Code standards: https://github.com/Xaaalera/claude-skills',
                     'Built with xkit / Xaaalera Toolkit SDK: https://github.com/Xaaalera/heroes5-mod-devkit',
                     'Game API: https://github.com/Xaaalera/heroes5-game-api',
                     'Heroes V Universe: https://h5lobby.com/',
@@ -612,7 +748,13 @@ class PluginWatch:
                     'Email: dampirsimpl@gmail.com | Telegram: https://t.me/Victima',
                     '',
                 ]))
-            os.replace(temporary, archive_path)
+            from plugin_core import validate_player_archive
+            try:
+                with ZipFile(temporary) as archive:
+                    validate_player_archive(archive, release_name)
+                os.replace(temporary, archive_path)
+            finally:
+                temporary.unlink(missing_ok=True)
             return {'status': 'released', 'archive': str(archive_path), 'manifest': manifest,
                     'build_seconds': build_seconds, 'compiled_units': compiled}
         applied = self.request('reload ' + str(payload))
@@ -839,11 +981,18 @@ def main():
                         break
                 time.sleep(0.25)
                 continue
-            snapshot = watcher.snapshot()
+            snapshot = watcher.observe()
+            if snapshot is None:
+                if watcher.source_error != getattr(watcher, 'reported_source_error', None):
+                    events.emit({'status': 'build_failed', 'error': watcher.source_error})
+                    watcher.reported_source_error = watcher.source_error
+                time.sleep(0.25)
+                continue
+            watcher.reported_source_error = None
             if snapshot != watcher.last_attempt:
                 observed_at = time.perf_counter()
                 time.sleep(0.1)
-                if watcher.snapshot() == snapshot:
+                if watcher.observe() == snapshot:
                     try:
                         record = watcher.update(snapshot, observed_at)
                     except subprocess.TimeoutExpired:

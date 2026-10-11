@@ -6,3 +6,4 @@ typer==0.21.0
 click==8.3.1
 Babel==2.18.0
 Pillow==12.3.0
+pefile==2024.8.26
