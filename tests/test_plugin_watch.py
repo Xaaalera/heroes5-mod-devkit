@@ -427,6 +427,30 @@ class PluginWatchBoundaries(unittest.TestCase):
         client.send.assert_called_once_with(client.process, 'connect-check')
         client.start.assert_not_called()
 
+    def test_core_command_deadline_rejects_late_responses_without_replay(self):
+        from plugin_core import CoreClient
+        client = object.__new__(CoreClient)
+        process = SimpleNamespace(stdin=io.StringIO(), responses=Mock())
+        client.process = process
+        process.responses.get.return_value = '{"status":0}'
+        with patch('plugin_core.time.perf_counter', side_effect=[0, 0.25, 0.5]):
+            self.assertEqual(client.request('game-script query', timeout=1), {'status': 0})
+        self.assertEqual(process.stdin.getvalue(), 'game-script query\n')
+        self.assertEqual(process.responses.get.call_args.kwargs['timeout'], 0.75)
+        for clocks in ([0, 2], [0, 0.2, 1.1]):
+            process.stdin = io.StringIO()
+            process.responses.get.reset_mock()
+            with patch('plugin_core.time.perf_counter', side_effect=clocks):
+                with self.assertRaisesRegex(RuntimeError, 'unconfirmed_keep_remote_code'):
+                    client.request('game-script query', timeout=1)
+            self.assertEqual(process.stdin.getvalue(), 'game-script query\n')
+            self.assertLessEqual(process.responses.get.call_count, 1)
+        for timeout in (0, -1, 51, float('nan')):
+            process.stdin = io.StringIO()
+            with self.assertRaises(ValueError):
+                client.request('game-script query', timeout=timeout)
+            self.assertEqual(process.stdin.getvalue(), '')
+
     def test_console_controller_deadline_covers_native_budget_and_unconfirmed_cleanup(self):
         from plugin_core import CoreClient
         client = object.__new__(CoreClient)

@@ -626,19 +626,32 @@ class CoreClient:
             raise RuntimeError('core_client_disconnected')
         return json.loads(line)
 
-    def send(self, process, command):
+    def send(self, process, command, timeout=None):
+        if timeout is not None and not 0 < timeout <= 50:
+            raise ValueError('Core command timeout must be in (0,50] seconds')
+        deadline = time.perf_counter() + timeout if timeout is not None else None
         console_replacement = command.startswith('console-replace ')
         if console_replacement:
             process.console_replacement_pending = True
         process.stdin.write(command + '\n')
         process.stdin.flush()
-        response = self.response(process, timeout=50) if console_replacement else self.response(process)
+        if deadline is None:
+            response = self.response(process, timeout=50) if console_replacement else self.response(process)
+        else:
+            remaining = deadline - time.perf_counter()
+            if remaining <= 0:
+                raise RuntimeError('core_call_unconfirmed_keep_remote_code')
+            response = self.response(process, timeout=min(50 if console_replacement else 15, remaining))
+            if time.perf_counter() >= deadline:
+                raise RuntimeError('core_call_unconfirmed_keep_remote_code')
         if console_replacement:
             process.console_replacement_pending = False
         return response
 
-    def request(self, command):
-        return self.send(self.process, command)
+    def request(self, command, timeout=None):
+        if timeout is None:
+            return self.send(self.process, command)
+        return self.send(self.process, command, timeout=timeout)
 
     def poll(self):
         return self.process.poll()
