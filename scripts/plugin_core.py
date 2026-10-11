@@ -31,6 +31,23 @@ def runtime_source(sdk, name):
     return target
 
 
+def core_source_snapshot(source, console=False):
+    """Fingerprint the same core inputs for builds and evidence verification."""
+    source = Path(source)
+    snapshot = {path.relative_to(source).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in sorted(source.rglob('*'))
+                if path.is_file() and (path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.cmake', '.def')
+                                      or path.name == 'CMakeLists.txt')}
+    include = source.parent / 'game-api/include'
+    for path in include.rglob('*.hpp'):
+        snapshot['@game-api/' + path.relative_to(include).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    if console:
+        for path in (source.parent / 'locale').rglob('*.po'):
+            snapshot['@locale/' + path.relative_to(source.parent / 'locale').as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+        snapshot['@resources'] = hashlib.sha256((source.parent / 'scripts/native-ui-resources.py').read_bytes()).hexdigest()
+    return snapshot
+
+
 def owned_core_endpoint(root, owner):
     """Resolve sealed resident-core binaries for one immutable SDK game owner."""
     root = Path(root).resolve()
@@ -444,19 +461,7 @@ class CoreBuild:
         self.cmake = Path(cmake).resolve(strict=True)
 
     def snapshot(self):
-        snapshot = {path.relative_to(self.source).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
-                for path in sorted(self.source.rglob('*'))
-                if path.is_file() and (path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.cmake', '.def')
-                                       or path.name == 'CMakeLists.txt')}
-        include = self.source.parent / 'game-api/include'
-        for path in include.rglob('*.hpp'):
-            snapshot['@game-api/' + path.relative_to(include).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
-        if self.console:
-            for path in (self.source.parent / 'locale').rglob('*.po'):
-                snapshot['@locale/' + path.relative_to(self.source.parent / 'locale').as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
-            resources = self.source.parent / 'scripts/native-ui-resources.py'
-            snapshot['@resources'] = hashlib.sha256(resources.read_bytes()).hexdigest()
-        return snapshot
+        return core_source_snapshot(self.source, self.console)
 
     def release(self, sources, generation, payload, sdk_include):
         """Derive player compilation from the actual core target, including its extensions."""
