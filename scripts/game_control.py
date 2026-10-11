@@ -1,5 +1,6 @@
 """Terminal mailbox for the pinned sandbox game's main thread."""
 import argparse
+from functools import lru_cache
 from contextvars import ContextVar
 import ctypes
 from ctypes import wintypes
@@ -596,10 +597,11 @@ def execute(probe, command=None, timeout=10, result_required=False, mode=None, e
             probe.write(kernel, process, data + 24, bytes(8))
             probe.write(kernel, process, data + 64, token.encode('ascii'))
             probe.write(kernel, process, data + 12, struct.pack('<I', 1))
+            status = 1  # The newly submitted request, not the previous command.
             deadline = time.monotonic() + timeout
             while time.monotonic() < deadline:
-                status = struct.unpack('<I', probe.read(kernel, process, data + 12, 4))[0]
-                response_size, response_ready = struct.unpack('<II', probe.read(kernel, process, data + 24, 8))
+                status, response_size, response_ready = struct.unpack(
+                    '<I8xII', probe.read(kernel, process, data + 12, 20))
                 if status == 3 and (not result_required or response_ready):
                     if result_required:
                         response = probe.read(kernel, process, data + 1024, min(response_size, 2047)).decode('utf-8', errors='replace')
@@ -607,6 +609,9 @@ def execute(probe, command=None, timeout=10, result_required=False, mode=None, e
                     return {'pid': state['pid'], 'status': 'dispatched', 'command': command,
                             'note': 'Dispatcher returned; verify the game-side effect separately.'}
                 time.sleep(0.05)
+            if status == 3 and result_required:
+                raise TimeoutError('Dispatcher returned but the requested result was not received; '
+                                   'the game-side effect is unconfirmed and the request was not resubmitted')
             raise TimeoutError('Command remains pending; it was not cancelled or resubmitted')
         finally:
             lock_handle.close()
@@ -691,13 +696,13 @@ def runtime_state(probe):
         kernel.CloseHandle(process)
 
 
-def hero_state(probe, name):
+def hero_state(probe, name, timeout=10):
     if not re.fullmatch(r'[A-Za-z0-9_ -]{1,80}', name):
         raise ValueError('Invalid hero identifier')
     script = (f"@if IsHeroAlive('{name}') then local x,y,f=GetObjectPosition('{name}'); "
               f"SetGameVar('{RESULT_KEY}',x..'|'..y..'|'..f..'|'..GetHeroLevel('{name}')"
               f"..'|'..GetHeroStat('{name}',7)); else SetGameVar('{RESULT_KEY}','not_found'); end")
-    response = execute(probe, script, result_required=True)
+    response = execute(probe, script, timeout=timeout, result_required=True)
     if response['result'] == 'not_found':
         raise ValueError('Hero not found: ' + name)
     values = [int(value) for value in response.pop('result').split('|')]
@@ -772,15 +777,10 @@ def capture_screenshot(probe, timeout):
     raise TimeoutError('No complete new game screenshot arrived; the request was not repeated')
 
 
-def main(argv=None):
-    global _probe_module
-    if _probe_module is None:
-        specification = importlib.util.spec_from_file_location('control_probe', Path(__file__).resolve().with_name('native-probe.py'))
-        module = importlib.util.module_from_spec(specification)
-        specification.loader.exec_module(module)
-        _probe_module = module
-    probe = _probe_module
-    parser = argparse.ArgumentParser(description=__doc__)
+@lru_cache(maxsize=4)
+def command_parser(program):
+    """Reuse static command definitions; every parse creates its own namespace."""
+    parser = argparse.ArgumentParser(prog=program, description=__doc__)
     parser.add_argument('--timeout', type=float, default=10)
     actions = parser.add_subparsers(dest='action', required=True)
     for action in ('status', 'runtime-state', 'levelup-state', 'heroes', 'confirm', 'results', 'quit', 'screenshot'):
@@ -821,6 +821,18 @@ def main(argv=None):
     item.add_argument('name')
     item.add_argument('object')
     actions.add_parser('finish').add_argument('--winner', type=int, choices=(0, 1), default=0)
+    return parser
+
+
+def main(argv=None):
+    global _probe_module
+    if _probe_module is None:
+        specification = importlib.util.spec_from_file_location('control_probe', Path(__file__).resolve().with_name('native-probe.py'))
+        module = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(module)
+        _probe_module = module
+    probe = _probe_module
+    parser = command_parser(Path(sys.argv[0]).name)
     arguments = parser.parse_args(argv)
     if arguments.timeout <= 0 or arguments.timeout > 60:
         parser.error('Timeout must be in (0,60] seconds')
@@ -984,22 +996,36 @@ def main(argv=None):
             parser.error('Expected a CREATURE_* Lua constant')
         if arguments.count is not None and not 0 <= arguments.count <= 1000000:
             parser.error('Count must be 0..1000000')
-        hero_state(probe, arguments.name)
+        deadline = time.monotonic() + arguments.timeout
+        def remaining_timeout():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Creature command exceeded its timeout; inspect the current army before retrying')
+            return remaining
+        hero_state(probe, arguments.name, timeout=remaining_timeout())
         creature = arguments.creature
         query = (f"@if {creature} then SetGameVar('{RESULT_KEY}',''..GetHeroCreatures('{arguments.name}',{creature})); "
                  f"else SetGameVar('{RESULT_KEY}','unknown_creature'); end")
-        result = execute(probe, query, result_required=True)
+        result = execute(probe, query, timeout=remaining_timeout(), result_required=True)
+        remaining_timeout()
         if result['result'] == 'unknown_creature':
             parser.error('Unknown creature constant')
         before = int(result.pop('result'))
         count = before
         if arguments.count is not None and before != arguments.count:
             function = 'AddHeroCreatures' if arguments.count > before else 'RemoveHeroCreatures'
-            execute(probe, f"@{function}('{arguments.name}',{creature},{abs(arguments.count - before)})")
-            result = execute(probe, query, result_required=True)
-            count = int(result.pop('result'))
-            if count != arguments.count:
-                raise RuntimeError(f'Creature count not reached: before={before}, actual={count}, requested={arguments.count}')
+            execute(probe, f"@{function}('{arguments.name}',{creature},{abs(arguments.count - before)})",
+                    timeout=remaining_timeout())
+            while True:
+                result = execute(probe, query, timeout=remaining_timeout(), result_required=True)
+                count = int(result.pop('result'))
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f'Creature readback exceeded timeout: before={before}, actual={count}, requested={arguments.count}')
+                if count == arguments.count:
+                    break
+                # The Lua call can queue an army change for a later game tick.
+                # Observe the target without submitting the mutation again.
+                time.sleep(min(0.05, remaining_timeout()))
         result.update(hero=arguments.name, creature=creature, before=before, count=count)
     elif action == 'resource':
         if arguments.amount is not None and not 0 <= arguments.amount <= 100000000:
@@ -1016,7 +1042,7 @@ def main(argv=None):
                 raise RuntimeError(f'Resource amount not reached: actual={amount}, requested={arguments.amount}')
         result.update(player=arguments.player, resource=arguments.resource, before=before, amount=amount)
     elif action == 'hero':
-        result = hero_state(probe, arguments.name)
+        result = hero_state(probe, arguments.name, timeout=arguments.timeout)
     elif action in ('teleport', 'move'):
         hero_state(probe, arguments.name)
         function = 'SetObjectPosition' if action == 'teleport' else 'MoveHeroRealTime'

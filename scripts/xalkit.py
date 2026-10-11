@@ -23,6 +23,8 @@ from sdk_logging import EventLog
 from xalkit_ui import text, error, CommandFailure
 from xalkit_config import config_path, settings, save_settings
 
+_workspace_source_digest = hashlib.sha256((DEVKIT / 'scripts/workspace.py').read_bytes()).digest()
+
 app = typer.Typer(name='xkit', help=text('about'), no_args_is_help=True, pretty_exceptions_show_locals=False)
 console = Console()
 
@@ -52,9 +54,38 @@ def load_backend(filename):
     if str(scripts) not in sys.path:
         sys.path.insert(0, str(scripts))
     specification = importlib.util.spec_from_file_location('xalkit_' + filename.replace('-', '_'), scripts / filename)
+    identity = None
+    if filename == 'game_control.py':
+        # Reuse command/probe initialization within a console or test cycle.
+        # A changed source or workspace must get a fresh module, never stale ROOT.
+        source = (scripts / filename).read_bytes()
+        probe_source = (scripts / 'native-probe.py').read_bytes()
+        workspace_digest = hashlib.sha256((scripts / 'workspace.py').read_bytes()).digest()
+        if workspace_digest != _workspace_source_digest:
+            raise RuntimeError('Workspace support code changed; start a new Python command host before reusing it')
+        identity = (str(workspace_root()), os.environ.get('H5_GAME_DIR'), hashlib.sha256(source).digest(), tuple(
+            (str(path.resolve()), digest) for path, digest in (
+                (scripts / 'native-probe.py', hashlib.sha256(probe_source).digest()),
+                (scripts / 'workspace.py', workspace_digest))))
+        identity = (str(scripts.resolve()), identity)
+        existing = sys.modules.get(specification.name)
+        if existing is not None and getattr(existing, '_xkit_backend_identity', None) == identity:
+            return existing
     module = importlib.util.module_from_spec(specification)
     sys.modules[specification.name] = module
-    specification.loader.exec_module(module)
+    if identity is None:
+        specification.loader.exec_module(module)
+    else:
+        # Compile the bytes fingerprinted above; timestamp-based .pyc reuse can
+        # otherwise miss same-size edits made within one timestamp interval.
+        exec(compile(source, str(scripts / filename), 'exec'), module.__dict__)
+        probe_specification = importlib.util.spec_from_file_location(
+            specification.name + '_probe', scripts / 'native-probe.py')
+        probe_module = importlib.util.module_from_spec(probe_specification)
+        exec(compile(probe_source, str(scripts / 'native-probe.py'), 'exec'), probe_module.__dict__)
+        module._probe_module = probe_module
+    if identity is not None:
+        module._xkit_backend_identity = identity
     return module
 
 

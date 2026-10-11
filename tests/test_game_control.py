@@ -26,6 +26,60 @@ specification.loader.exec_module(control)
 
 
 class GameControlCommandTests(unittest.TestCase):
+    def test_cached_parser_keeps_request_targets_and_defaults_independent(self):
+        from concurrent.futures import ThreadPoolExecutor
+        parser = control.command_parser('xkit game')
+        first = parser.parse_args(['--timeout', '.2', 'creature', 'Brem', 'CREATURE_PEASANT', '--count', '7'])
+        second = parser.parse_args(['hero', 'Calid'])
+        self.assertEqual((first.name, first.count, first.timeout), ('Brem', 7, .2))
+        self.assertEqual((second.name, second.timeout), ('Calid', 10))
+        self.assertFalse(hasattr(second, 'count'))
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            requests = list(executor.map(parser.parse_args, [['hero', 'Brem'], ['hero', 'Calid']] * 4))
+        self.assertEqual([request.name for request in requests], ['Brem', 'Calid'] * 4)
+
+    def test_command_polling_keeps_delayed_results_and_does_not_replay_timeouts(self):
+        data = 8192
+        state = {'pid': 123, 'created': 456, 'allocation': 4096,
+                 'patch': b'entry'.hex(), 'result_patch': b'result'.hex()}
+        cases = (
+            ('delayed_result', [(3, 0, 0), (3, 2, 1)], 'ok'),
+            ('missing_result', [(3, 0, 0)], 'Dispatcher returned'),
+            ('still_pending', [(2, 0, 0)], 'remains pending'),
+            ('expired_before_poll', [], 'remains pending'),
+        )
+        for name, responses, expected in cases:
+            with self.subTest(case=name):
+                probe = Mock()
+                probe.checked.side_effect = lambda value: value
+                probe.creation_time.return_value = 456
+                remaining = list(responses)
+                def read(kernel, process, address, size):
+                    if address == control.ENTRY: return b'entry'
+                    if address == control.RESULT_ENTRY: return b'result'
+                    if (address, size) == (data, 8): return control.MAGIC
+                    if (address, size) == (data + 12, 4): return struct.pack('<I', 3)
+                    if (address, size) == (data + 12, 20):
+                        status, length, ready = remaining.pop(0)
+                        return struct.pack('<I8xII', status, length, ready)
+                    if (address, size) == (data + 1024, 2): return b'ok'
+                    self.fail('Unexpected command memory read')
+                probe.read.side_effect = read
+                with patch.object(control, 'STATE') as state_file, \
+                        patch.object(control.time, 'monotonic', side_effect=(
+                            [0, 2] if name == 'expired_before_poll' else [0, 0, .1 if name == 'delayed_result' else 2])), \
+                        patch.object(control.time, 'sleep'):
+                    state_file.read_text.return_value = json.dumps(state)
+                    if name == 'delayed_result':
+                        result = control.execute(probe, '@query', timeout=1, result_required=True)
+                        self.assertEqual(result['result'], 'ok')
+                    else:
+                        with self.assertRaisesRegex(TimeoutError, expected):
+                            control.execute(probe, '@query', timeout=1, result_required=True)
+                    self.assertEqual(probe.write.call_count, 5, 'Submit once; never replay a timeout')
+                    state_file.with_suffix.return_value.unlink.assert_called_once()
+                probe.api.return_value.CloseHandle.assert_called_once()
+
     def test_startup_wait_observes_heartbeat_without_submitting_commands(self):
         owner = {'pid': 123, 'created': 456}
         ready = {'pid': 123, 'heartbeat': 1, 'mailbox_status': 0}
@@ -654,18 +708,81 @@ try {
                 replies = [{'status': 'completed', 'result': str(before)}]
                 if before != target:
                     replies += [{'status': 'dispatched'}, {'status': 'completed', 'result': str(actual)}]
+                clock = [0.0]
+                responses = iter(replies)
+                def reply(probe, command, **options):
+                    response = next(responses)
+                    if actual != target and response.get('result') == str(actual):
+                        clock[0] = 11
+                    return response
                 with patch('sys.argv', ['game_control', 'creature', 'Brem', 'CREATURE_PEASANT', '--count', str(target)]), \
                      patch.object(control, 'hero_state', return_value={}), \
-                     patch.object(control, 'execute', side_effect=replies) as execute, \
+                     patch.object(control, 'execute', side_effect=reply) as execute, \
+                     patch.object(control.time, 'monotonic', side_effect=lambda: clock[0]), \
                      patch('sys.stdout', new_callable=io.StringIO) as output:
                     if actual != target:
-                        with self.assertRaisesRegex(RuntimeError, 'actual=1'):
+                        with self.assertRaisesRegex(TimeoutError, 'actual=1'):
                             control.main()
                         self.assertEqual(output.getvalue(), '')
                     else:
                         control.main()
                         self.assertEqual(json.loads(output.getvalue())['count'], target)
                     self.assertEqual(execute.call_count, 1 if before == target else 3)
+
+    def test_creature_change_waits_for_game_ticks_without_replaying_mutation(self):
+        replies = [{'result': '0'}, {'status': 'dispatched'},
+                   {'result': '0'}, {'result': '0'}, {'result': '100'}]
+        with patch.object(control, 'hero_state', return_value={}), \
+             patch.object(control, 'execute', side_effect=replies) as execute, \
+             patch.object(control.time, 'monotonic', return_value=0), \
+             patch.object(control.time, 'sleep'):
+            result = control.main(['creature', 'Brem', 'CREATURE_ARCHER', '--count', '100'])
+        self.assertEqual(result['count'], 100)
+        mutations = [call for call in execute.call_args_list if 'AddHeroCreatures' in call.args[1]]
+        self.assertEqual(len(mutations), 1)
+
+    def test_hero_readback_honors_requested_timeout(self):
+        with patch.object(control, 'execute', return_value={'status': 'completed', 'result': '14|27|0|1|2000'}) as execute:
+            result = control.main(['--timeout', '0.4', 'hero', 'Brem'])
+        self.assertEqual(result['hero'], 'Brem')
+        self.assertEqual(execute.call_args.kwargs['timeout'], 0.4)
+
+    def test_creature_late_matching_readback_is_not_success(self):
+        clock = [0.0]
+        reads = [0]
+        def delayed_reply(probe, command, **options):
+            if 'AddHeroCreatures' in command:
+                clock[0] += 0.1
+                return {'status': 'dispatched'}
+            reads[0] += 1
+            clock[0] += 0.1 if reads[0] == 1 else 0.3
+            return {'result': '0' if reads[0] == 1 else '100'}
+        with patch.object(control, 'hero_state', return_value={}) as hero, \
+             patch.object(control, 'execute', side_effect=delayed_reply) as execute, \
+             patch.object(control.time, 'monotonic', side_effect=lambda: clock[0]), \
+             patch('sys.stdout', new_callable=io.StringIO) as output:
+            with self.assertRaises(TimeoutError):
+                control.main(['--timeout', '0.4', 'creature', 'Brem', 'CREATURE_ARCHER', '--count', '100'])
+        self.assertEqual(output.getvalue(), '')
+        self.assertAlmostEqual(hero.call_args.kwargs['timeout'], 0.4)
+        self.assertEqual(execute.call_count, 3)
+        self.assertAlmostEqual(execute.call_args.kwargs['timeout'], 0.2)
+        mutations = [call for call in execute.call_args_list if 'AddHeroCreatures' in call.args[1]]
+        self.assertEqual(len(mutations), 1)
+
+    def test_creature_expired_initial_read_never_submits_mutation(self):
+        clock = [0.0]
+        def delayed_reply(probe, command, **options):
+            clock[0] += 0.5
+            return {'result': '100' if 'GetHeroCreatures' in command and clock[0] > 1 else '0'}
+        with patch.object(control, 'hero_state', return_value={}), \
+             patch.object(control, 'execute', side_effect=delayed_reply) as execute, \
+             patch.object(control.time, 'monotonic', side_effect=lambda: clock[0]), \
+             patch('sys.stdout', new_callable=io.StringIO) as output:
+            with self.assertRaises(TimeoutError):
+                control.main(['--timeout', '0.4', 'creature', 'Brem', 'CREATURE_ARCHER', '--count', '100'])
+        self.assertEqual(execute.call_count, 1)
+        self.assertEqual(output.getvalue(), '')
 
     def test_resource_requires_readback(self):
         with patch('sys.argv', ['game_control', 'resource', '1', '6', '--amount', '50']), \

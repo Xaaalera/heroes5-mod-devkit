@@ -16,6 +16,48 @@ from xalkit_ui import text, translations
 
 
 class XalKitTests(unittest.TestCase):
+    def test_command_backend_is_reused_without_stale_source_or_workspace(self):
+        sdk = self.root / 'canonical-sdk'
+        scripts = sdk / 'scripts'
+        scripts.mkdir(parents=True)
+        source = scripts / 'game_control.py'
+        original = 'import os\nROOT = os.environ.get("H5_WORKSPACE")\nMARKER = "a"\nprobe = object()\n'
+        source.write_text(original, encoding='utf-8')
+        (scripts / 'native-probe.py').write_text('MARKER = "1"\n', encoding='utf-8')
+        workspace_source = Path(xalkit.__file__).with_name('workspace.py').read_bytes()
+        (scripts / 'workspace.py').write_bytes(workspace_source)
+        with patch.object(xalkit, 'DEVKIT', sdk), patch.dict(sys.modules):
+            first = xalkit.load_backend('game_control.py')
+            self.assertIs(xalkit.load_backend('game_control.py'), first)
+            self.assertIs(xalkit.load_backend('game_control.py').probe, first.probe)
+            timestamp = source.stat()
+            source.write_text(original.replace('"a"', '"b"'), encoding='utf-8')
+            os.utime(source, ns=(timestamp.st_atime_ns, timestamp.st_mtime_ns))
+            changed = xalkit.load_backend('game_control.py')
+            self.assertIsNot(changed, first)
+            self.assertEqual(changed.MARKER, 'b')
+            probe_timestamp = (scripts / 'native-probe.py').stat()
+            (scripts / 'native-probe.py').write_text('MARKER = "2"\n', encoding='utf-8')
+            os.utime(scripts / 'native-probe.py', ns=(probe_timestamp.st_atime_ns, probe_timestamp.st_mtime_ns))
+            updated_probe = xalkit.load_backend('game_control.py')
+            self.assertIsNot(updated_probe, changed)
+            self.assertEqual(updated_probe._probe_module.MARKER, '2')
+            with patch.dict(os.environ, {'H5_WORKSPACE': str(self.root / 'other-workspace')}):
+                moved = xalkit.load_backend('game_control.py')
+                self.assertIsNot(moved, updated_probe)
+                self.assertEqual(moved.ROOT, str(self.root / 'other-workspace'))
+            (scripts / 'workspace.py').write_bytes(workspace_source + b'\n# changed support code\n')
+            with self.assertRaisesRegex(RuntimeError, 'Workspace support code changed'):
+                xalkit.load_backend('game_control.py')
+            (scripts / 'workspace.py').write_bytes(workspace_source)
+            source.write_text('raise RuntimeError("incomplete source")\n', encoding='utf-8')
+            with self.assertRaisesRegex(RuntimeError, 'incomplete source'):
+                xalkit.load_backend('game_control.py')
+            source.write_text(original, encoding='utf-8')
+            recovered = xalkit.load_backend('game_control.py')
+            self.assertEqual(recovered.MARKER, 'a')
+            self.assertIs(xalkit.load_backend('game_control.py'), recovered)
+
     def test_selected_generic_command_endpoint_follows_core_application_and_rollback(self):
         import xalkit_runtime
         owner = {'pid': 12, 'created': 34}
@@ -429,6 +471,82 @@ class XalKitTests(unittest.TestCase):
         self.assertEqual(start.call_args.kwargs['native_adapter'], 'bank-selector')
         self.assertNotIn('resources', start.call_args.kwargs)
 
+    def test_native_staging_keeps_disk_recovery_for_loader_and_disabled_legacy_predictor(self):
+        import xalkit_runtime
+        game = self.root / '.local/test-game'
+        marker = self.root / '.local/test-state/prepared.json'
+        marker.parent.mkdir(parents=True); game.mkdir(parents=True)
+        marker.write_text(json.dumps({'status': 'complete', 'profile': 'WorkshopDev', 'game': str(game)}))
+        loader = game / 'bin/dinput8.dll'
+        legacy = game / 'bin/Heroes5Mods/WorkshopDeploymentPreview.dll'
+        legacy.parent.mkdir(parents=True)
+        loader.write_bytes(b'old loader'); legacy.write_bytes(b'old predictor')
+        candidate = self.root / 'current-loader.dll'; candidate.write_bytes(b'new loader')
+        with patch('sdk_storage.require_games_closed'):
+            receipt = {}
+            xalkit_runtime.stage_native_runtime(self.root, {
+                'bin/dinput8.dll': candidate, 'bin/Heroes5Mods/WorkshopDeploymentPreview.dll': None}, receipt, 'native')
+            self.assertEqual(loader.read_bytes(), b'new loader')
+            self.assertFalse(legacy.exists())
+            manifest = next(iter(receipt.values()))['recovery_manifest']
+            self.assertTrue(manifest.is_file())
+            receipt.clear()  # Simulate losing the in-memory session receipt.
+            result = xalkit_runtime.recover_bank_runtime(self.root, manifest)
+            self.assertEqual(result['status'], 'native_recovered')
+            self.assertEqual(loader.read_bytes(), b'old loader')
+            self.assertEqual(legacy.read_bytes(), b'old predictor')
+
+    def test_mixed_bank_and_predictor_staging_restores_both_legacy_dlls_and_resources(self):
+        import xalkit_runtime
+        game=self.root/'.local/test-game';marker=self.root/'.local/test-state/prepared.json'
+        marker.parent.mkdir(parents=True);game.mkdir(parents=True)
+        marker.write_text(json.dumps({'status':'complete','profile':'WorkshopDev','game':str(game)}))
+        originals={'bin/dinput8.dll':b'old loader','bin/Heroes5Mods/WorkshopBankReference.dll':b'old bank',
+                   'bin/Heroes5Mods/WorkshopDeploymentPreview.dll':b'old predictor',
+                   'UserMODs/workshop-army-reference.h5u':b'old resources'}
+        for member,contents in originals.items():
+            target=game/member;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(contents)
+        loader=self.root/'new-loader.dll';loader.write_bytes(b'new loader')
+        package=self.root/'new-bank.h5u';package.write_bytes(b'new resources')
+        with patch('sdk_storage.require_games_closed'):
+            receipt={}
+            xalkit_runtime.stage_bank_runtime(self.root,{'bin/dinput8.dll':loader,
+                'bin/Heroes5Mods/WorkshopBankReference.dll':None,
+                'bin/Heroes5Mods/WorkshopDeploymentPreview.dll':None,
+                'UserMODs/workshop-army-reference.h5u':package},receipt)
+            self.assertFalse((game/'bin/Heroes5Mods/WorkshopBankReference.dll').exists())
+            self.assertFalse((game/'bin/Heroes5Mods/WorkshopDeploymentPreview.dll').exists())
+            self.assertEqual((game/'UserMODs/workshop-army-reference.h5u').read_bytes(),b'new resources')
+            manifest=next(iter(receipt.values()))['recovery_manifest'];receipt.clear()
+            xalkit_runtime.recover_bank_runtime(self.root,manifest)
+            for member,contents in originals.items():
+                self.assertEqual((game/member).read_bytes(),contents)
+
+    def test_first_native_start_prepares_game_before_staging(self):
+        import xalkit_runtime
+        order = []
+        backend = Mock()
+        from contextlib import nullcontext
+        backend.exclusive.side_effect = lambda *arguments: nullcontext()
+        marker = self.root / '.local/test-state/prepared.json'
+        def prepare():
+            order.append('prepare')
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.write_text('{}')
+        backend.Workshop.return_value.prepare.side_effect = prepare
+        def stage(*arguments):
+            self.assertTrue(marker.is_file())
+            order.append('stage')
+            raise RuntimeError('stop before launch')
+        tools = (None, None, {}, {}, None)
+        with patch.object(xalkit, 'load_backend', return_value=backend), \
+                patch.object(xalkit, 'native_tools', return_value=tools), \
+                patch.object(xalkit_runtime, 'stage_native_runtime', side_effect=stage), \
+                patch.object(xalkit_runtime, 'EventLog'):
+            with self.assertRaisesRegex(RuntimeError, 'stop before launch'):
+                xalkit_runtime.start_session({'workspace': str(self.root)}, 'native-demo', self.root)
+        self.assertEqual(order, ['prepare', 'stage'])
+
     def test_bank_staging_restores_private_files_and_refuses_foreign_edits(self):
         import xalkit_runtime
         game = self.root / '.local/test-game'
@@ -583,6 +701,7 @@ with module.exclusive(root / '.local', process_lease=True):
             display_statuses.append(observed[-1]['status']) if json.loads(value).get('command') == 'event' else None)
         with patch.object(xalkit, 'load_backend', side_effect=lambda filename: probe if filename == 'native-probe.py' else Mock()), \
                 patch.object(xalkit, 'native_tools', return_value=tools), \
+                patch.object(xalkit_runtime, 'stage_native_runtime'), \
                 patch.object(xalkit_runtime, 'EventLog') as event_log, \
                 patch.object(xalkit_runtime.subprocess, 'Popen', return_value=process):
             event_log.return_value.emit.side_effect = observed.append
@@ -632,6 +751,7 @@ with module.exclusive(root / '.local', process_lease=True):
         with patch.object(xalkit, 'load_backend', side_effect=lambda filename: probe if filename == 'native-probe.py' else Mock()), \
                 patch.object(xalkit, 'native_tools', return_value=console_tools), \
                 patch('sdk_console.ConsoleBroker', return_value=broker), \
+                patch.object(xalkit_runtime, 'stage_native_runtime'), \
                 patch.object(xalkit_runtime, 'EventLog') as event_log, \
                 patch.object(xalkit_runtime.subprocess, 'Popen', return_value=process):
             xalkit_runtime.start_native({'workspace': str(self.root)}, 'native-demo', self.root)
@@ -661,6 +781,7 @@ with module.exclusive(root / '.local', process_lease=True):
                 patch('plugin_core.CoreClient') as sdk_client, \
                 patch('sdk_console.ConsoleBroker') as broker, \
                 patch.object(xalkit_runtime, 'OwnedBackgroundBudget'), \
+                patch.object(xalkit_runtime, 'stage_native_runtime'), \
                 patch.object(xalkit_runtime, 'EventLog'), \
                 patch.object(xalkit_runtime.subprocess, 'Popen') as supervisor:
             sdk_client.return_value.request.return_value = {'status': 0}
@@ -689,6 +810,7 @@ with module.exclusive(root / '.local', process_lease=True):
                     {'level': 'error', 'message': 'console_device_failed', 'module': 'xkit.console', 'sequence': 1}
                 ]}), \
                 patch('sdk_console.ConsoleBroker') as broker, \
+                patch.object(xalkit_runtime, 'stage_native_runtime'), \
                 patch.object(xalkit_runtime, 'EventLog') as event_log:
             sdk_client.return_value.request.side_effect = [failed_response, {'status': 0, 'diagnostics': 'fixture'}]
             broker.return_value.port = 1234
@@ -715,6 +837,7 @@ with module.exclusive(root / '.local', process_lease=True):
                 patch('plugin_core.load_sdk_runtime', return_value=runtime), \
                 patch('plugin_core.CoreClient') as sdk_client, \
                 patch('sdk_console.ConsoleBroker') as broker, \
+                patch.object(xalkit_runtime, 'stage_native_runtime'), \
                 patch.object(xalkit_runtime, 'EventLog') as event_log:
             sdk_client.return_value.request.side_effect = [failed_response, RuntimeError('diagnostics disconnected')]
             broker.return_value.port = 1234
@@ -748,6 +871,7 @@ with module.exclusive(root / '.local', process_lease=True):
                     monitor.close.side_effect = RuntimeError('monitor stop uncertain')
                 with patch.object(xalkit, 'load_backend', side_effect=lambda filename: probe if filename == 'native-probe.py' else Mock()), \
                         patch.object(xalkit, 'native_tools', return_value=tools), \
+                        patch.object(xalkit_runtime, 'stage_native_runtime'), \
                         patch.object(xalkit_runtime, 'EventLog') as event_log, \
                         patch.object(xalkit_runtime, 'OwnedCrashMonitor', return_value=monitor), \
                         patch.object(xalkit_runtime, 'read_owned_windows_events', return_value=[]), \
@@ -768,6 +892,7 @@ with module.exclusive(root / '.local', process_lease=True):
         probe.launch.side_effect = fail_before_resume
         with patch.object(xalkit, 'load_backend', side_effect=lambda filename: probe if filename == 'native-probe.py' else Mock()), \
                 patch.object(xalkit, 'native_tools', return_value=tools), \
+                patch.object(xalkit_runtime, 'stage_native_runtime'), \
                 patch.object(xalkit_runtime, 'EventLog') as event_log, \
                 patch.object(xalkit_runtime, 'OwnedCrashMonitor') as monitor_factory, \
                 patch.object(xalkit_runtime.Path, 'replace', side_effect=OSError('report persistence failed')), \

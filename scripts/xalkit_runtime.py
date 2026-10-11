@@ -182,7 +182,7 @@ def _replace_runtime_file(path, contents):
             temporary.unlink(missing_ok=True)
 
 
-def stage_bank_runtime(root, files, receipt):
+def stage_native_runtime(root, files, receipt, kind='bank'):
     """Retain private-game files before mutation and refuse redirected targets."""
     from sdk_storage import require_games_closed
     require_games_closed()
@@ -195,16 +195,22 @@ def stage_bank_runtime(root, files, receipt):
     if (marker.resolve() != marker or game.resolve() != game or metadata.get('status') != 'complete'
             or metadata.get('profile') != 'WorkshopDev' or metadata.get('game') != str(game)):
         raise ValueError('Bank staging requires a prepared private game')
-    if set(files) != {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll',
-                      'UserMODs/workshop-army-reference.h5u'}:
+    bank_files = {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll', 'UserMODs/workshop-army-reference.h5u'}
+    native_files = {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopDeploymentPreview.dll'}
+    mixed_files=bank_files | {'bin/Heroes5Mods/WorkshopDeploymentPreview.dll'}
+    if not ((kind == 'bank' and set(files) in (bank_files,mixed_files)) or
+            (kind == 'native' and set(files) in ({'bin/dinput8.dll'}, native_files))):
         raise ValueError('Bank staging contains unexpected destinations')
     for member, source_file in files.items():
+        if source_file is None and member not in ('bin/Heroes5Mods/WorkshopDeploymentPreview.dll',
+                                                  'bin/Heroes5Mods/WorkshopBankReference.dll'):
+            raise ValueError('Only replaced legacy mod DLLs may be absent during managed staging')
         target = game / member
         if target.resolve() != target or (target.exists() and target.stat().st_nlink != 1):
             raise ValueError('Bank staging refuses linked game files')
-        contents = Path(source_file).read_bytes()
+        contents = Path(source_file).read_bytes() if source_file is not None else None
         receipt[target] = {'previous': target.read_bytes() if target.exists() else None,
-                           'sha256': hashlib.sha256(contents).hexdigest(), 'contents': contents}
+                           'sha256': hashlib.sha256(contents).hexdigest() if contents is not None else None, 'contents': contents}
     recovery = root / '.local/xalkit/recovery'
     if recovery.resolve() != recovery:
         raise ValueError('Bank recovery directory is redirected')
@@ -221,10 +227,17 @@ def stage_bank_runtime(root, files, receipt):
         records.append({'member': target.relative_to(game).as_posix(),
                         'original_sha256': hashlib.sha256(record['previous']).hexdigest() if backup else None,
                         'backup': backup.name if backup else None, 'staged_sha256': record['sha256']})
-    _replace_runtime_file(manifest, (json.dumps({'version': 1, 'workspace': str(root), 'files': records}, indent=2) + '\n').encode('utf-8'))
+    _replace_runtime_file(manifest, (json.dumps({'version': 1, 'kind': kind, 'workspace': str(root), 'files': records}, indent=2) + '\n').encode('utf-8'))
     for target, record in receipt.items():
         target.parent.mkdir(parents=True, exist_ok=True)
-        _replace_runtime_file(target, record['contents'])
+        if record['contents'] is None:
+            target.unlink(missing_ok=True)
+        else:
+            _replace_runtime_file(target, record['contents'])
+
+
+def stage_bank_runtime(root, files, receipt):
+    return stage_native_runtime(root, files, receipt, 'bank')
 
 
 def restore_bank_runtime(receipt):
@@ -234,7 +247,9 @@ def restore_bank_runtime(receipt):
         if target.resolve() != target or (target.exists() and target.stat().st_nlink != 1):
             raise ValueError('Bank recovery refuses linked game files')
         current = target.read_bytes() if target.exists() else None
-        if current != record['previous'] and (current is None or hashlib.sha256(current).hexdigest() != record['sha256']):
+        matches_stage = (current is None and record['sha256'] is None) or (
+            current is not None and hashlib.sha256(current).hexdigest() == record['sha256'])
+        if current != record['previous'] and not matches_stage:
             raise ValueError('Staged bank file changed; original retained for recovery')
     for target, record in receipt.items():
         if record['previous'] is None:
@@ -276,11 +291,17 @@ def recover_bank_runtime(root, manifest):
     if (game.resolve() != game or marker.resolve() != marker or metadata.get('status') != 'complete'
             or metadata.get('profile') != 'WorkshopDev' or metadata.get('game') != str(game)):
         raise ValueError('Bank recovery requires the prepared private game')
+    kind = data.get('kind', 'bank')
     allowed = {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopBankReference.dll', 'UserMODs/workshop-army-reference.h5u'}
     records = data.get('files', [])
     if not isinstance(records, list) or any(not isinstance(record, dict) for record in records):
         raise ValueError('Recovery file records must be objects')
-    if len(records) != 3 or {record.get('member') for record in records} != allowed:
+    members = {record.get('member') for record in records}
+    valid_bank = kind == 'bank' and len(records)==len(members) and members in (
+        allowed,allowed | {'bin/Heroes5Mods/WorkshopDeploymentPreview.dll'})
+    valid_native = kind == 'native' and len(records) == len(members) and members in (
+        {'bin/dinput8.dll'}, {'bin/dinput8.dll', 'bin/Heroes5Mods/WorkshopDeploymentPreview.dll'})
+    if not (valid_bank or valid_native):
         raise ValueError('Recovery destinations differ from bank runtime files')
     receipt = {}
     for index, record in enumerate(records):
@@ -300,7 +321,7 @@ def recover_bank_runtime(root, manifest):
         receipt[game / record['member']] = {'previous': previous, 'sha256': record['staged_sha256'],
                                            'backup': backup, 'recovery_manifest': manifest}
     restore_bank_runtime(receipt)
-    return {'status': 'bank_recovered', 'manifest': str(manifest)}
+    return {'status': 'bank_recovered' if kind == 'bank' else 'native_recovered', 'manifest': str(manifest)}
 
 
 def start_session(saved, name, source, map_name=None, resources=False, background=False, console_check=False,
@@ -337,6 +358,11 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
     try:
         startup_mutation_lease.enter_context(workspace_mutation(root / '.local'))
         startup_mutation_locked = True
+        if not (root / '.local/test-state/prepared.json').is_file():
+            events.emit({'status': 'prepare', 'message': text('prepare')})
+            workshop = workshop_module.Workshop(root, name, True)
+            with workshop_module.exclusive(workshop.local):
+                workshop.prepare()
         if resources:
             from plugin_core import load_sdk_runtime
             try:
@@ -350,31 +376,45 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 events.emit({'status': 'resource_deployed', 'result': deployment})
         else:
             toolchain, compiler, environment, built, loader = native_tools(saved, events, with_console=True)
+            resource_candidates=[project for directory in (root/'plugins',root/'mods') if directory.is_dir()
+                                 for project in directory.iterdir() if project.is_dir() and (project/'mod.json').is_file()]
+            bank_projects={}
+            if resource_candidates:
+                manager=load_backend('plugin-watch.py')
+                bank_projects={project.resolve():project for project in resource_candidates
+                               if manager.project_adapter(project)=='bank-selector'}
             if bank_mode:
-                result = resource_operation(saved, name, source, 'build')
-                bank_package = Path(result.get('artifact') or root / '.local/test-state' / (name + '.h5u'))
+                bank_projects[source.resolve()]=source
+            if len(bank_projects)>1:
+                raise ValueError('Only one adapter may own the bank reference hook in one SDK session')
+            if not bank_projects:
+                native_files = {'bin/dinput8.dll': loader}
+                if name == 'deployment-preview':
+                    native_files['bin/Heroes5Mods/WorkshopDeploymentPreview.dll'] = None
+                stage_native_runtime(root, native_files, staged_bank, 'native')
+            if bank_projects:
+                bank_source=next(iter(bank_projects.values()))
+                bank_name=bank_source.name
+                result = resource_operation(saved, bank_name, bank_source, 'build')
+                bank_package = Path(result.get('artifact') or root / '.local/test-state' / (bank_name + '.h5u'))
                 module = load_backend('plugin-watch.py')
                 from plugin_core import CoreBuild
                 bank_cmake = CoreBuild(DEVKIT / 'native', root / '.local/xalkit/bank-tools', environment).cmake
-                builder = module.PluginWatch(source / 'src', root / '.local/xalkit/bank-prepare', compiler, environment, None)
-                candidate = builder.build_bank_payload(source, bank_package, Path(built['graphics']), bank_cmake,
+                builder = module.PluginWatch(bank_source / 'src', root / '.local/xalkit/bank-prepare', compiler, environment, None)
+                candidate = builder.build_bank_payload(bank_source, bank_package, Path(built['graphics']), bank_cmake,
                                                        time.perf_counter())
                 events.emit(candidate)
                 if not candidate or candidate['status'] != 'bank_built':
                     raise RuntimeError(text('native_build_failed', diagnostic=events.directory))
                 stage_bank_runtime(root, {'bin/dinput8.dll': loader,
-                    'bin/Heroes5Mods/WorkshopBankReference.dll': candidate['payload'],
+                    'bin/Heroes5Mods/WorkshopBankReference.dll': None,
+                    'bin/Heroes5Mods/WorkshopDeploymentPreview.dll': None,
                     'UserMODs/workshop-army-reference.h5u': bank_package}, staged_bank)
         if built.get('console'):
             from sdk_console import ConsoleBroker
             console_broker = ConsoleBroker(root, str(events.session))
             if console_check:
                 console_broker.validation_enabled = True
-        if not (root / '.local/test-state/prepared.json').is_file():
-            events.emit({'status': 'prepare', 'message': text('prepare')})
-            workshop = workshop_module.Workshop(root, name, True)
-            with workshop_module.exclusive(workshop.local):
-                workshop.prepare()
         profiles = root / '.local/test-game/UniverseTeam/Universe Mod/Profiles'
         global_settings = profiles / 'global_a2.cfg'
         if global_settings.is_file():
@@ -491,14 +531,9 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 '--toolchain', str(toolchain), '--client', built['controller'], '--bridge', built['bridge'],
                 '--core-source', str(DEVKIT / 'native'), '--owned-game', '--main-thread', '--control-stdin',
                 '--managed-projects', '--log-session', events.session]
-            if bank_mode:
-                arguments = [sys.executable, '-X', 'utf8', str(DEVKIT / 'scripts/plugin-watch.py'),
-                    '--source', str(source / 'src'), '--output', str(root / '.local/xalkit/bank-watch'),
-                    '--toolchain', str(toolchain), '--client', built['controller'], '--bridge', built['bridge'],
-                    '--core-source', str(DEVKIT / 'native'), '--owned-game', '--main-thread', '--control-stdin',
-                    '--bank-project', str(source), '--bank-package', str(bank_package),
-                    '--bank-graphics', str(built['graphics']), '--bank-cmake', str(bank_cmake),
-                    '--plugin-id', name, '--log-session', events.session]
+            if bank_projects:
+                arguments += ['--bank-package',str(bank_package),'--bank-graphics',str(built['graphics']),
+                              '--bank-cmake',str(bank_cmake)]
             if built.get('console'):
                 arguments += ['--console-build', str(root / '.local/xalkit/console-build'), '--console-project', name]
             process = subprocess.Popen(arguments, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -740,10 +775,10 @@ def start_session(saved, name, source, map_name=None, resources=False, backgroun
                 if staged_bank:
                     try:
                         if owned and final_game_exit is None:
-                            raise RuntimeError('Owned game exit unconfirmed; bank files retained')
+                            raise RuntimeError('Owned game exit unconfirmed; native files retained')
                         with (ExitStack() if startup_mutation_locked else workshop_module.exclusive(root / '.local', process_lease=True)):
                             restore_bank_runtime(staged_bank)
-                        events.emit({'status': 'bank_files_restored'})
+                        events.emit({'status': 'bank_files_restored' if bank_mode else 'native_files_restored'})
                     except Exception as bank_error:
                         session_failures.append('bank_restore:' + str(bank_error))
                         recovery_manifests = sorted({str(record['recovery_manifest']) for record in staged_bank.values()
