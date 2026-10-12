@@ -389,9 +389,23 @@ class PluginWatch:
                 explicit_selection = 'native_sources' in metadata
             except (ValueError, AttributeError) as failure:
                 raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='manifest_json')) from failure
+        # Prune before descent: a cache directory may disappear concurrently,
+        # and a shared checkout must be read through shared_snapshot, not here.
+        def propagate_walk_failure(failure):
+            raise failure
+        local_sources = []
+        excluded = {'.local', '.git', '.venv', 'node_modules'}
+        for directory, directories, files in os.walk(self.source, onerror=propagate_walk_failure):
+            parent = Path(directory)
+            directories[:] = [name for name in directories if name not in excluded and
+                              (parent / name).resolve().is_relative_to(self.source)]
+            for name in files:
+                path = parent / name
+                if path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.def') and \
+                        path.resolve().is_relative_to(self.source):
+                    local_sources.append(path)
         if not explicit_selection:
-            paths = sorted(path for path in self.source.rglob('*')
-                           if path.is_file() and path.suffix.lower() in ('.cpp', '.h', '.hpp', '.inl', '.def'))
+            paths = sorted(local_sources)
         else:
             if not isinstance(selected, list) or not selected or any(not isinstance(name, str) for name in selected):
                 raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='source_list'))
@@ -406,21 +420,15 @@ class PluginWatch:
                         not path.is_file() or path.suffix.lower() != '.cpp' or path in paths:
                     raise CommandFailure(error('SDK_NATIVE_SOURCES_INVALID', detail='source_path', source=name))
                 paths.append(path)
-            paths.extend(path for path in self.source.rglob('*') if path.is_file() and
-                         path.suffix.lower() in ('.h', '.hpp', '.inl', '.def') and
-                         path.resolve().is_relative_to(self.source) and
-                         not any(part in ('.local', '.git', '.venv', 'node_modules')
-                                 for part in path.relative_to(self.source).parts))
+            paths.extend(path for path in local_sources if path.suffix.lower() in ('.h', '.hpp', '.inl', '.def'))
             paths = sorted(set(paths))
         snapshot = {str(path.relative_to(self.source)): hashlib.sha256(path.read_bytes()).hexdigest()
                     for path in paths}
         if explicit_selection:
             # A selected translation unit may include another .cpp during a
             # legacy migration. Watch local sources without compiling them twice.
-            for path in self.source.rglob('*.cpp'):
-                if path in paths or not path.is_file() or not path.resolve().is_relative_to(self.source) or \
-                        any(part in ('.local', '.git', '.venv', 'node_modules')
-                            for part in path.relative_to(self.source).parts):
+            for path in local_sources:
+                if path in paths or path.suffix.lower() != '.cpp':
                     continue
                 name = '@watch/' + path.relative_to(self.source).as_posix()
                 if name in snapshot:

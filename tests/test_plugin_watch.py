@@ -89,6 +89,48 @@ class PluginWatchBoundaries(unittest.TestCase):
             self.assertIn(str(Path('src/legacy.cpp')), watcher.snapshot())
             self.assertNotIn(str(Path('src/managed.cpp')), watcher.snapshot())
 
+    def test_snapshot_never_descends_into_excluded_caches(self):
+        for explicit in (False, True):
+            with self.subTest(explicit=explicit), tempfile.TemporaryDirectory() as directory:
+                source = Path(directory) / 'project'; source.mkdir()
+                (source / 'src').mkdir()
+                (source / 'src/main.cpp').write_text('main')
+                (source / 'src/shared.hpp').write_text('header')
+                excluded = {'.local', '.git', '.venv', 'node_modules'}
+                for name in excluded:
+                    cache = source / name / 'volatile'; cache.mkdir(parents=True)
+                    (cache / 'ignored.cpp').write_text('not a build input')
+                if explicit:
+                    (source / 'xalkit.json').write_text(json.dumps({'native_sources': ['src/main.cpp']}))
+                watcher = watch_module.PluginWatch(source, Path(directory) / 'output', Path('cl.exe'), {}, None)
+                original_scan = watch_module.os.scandir
+                def reject_cache_scan(path):
+                    location = Path(path)
+                    if location.is_relative_to(source):
+                        self.assertFalse(excluded.intersection(location.relative_to(source).parts),
+                                         'Snapshot descended into a volatile excluded cache')
+                    return original_scan(path)
+                with patch.object(watch_module.os, 'scandir', side_effect=reject_cache_scan):
+                    snapshot = watcher.snapshot()
+                self.assertIn(str(Path('src/main.cpp')), snapshot)
+                self.assertIn(str(Path('src/shared.hpp')), snapshot)
+                self.assertFalse(any('ignored.cpp' in name for name in snapshot))
+
+    def test_snapshot_does_not_hide_unreadable_included_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'project'; source.mkdir()
+            (source / 'src').mkdir()
+            (source / 'src/main.cpp').write_text('main')
+            watcher = watch_module.PluginWatch(source, Path(directory) / 'output', Path('cl.exe'), {}, None)
+            original_scan = watch_module.os.scandir
+            def fail_source_scan(path):
+                if Path(path) == source / 'src':
+                    raise FileNotFoundError('Included source disappeared')
+                return original_scan(path)
+            with patch.object(watch_module.os, 'scandir', side_effect=fail_source_scan):
+                with self.assertRaisesRegex(FileNotFoundError, 'Included source disappeared'):
+                    watcher.snapshot()
+
     def test_invalid_explicit_sources_return_registered_error_without_building(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / 'project'; source.mkdir()
