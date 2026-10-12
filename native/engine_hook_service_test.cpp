@@ -375,6 +375,16 @@ int wmain(int count,wchar_t** arguments) {
                 RequireService(reinterpret_cast<const uint32_t*>(lease.Data())[104]==(generation+1)*3,
                     "Queued input lost or dispatched twice");
             }
+            RequireService(PostMessageW(window,WM_RBUTTONDBLCLK,MK_RBUTTON,MAKELPARAM(45,67)),
+                "Queued right double-click setup failed");
+            RequireService(PeekMessageW(&queued,window,WM_RBUTTONDBLCLK,WM_RBUTTONDBLCLK,PM_REMOVE),
+                "Queued right double-click missing");
+            DispatchMessageW(&queued);
+            {
+                h5::resident::BufferLease lease(window,bridge_fixture::uiSlot+1,1,false);
+                RequireService(reinterpret_cast<const uint32_t*>(lease.Data())[110]==generation+1,
+                    "Right double-click lost, dispatched twice or lost across HMR");
+            }
             RequireService(!bridge_fixture::runtime->CurrentEngineContext() && !bridge_fixture::runtime->DispatchingOnCurrentThread(),
                 "Window input leaked borrowed context/dispatch marker");
             if (generation) { RequireService(!GetModuleHandleW(arguments[1]),"Retired payload generation still loaded"); }

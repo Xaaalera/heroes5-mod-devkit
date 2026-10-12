@@ -681,7 +681,7 @@ void DispatchWindowInputOnMain(const CWPSTRUCT& message) {
             SetFocus(mainWindow); ReadUiCapture();
         }
     }
-    if (message.hwnd!=mainWindow || message.message!=WM_LBUTTONDBLCLK ||
+    if (message.hwnd!=mainWindow || (message.message!=WM_LBUTTONDBLCLK && message.message!=WM_RBUTTONDBLCLK) ||
         GetCurrentThreadId()!=windowThread || nativeDispatchActive ||
         payloadTransition.load(std::memory_order_acquire) ||
         heroes5_sdk::PluginRuntime::CallingPayloadOnCurrentThread()) { return; }

@@ -176,7 +176,11 @@ extern "C" uint32_t __cdecl Heroes5PluginPrepareReplace(const heroes5_sdk::Engin
 #pragma comment(linker,"/EXPORT:Heroes5PluginPrepareReplace=_Heroes5PluginPrepareReplace")
 extern "C" uint32_t __cdecl Heroes5PluginWindowInput(const heroes5_sdk::WindowInputContext* context) {
     if (!context || context->size!=sizeof(*context) || context->version!=1 ||
-        context->message!=WM_LBUTTONDBLCLK || !context->engine.residentData) { return 0; }
+        (context->message!=WM_LBUTTONDBLCLK && context->message!=WM_RBUTTONDBLCLK) ||
+        !context->engine.residentData) { return 0; }
+    if (context->message==WM_RBUTTONDBLCLK) {
+        ++reinterpret_cast<uint32_t*>(context->engine.residentData)[110];return 1;
+    }
     ++reinterpret_cast<uint32_t*>(context->engine.residentData)[109];
     // The owner pins runtime during input. A reentrant input message must
     // be forwarded without recursively dispatching this payload callback.

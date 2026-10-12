@@ -391,7 +391,7 @@ public:
         using InputHandler=uint32_t (__cdecl*)(const WindowInputContext*);
         const auto handler=reinterpret_cast<InputHandler>(GetProcAddress(module_,"Heroes5PluginWindowInput"));
         if (!handler) { return RuntimeResult::Ok; }
-        if (context.size!=sizeof(context) || context.version!=1 || context.message!=WM_LBUTTONDBLCLK ||
+        if (context.size!=sizeof(context) || context.version!=1 || (context.message!=WM_LBUTTONDBLCLK && context.message!=WM_RBUTTONDBLCLK) ||
             !ValidEngineContext(context.engine)) { return RuntimeResult::CallRejected; }
         EngineContextScope contextScope(activeEngineContext_,context.engine);
         PayloadDispatchScope dispatchScope(&dispatchThread_);
