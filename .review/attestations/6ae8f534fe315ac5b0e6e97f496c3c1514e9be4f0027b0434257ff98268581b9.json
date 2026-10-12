@@ -1,0 +1,1006 @@
+{
+  "diffHash": "6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9",
+  "commitSha": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+  "perAgent": {
+    "craft": {
+      "reviewer": "/root/ci_portability_craft_review",
+      "agent": "craft",
+      "head": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9",
+      "findings": [],
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "craft",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "The two fixture-root normalizations reuse pathlib and introduce no concrete CRAFT defect; unchanged source judgments are retained."
+      },
+      "evidence": [
+        "Read repository AGENTS, configured CRAFT rules, actual canonical game-api/.agents/review/review-craft.md, and installed solid, ockham, conventions, ui-strings and responsive-layout guides. JS/TS conventions are inapplicable to this Python-only delta; UI-string and responsive-layout guides are inapplicable because fixtures contain no changed user-facing UI or layout. Full descriptive identifiers remain intact.",
+        "Reused actual source-publication-craft-sdk-final.json (ce04ee79b4b12b92226d923863169ca3d6b277ea, PASS10). Git comparison ce04ee79..84bc5a10b1490e2e38470d85d8cf09d1d3bf151d changes only the retained .review attestation. Prior complete source/documentation claims therefore still apply.",
+        "git diff 84bc5a10b1490e2e38470d85d8cf09d1d3bf151d..39b4e923c179e0e79f2bbf5757d96643ecbf474b contains exactly tests/test_plugin_watch.py, two insertions and two deletions: source fixture roots in test_snapshot_never_descends_into_excluded_caches and test_snapshot_does_not_hide_unreadable_included_sources gain pathlib.Path.resolve(). Every other tracked file is identical to the public base. Working tree status is clean.",
+        "Read both complete test methods and watcher initialization/snapshot. Production already canonicalizes source.resolve(strict=True), then walks that canonical root. Test scandir callbacks compare against the fixture source using is_relative_to/equality. Normalizing that fixture root aligns the comparison and injection with the existing watcher. No new function, dependency, helper, scanner, configuration or dead code is introduced. Two native resolve() calls do not justify another abstraction.",
+        "Read actual sdk-hosted-38221717134-failure.log: line253 is AssertionError: FileNotFoundError not raised in the included-source test; one failure across218 tests. Read sdk-ci-alias-reproduction.py: retained reproduction presents one temp directory via alias-parent/.. and invokes this exact test. sdk-ci-alias-before.log shows the same assertion and exact_ci_failure_reproduced=true; sdk-ci-alias-after.log shows OK and passed_after_fix=true. These are retained executions, not runs by this reviewer. The reproduction establishes a path-alias mechanism; it does not independently identify the hosted runner alias spelling.",
+        "Read completed source-publication-devkit-39b4e923.json and log. This exact HEAD has passed=true; unit, review-contract, native-launch and explicit-base secrets each exit0, total31.426214500097558s. Log records218 tests in20.887s and native9/9 pass plus secrets checks passed. No test rerun was required for this bounded review.",
+        "Ran read-only npm run review:info: configured base71509e43af0faf080d8a47ed5b3ff8c72da2a3e9 and cumulative diffHash6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9. Claims are retained from the verified prior full judgment; tests/test_plugin_watch.py was independently rejudged for this new delta."
+      ],
+      "limits": [
+        "One bounded review of the new hosted-CI fixture portability correction; no fourth review of unchanged resource/cache implementation.",
+        "No test execution, builds, game actions, focus/input, image capture, network, public source edits, commits or pushes. Only this explicitly authorized private result was written.",
+        "Retains prior source-publication scope limits; no claim of renewed hosted CI success, player artifact acceptance or live campaign behavior."
+      ],
+      "verdict": "PASS",
+      "score": 10
+    },
+    "architecture": {
+      "agent": "architecture",
+      "head": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9",
+      "verdict": "PASS",
+      "score": 10,
+      "findings": [],
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2.json",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "architecture",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "major": 0,
+          "advisory": 0,
+          "minor": 0,
+          "blocker": 0
+        },
+        "one_line": "Canonicalizing two temporary fixture roots preserves the watcher boundary and activates the intended cache/error scan oracles across path aliases."
+      },
+      "evidence": [
+        "New single bounded post-publication CI portability review; not another round of the prior feature review. Loaded actual game-api/.agents/review/review-architecture.md, devkit AGENTS/config and actual SOLID/Ockham guides. Architecture config contains prose rules, no deterministic pattern objects or extensionSkill.",
+        "git rev-parse independently confirms exact HEAD. Public84bc5a10b1490e2e38470d85d8cf09d1d3bf151d..HEAD changes only tests/test_plugin_watch.py, exactly two additions of .resolve() at lines95/121. Worktree clean. git diff --quiet public..HEAD excluding that test exits0.",
+        "Retained full architecture judgment source-publication-architecture-sdk-final.json is actual PASS10 at ce04ee79b4b12b92226d923863169ca3d6b277ea with88 explicit cumulative claims and no findings. git diff --quiet ce04ee79..HEAD excluding tests/test_plugin_watch.py and .review exits0. Other delta is the prior review attestation; production/runtime/docs/API gitlink remain identical. Reuse its source-boundary, cleanup/lifetime and package judgments only for this established equal content.",
+        "Read both modified test bodies and PluginWatch.__init__/snapshot. Production resolves source strictly before os.walk. Matching fixture roots to that canonical spelling makes equality and is_relative_to target the same owned tree. Cache exclusion guard and included-source error guard retain their intended semantics; no new entity, abstraction, dependency, runtime policy or SDK/mod coupling is introduced.",
+        "Read actual sdk-ci-alias-reproduction.py: before mode loads exact84bc5a1 test source via git show; current mode loads current module; same physical temp directory is expressed using alias-parent/.. . Read actual sdk-ci-alias-before.log exact FileNotFoundError not raised and after.log one-test OK. These retained reproductions were executed by parent, not reviewer; this review performs no tests.",
+        "Read fresh source-publication-devkit-39b4e923.json and actual matching log: exact HEAD, all four operations exit0,218Python tests OK, contract8/8 zero skips, native9/9 PASS and explicit-base secrets passed. Earlier hosted CI38221717134 failure is parent supplied context; no network verification performed.",
+        "Computed configured cumulative diffHash using installed bladeforge-review-harness getCumulativeDiff/hashDiff. Decline no changed cumulative file: retained88 explicit claims plus current judgment for tests/test_plugin_watch.py. No architecture failure scenario supports a deduction."
+      ],
+      "retained_review": "D:/Pk/Heroes5ModsFolder/.local/test-state/canonical-graphics-build-20261006/source-publication-architecture-sdk-final.json",
+      "limits": [
+        "Read-only source review. No tests/builds/network/game/input/focus or source edits performed. Only expressly requested private evidence JSON written.",
+        "This correction does not establish a new hosted CI result or ordinary final-player startup, feature parity or game compatibility."
+      ],
+      "gate_evidence": "D:/Pk/Heroes5ModsFolder/.local/test-state/canonical-graphics-build-20261006/source-publication-devkit-39b4e923.json",
+      "reviewer": "/root/ci_portability_architecture_review"
+    },
+    "tests": {
+      "head": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9",
+      "incrementalBase": "84bc5a10b1490e2e38470d85d8cf09d1d3bf151d",
+      "reviewer": "/root/ci_portability_tests_review",
+      "mode": "Independent configured TESTS; bounded pass 1 for new hosted-CI fixture portability failure",
+      "findings": [],
+      "claims": [
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "tests",
+        "score": 10,
+        "verdict": "PASS",
+        "counts": {
+          "major": 0,
+          "advisory": 0,
+          "minor": 0,
+          "blocker": 0
+        },
+        "one_line": "Canonical fixture roots restore fault injection and cache-descent guards under aliased temp paths without weakening assertions; all current configured gates pass."
+      },
+      "evidence": [
+        "Read repository AGENTS, actual .agents/review/review-tests.md, current TESTS config and installed tests-architecture guide. Config contains narrative rules and no deterministic regex objects. No new adapter/loader/package or live behavior is changed.",
+        "Independently resolved HEAD and incremental base and git diff --name-only: only tests/test_plugin_watch.py changes. Full patch is exactly two source fixture roots gaining .resolve() before mkdir; production, other tests, build inputs and documentation unchanged from public84bc5a1.",
+        "Read actual retained source-publication-tests-sdk-final.json: configured TESTS PASS10, no findings, prior source-walk regressions and full gates established. Reused prior unchanged source judgment; did not repeat the three-pass implementation review.",
+        "Production PluginWatch.__init__ canonicalizes source with resolve(strict=True). Both scandir substitutes compare against the fixture source. Canonicalizing the fixture makes fail_source_scan match src and makes reject_cache_scan.is_relative_to(source) inspect descendants under aliases. The change strengthens guard reachability; no expected exception, regex, cache set, source membership or negative membership assertion was removed.",
+        "Cache test still uses real os.walk/scandir with only the external filesystem seam intercepted, covers explicit and automatic selection, rejects scanning .local/.git/.venv/node_modules before descent, asserts mainCPP/header presence and ignoredCPP absence. Included-source test still requires FileNotFoundError with Included source disappeared; swallowing os.walk errors would fail this assertion.",
+        "Read actual sdk-hosted-38221717134-failure.log: Python218 tests, exactly one failure, FileNotFoundError not raised in included-source test. Read sdk-ci-alias-reproduction.py: parent/.. temp-root spelling resolves to same real root; before mode loads public84bc5a1 fixture source and after loads current source. before.log reproduces exact assertion in0.013s; after.log passes same case in0.008s.",
+        "Read current source-publication-devkit-39b4e923.json and actual log: HEAD matches; all four configured operations exit0. Python218 tests OK20.887s, Node8/8, native9/9 CTest3.56s; full wrapper31.426214500097558s. Reviewer ran no tests or builds.",
+        "Independently ran read-only npm run review:info: configured base71509e43af0faf080d8a47ed5b3ff8c72da2a3e9, current diffHash6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9."
+      ],
+      "reused_review": {
+        "sha256": "e54cee97cab0cc1e41c59168041f78c11cc8c03327b91e1d69942aca5b2f935c",
+        "path": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\source-publication-tests-sdk-final.json"
+      },
+      "gate_evidence": {
+        "passed": true,
+        "receipt": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\source-publication-devkit-39b4e923.json",
+        "log_sha256": "60423aa01032eba7fc1fa57922b25904d56e8d18c868abe606d41ccabbcbca5b",
+        "receipt_sha256": "5104d2246a0b8675dd157abbb13f3deaea65c249dabfe990c7f1fef6e757d0ae",
+        "head": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+        "log": "D:\\Pk\\Heroes5ModsFolder\\.local\\test-state\\canonical-graphics-build-20261006\\source-publication-devkit-39b4e923.log"
+      },
+      "limits": [
+        "Read-only public source review; no source edits, tests, builds, network, game, focus/input, images, commits or publication. Private report write explicitly authorized.",
+        "Alias-parent/.. reproduces canonical versus lexical spelling mismatch; no claim that actual hosted temp alias mechanism or post-fix hosted run was directly observed.",
+        "No new coverage percentage, mutation score, player package, ordinary startup, live game or campaign acceptance claimed."
+      ],
+      "verdict": "PASS",
+      "score": 10
+    },
+    "docs": {
+      "reviewer": "/root/ci_portability_docs_review",
+      "repo": "devkit",
+      "head": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9",
+      "publicBase": "84bc5a10b1490e2e38470d85d8cf09d1d3bf151d",
+      "verdict": "PASS",
+      "score": 10,
+      "scoreFormula": "max(0, 10 - 20*blockers - 3*majors - minors)",
+      "findings": [],
+      "rounds": 1,
+      "roundCap": 1,
+      "scope": "Separate post-publication CI fixture portability correction; one bounded configured DOCS pass. Prior completed three-pass SDK feature review is not reopened.",
+      "claims": [
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "docs",
+        "score": 10,
+        "verdict": "PASS",
+        "counts": {
+          "major": 0,
+          "advisory": 0,
+          "minor": 0,
+          "blocker": 0
+        },
+        "one_line": "Canonical fixture roots restore test path comparisons without changing public SDK behavior or making accepted documentation stale."
+      },
+      "review": {
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "Git verified all five Markdown blobs identical to the genuine prior DOCS review at ce04ee79b4b12b92226d923863169ca3d6b277ea. Prior accepted criterion: README describes creating and developing mods and independent player delivery. docs/commands links to canonical guides. The companion resource section explains how a native mod ships the text/window resources its DLL needs; no mod-specific behavior is moved into shared SDK documentation."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "Git verified all five Markdown blobs identical to the genuine prior DOCS review at ce04ee79b4b12b92226d923863169ca3d6b277ea. Prior accepted criterion: All five review:info Markdown paths are covered and Git-identical to accepted6984e9d2d2ff66755725850df918a63db0782570. Read actual prior perAgent.docs PASS10 from attestationd95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02. docs/commands retains Purpose/Operation/Limits/Verification and links to the canonical native-projects article."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "Public 84bc5a1..HEAD changes only two fixture roots in tests/test_plugin_watch.py to .resolve() before mkdir and comparison. PluginWatch already resolves its source; production scanner, public commands, settings, errors, dependencies and user workflows are unchanged. No paired human documentation becomes stale."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "Git verified all five Markdown blobs identical to the genuine prior DOCS review at ce04ee79b4b12b92226d923863169ca3d6b277ea. Prior accepted criterion: A human follows xkit release project-name after declaring resources/mod.json. The article names DLL and UserMODs/workshop-recipe-id.h5u output paths, installation of both bin and UserMODs, independent uninstall and actionable SDK_NATIVE_RESOURCES_INVALID recovery. Current emitted RU/EN README.txt instructions require ordinary Heroes/Lobby launch and no SDK/Python on player systems."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "Read hosted run 38221717134 failure: test_snapshot_does_not_hide_unreadable_included_sources expected FileNotFoundError but it was not raised; 218 tests, one failure. Read exact alias before reproduction with the same assertion and after reproduction with one test OK. Current 39b4e923 receipt and actual log show 218 Python tests OK, contract 8/8, native 9/9, and explicit-base secrets PASS. This is retained local verification, not proof of a successful hosted rerun."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "Git verified all five Markdown blobs identical to the genuine prior DOCS review at ce04ee79b4b12b92226d923863169ca3d6b277ea. Prior accepted criterion: The section explicitly labels working SDK sources without a published ready release, distinguishes packaging from hot game-resource reload, and requires separate ordinary startup/in-game verification. Native DLL and its own companion H5U form one optional mod; shared infrastructure and other mods remain independently installed."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "Git verified all five Markdown blobs identical to the genuine prior DOCS review at ce04ee79b4b12b92226d923863169ca3d6b277ea. Prior accepted criterion: Current canonical RU/EN companion articles exactly match five-critic accepted raw SHA256149dc69cbf8e0955de9b717773243689ce7a449f75873123e5ea39f5e3c3eac9 and670652a29966b21f9f3459fe3a7f06ccfd9a8230f236967877f0a8861c2e4dc7. Directly compared added PO messages: resource errors, progress, original graphics DLL preservation and player install/uninstall agree across languages."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "Git verified all five Markdown blobs identical to the genuine prior DOCS review at ce04ee79b4b12b92226d923863169ca3d6b277ea. Prior accepted criterion: README/CONTRIBUTING/AGENTS/docs/commands remain canonical-site entry points. The native-projects working article is updated with the real field, release command, validation guarantees and limitations; accepted critiques are reused only at the exact current hashes. No parallel maintained manual, new dependency or undocumented setup step is introduced."
+          }
+        },
+        "findings": [],
+        "files": [
+          "AGENTS.md",
+          "CONTRIBUTING.md",
+          "NOTICE.md",
+          "README.md",
+          "docs/commands.md"
+        ],
+        "reviewer": "/root/ci_portability_docs_review"
+      },
+      "evidence": {
+        "hostedFailure": "sdk-hosted-38221717134-failure.log",
+        "exactReproductionAfter": "sdk-ci-alias-after.log",
+        "publicDelta": "84bc5a1..39b4e923: only tests/test_plugin_watch.py, lines 95 and 121, canonicalize project fixture roots.",
+        "role": "game-api/.agents/review/review-docs.md",
+        "guidesRead": [
+          "C:/Users/dampi/.codex/skills/standard/SKILL.md",
+          "C:/Users/dampi/.codex/skills/wittgenstein/SKILL.md",
+          "C:/Users/dampi/.codex/skills/critique/SKILL.md"
+        ],
+        "exactReproductionBefore": "sdk-ci-alias-before.log",
+        "previousReview": "source-publication-docs-sdk-final.json",
+        "currentGatesReceipt": "source-publication-devkit-39b4e923.json",
+        "currentGatesLog": "source-publication-devkit-39b4e923.log",
+        "documentationEquality": "git diff --name-only ce04ee79b4b12b92226d923863169ca3d6b277ea HEAD -- *.md returned no paths."
+      },
+      "limits": [
+        "Separate reviewer agent; no cross-family independence is claimed.",
+        "No game, focus, input, screenshots, network, tests, source edits, commits, pushes, attestation changes or private archive scans by this reviewer.",
+        "Evidence receipt and relevant actual log conclusions were inspected; gates and exact reproduction were not rerun.",
+        "Prior article judgments are reused only through unchanged SDK Markdown scope; no article panel or current article hash inspection was repeated.",
+        "Hosted rerun success, final player startup and gameplay acceptance are outside this DOCS verdict.",
+        "Only this explicitly authorized private review evidence file is written."
+      ]
+    },
+    "security": {
+      "reviewer": "/root/ci_portability_security_review",
+      "agent": "security",
+      "head": "39b4e923c179e0e79f2bbf5757d96643ecbf474b",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "6ae8f534fe315ac5b0e6e97f496c3c1514e9be4f0027b0434257ff98268581b9",
+      "deltaBase": "84bc5a10b1490e2e38470d85d8cf09d1d3bf151d",
+      "verdict": "PASS",
+      "score": 10,
+      "findings": [],
+      "claims": [
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        }
+      ],
+      "summary": {
+        "agent": "security",
+        "score": 10,
+        "verdict": "PASS",
+        "counts": {
+          "major": 0,
+          "advisory": 0,
+          "minor": 0,
+          "blocker": 0
+        },
+        "one_line": "Two test fixture source-root canonicalizations introduce no reachable exposure and preserve security-relevant exclusion and error assertions."
+      },
+      "evidence": [
+        "Read devkit AGENTS.md, .claude/review.config.json and canonical game-api/.agents/review/review-security.md. Configured security skills/rules are empty; installed SOLID, Ockham and tests-architecture guides were also read for applicable repository standards. Explicit parent authorization permits this private evidence write.",
+        "Independently verified HEAD 39b4e923c179e0e79f2bbf5757d96643ecbf474b and clean worktree. Exact public delta 84bc5a10b1490e2e38470d85d8cf09d1d3bf151d..HEAD changes only tests/test_plugin_watch.py:95,121: two source path expressions gain .resolve(). All production/runtime/docs/config/dependencies match public base by Git diff.",
+        "Read retained genuine prior source-publication-security-sdk-final.json: PASS score10, head ce04ee79b4b12b92226d923863169ca3d6b277ea, configured base71509e43af0faf080d8a47ed5b3ff8c72da2a3e9, diffHash c2f970db09a140ea445f4acd82f1e888aedff4f35799a0fe65a33124f60f7014. Git ce04ee79..84bc5a1 changes only the prior review attestation; production/runtime/docs remain byte-identical to that reviewed state. Prior findings were empty; reused only for unchanged code.",
+        "Read surrounding fixture assertions and scripts/plugin-watch.py constructor/snapshot. Production self.source already calls source.resolve(strict=True) at354. os.walk retains onerror propagation at394-398; excluded cache pruning and resolved containment at400-405 and explicit source rejection at419-421 remain unchanged. Canonical test paths restore equality and containment checks against the same directory production scans. No assertion, mutation guard, exception requirement, input validator or containment check is removed or weakened.",
+        "Read sdk-hosted-38221717134-failure.log: unreadable-source test failed with FileNotFoundError not raised;218 tests, one failure. Read sdk-ci-alias-reproduction.py: its parent/.. alias resolves to exactly the owned temporary root, --before-fix loads public84bc5a1 test fixture, and unchanged injected scandir error is the oracle. sdk-ci-alias-before.log reproduces exactly that assertion failure; sdk-ci-alias-after.log reports OK and passed_after_fix true. These retained executions were inspected, not rerun.",
+        "Read source-publication-devkit-39b4e923.json and relevant matching log: exact current HEAD; configured unit/review-contract/native-launch/secrets each exit0;218 Python,8 Node and9 native tests pass. Configured-base secrets gate also passes. Parent execution evidence reused, no reviewer tests or builds run.",
+        "Fixture paths derive solely from owned tempfile.TemporaryDirectory; resolving their source spelling adds no untrusted-input-to-shell, credential, public-output, authorization or production filesystem access surface. Claims cover the only changed file; no reachable security defect and no deductions.",
+        "Scope is one new bounded post-publication fixture portability pass. No game, input, screenshots, network, test execution, source edits or public writes. Local retained alias proof does not establish a newly completed hosted rerun. Existing standalone player and campaign acceptance remain outside this fixture change."
+      ]
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-10-12T08:37:05.351Z"
+}
