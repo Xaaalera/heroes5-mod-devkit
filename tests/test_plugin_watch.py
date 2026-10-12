@@ -92,7 +92,7 @@ class PluginWatchBoundaries(unittest.TestCase):
     def test_snapshot_never_descends_into_excluded_caches(self):
         for explicit in (False, True):
             with self.subTest(explicit=explicit), tempfile.TemporaryDirectory() as directory:
-                source = Path(directory) / 'project'; source.mkdir()
+                source = (Path(directory) / 'project').resolve(); source.mkdir()
                 (source / 'src').mkdir()
                 (source / 'src/main.cpp').write_text('main')
                 (source / 'src/shared.hpp').write_text('header')
@@ -118,7 +118,7 @@ class PluginWatchBoundaries(unittest.TestCase):
 
     def test_snapshot_does_not_hide_unreadable_included_sources(self):
         with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory) / 'project'; source.mkdir()
+            source = (Path(directory) / 'project').resolve(); source.mkdir()
             (source / 'src').mkdir()
             (source / 'src/main.cpp').write_text('main')
             watcher = watch_module.PluginWatch(source, Path(directory) / 'output', Path('cl.exe'), {}, None)
