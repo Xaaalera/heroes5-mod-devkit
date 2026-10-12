@@ -1,0 +1,1691 @@
+{
+  "diffHash": "9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2",
+  "commitSha": "4231ae3daa812b38856c7c8c5cbaa99174408ace",
+  "perAgent": {
+    "craft": {
+      "head": "4231ae3daa812b38856c7c8c5cbaa99174408ace",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2",
+      "findings": [],
+      "summary": {
+        "agent": "craft",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "No established CRAFT defect in the configured cumulative scope, assessed through verified unchanged-content reuse and independent review of packaging, localization and right-double-click changes."
+      },
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        }
+      ],
+      "evidence": [
+        "Read repository AGENTS, README, CONTRIBUTING and actual configured CRAFT rules. Devkit lacks .agents/review/review-craft.md; used the explicitly designated canonical game-api counterpart. Loaded all five installed configured guides.",
+        "Resolved prior accepted commit6984e9d2d2ff66755725850df918a63db0782570 and read actual CRAFT PASS10 in attestationd95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02. Git verifies71 unchanged cumulative paths. Reused their recorded judgments and independently reviewed all16 subsequent paths.",
+        "Confirmed exact current HEAD, clean status and review:info harness hash. The changed game-api gitlink names58f5ddc74d65b911e4a7e3f4e067c691f9425d5a.",
+        "Read packaging/orchestration additions, existing package_resource_player, validate_player_archive, core_source_snapshot, PluginWatch.snapshot, resource_operation and Workshop.build. Repository searches establish that resource_source_snapshot has a different input contract from native/core snapshots: only mod.json and files/ belong to the resource generation. It avoids scanning native sources and caches.",
+        "validate_resource_archive is shared by existing resource packaging, new companion packaging and embedded-resource validation. Companion packaging composes the existing native release and validator; it does not introduce another compiler, watcher, resource builder or player launcher. Standard ZipFile, hashlib, pathlib and os.replace facilities are reused.",
+        "Read all changed RMB dispatch and fixture lines with surrounding input context. The additional message follows the existing owned-window, UI-thread, lifetime and callback route; no parallel dispatcher or abandoned left-button path was added.",
+        "Read both PO deltas and independently decoded both MO catalogs using gettext.GNUTranslations. All four new keys resolve to the intended RU/EN text, including recovery instructions and companion installation/removal guidance. Changed README fragments use existing translations APIs. Existing unchanged README literals were not charged as new defects.",
+        "Read native-resources-independent-source-review-closed.json. Independently matched all four recorded current hashes: xalkit.py b4d3db33aa0d32478d297c0549fa93853a6225bea0410b66a77ea1866a14dabe; plugin_core.py5994c99e972bbef9d3ebd1ed3a9d3fbe4dbe4cd177729f13bab00485eb382dbe; test_plugin_watch.py31defc1e5ed9bb1f0fe101065d055f18070892e25e7e3488a92644bfefc645e9; test_xalkit.py0e95481b4df538abd45895cfc3f439c6bd7145903fa8a1c9be721ec409894524. Treat this as bounded supporting evidence, not a complete gate.",
+        "Read native-source-selection-review.json as historical evidence with its older hashes and stated limits. Current packaging work extends the selected-source/native build workflow rather than replacing it.",
+        "Read source-publication-devkit-4231ae3d.json and log tail. Parent-executed unit, review-contract, native and explicit-base secrets operations exited0; native log shows9/9 PASS. Earlier bounded receipt records parent216-unit PASS. This reviewer did not execute tests or builds.",
+        "No new rendered UI layout, dependency, JS/TS implementation or repeated SDK control loop is added by the subsequent delta. Responsive browser breakpoints and JS syntax conventions therefore introduce no additional applicable source requirement here."
+      ],
+      "limits": [
+        "Source publication CRAFT verdict only; no combined player artifact startup, final campaign or physical input acceptance is certified.",
+        "No source edits, persistent writes, test execution, builds, game actions, input, image inspection, network access, commits or pushes.",
+        "Prior whole-scope judgments are reused only for Git-verified unchanged content; the two bounded source receipts are not represented as full pre-push gates."
+      ],
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/source_release_craft"
+    },
+    "architecture": {
+      "repository": "devkit",
+      "HEAD": "4231ae3daa812b38856c7c8c5cbaa99174408ace",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2",
+      "findings": [],
+      "summary": {
+        "agent": "architecture",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "Generic companion packaging and right double click delivery preserve developer/player separation, per-mod packaging and existing callback lifetime ownership."
+      },
+      "score_formula": "10 - 20*0 - 3*0 - 0 = 10",
+      "scope": {
+        "current_cumulative_paths": 87,
+        "previous_attested_HEAD": "6984e9d2d2ff66755725850df918a63db0782570",
+        "previous_attestation": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+        "previous_cumulative_paths": 86,
+        "exact_unchanged_reused_paths": 71,
+        "directly_inspected_delta_paths": 16,
+        "reuse_verification": "Compared git ls-tree entries at the previous attested commit and current HEAD for every prior cumulative path outside the subsequent delta; all71 match, including the retained deletion."
+      },
+      "evidence": [
+        "Read SDK AGENTS, README, CONTRIBUTING, commands pointer, configured architecture rules and the supplied canonical architecture role. Independently regenerated review:info and rechecked exact HEAD and clean worktree.",
+        "Read the previous architecture attestation actual PASS10 judgment and limits. Reused prior source/runtime/loader/lifecycle judgments only where Git equality was established.",
+        "resource_project is an explicit generic native-project declaration. Selection is parsed once from captured manifest bytes, constrained within the native source tree, and compared with the watcher first xalkit.json fingerprint before compilation. Initially absent declarations are also guarded.",
+        "resource_operation captures both artifact and build-report hashes while holding the existing resource lock. Companion publication requires both captured hashes, validates the matching artifact/report relationship, and rejects a foreign replacement even if it is another internally consistent build with the same resource ID.",
+        "Resource recipe and local files are snapshotted before building and compared after native compilation. Caches and native source trees are excluded from this local resource-input snapshot. The recorded build-report digest retains the existing builder template/game-input evidence without claiming that local source fingerprints alone capture all transitive provenance.",
+        "Native-only intermediates use a separate output directory when a companion is selected. The finished per-mod ZIP is replaced only after the combined temporary archive validates; failures preserve the previous final ZIP and do not emit a released event.",
+        "The combined archive contains one mod DLL and declared H5U, the two existing shared native dependencies, notices and player instructions. Validation requires exact members, checksums, permitted H5U paths, valid source/build fingerprints and existing PE export/import/deferred-import checks. No Python, Node, supervisor, source tree or workshop path is added as a player dependency.",
+        "Right double click extends the existing public WindowInputContext event whitelist. Bridge dispatch retains RuntimeLifetimeGuard, transition/reentrancy checks and a writable resident lease; runtime invocation retains its guard, EngineContextScope and PayloadDispatchScope. The event mod meaning remains in the payload callback.",
+        "The added native fixture exercises right double click through both HMR generations and checks borrowed context/dispatch-marker cleanup. It adds no predictor, bank rule, formula or renderer to the shared runtime or diagnostic bus.",
+        "All four current resource source/test SHA256 values match native-resources-independent-source-review-closed.json exactly. Its two earlier packaging/selection findings are closed, and their fixes were independently inspected in current code and regression scenarios.",
+        "The Game API gitlink equals reviewed API HEAD58f5ddc74d65b911e4a7e3f4e067c691f9425d5a. Existing loader, package templates and dependency policy remain Git-identical to prior accepted scope.",
+        "Read canonical architecture-contract lines17-85 in knowledge/docs/en/modding/native-projects.md. Current source ownership conforms to its responsibilities, dependency direction and cleanup rules; migration completion and ordinary final-package startup remain separate requirements."
+      ],
+      "gate_evidence": {
+        "receipt": "D:/Pk/Heroes5ModsFolder/.local/test-state/canonical-graphics-build-20261006/source-publication-devkit-4231ae3d.json",
+        "receipt_sha256": "429c6e229d2ad5c054ada0f61b32effc17f25d722b84a8dbc6212b826783c165",
+        "passed": true,
+        "matching_HEAD": true,
+        "operations": [
+          {
+            "name": "unit",
+            "command": "npm test",
+            "exit_code": 0
+          },
+          {
+            "name": "review-contract",
+            "command": "npm run check",
+            "exit_code": 0
+          },
+          {
+            "name": "native-launch",
+            "command": "npm run check:native",
+            "exit_code": 0
+          },
+          {
+            "name": "secrets",
+            "command": "npm run review:secrets -- --base 71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+            "exit_code": 0
+          }
+        ],
+        "whole_run_seconds": 85.68521669995971,
+        "log_inspection": "Actual log shows216Python tests OK, contract tests with zero skips, native9/9 PASS and explicit-base secrets pass.",
+        "execution": "Parent executed gates; reviewer independently inspected receipt and log."
+      },
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        }
+      ],
+      "verdict": "PASS",
+      "score": 10,
+      "reviewer": "/root/source_release_architecture"
+    },
+    "tests": {
+      "head": "4231ae3daa812b38856c7c8c5cbaa99174408ace",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2",
+      "verdict": "PASS",
+      "score": 10,
+      "findings": [],
+      "summary": {
+        "agent": "tests",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "Companion packaging, stale-build rejection and right double-click delivery have meaningful regressions and passing configured source gates."
+      },
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        }
+      ],
+      "evidence": [
+        "Read actual configured TESTS contract and rules; no deterministic regex objects configured for this lane. Independently regenerated fixed base/hash and confirmed clean worktree.",
+        "Cumulative scope87 paths;71 retain exact Git content since6984e9d. Read genuine d95aa89b perAgent.tests PASS10 and reused unchanged-scope judgment. Directly inspected all sixteen incremental paths, including native source/tests, packaging/orchestration source/tests, error mapping, PO deltas and dependency pin.",
+        "Packaging tests execute production ZIP writing and validation with filesystem artifacts; compiler and PE-reader boundaries are substituted. Assertions inspect embedded H5U bytes, resource digest, native-member preservation, package inventory and readable installation resource reference.",
+        "Tampering cases recompute outer resource hashes where necessary, so bad inner CRC, traversal, ambiguous separators and case-insensitive duplicates reach inner validation. Missing source fingerprints and changed outer bytes are independently rejected.",
+        "Public orchestration checks source changes during native compilation, competing artifact/report replacement and report-only replacement. Each failure requires CommandFailure, byte-identical prior finalZIP and no released event. Initial declaration changes are tested with previously declared and newly added resources before watcher snapshot; compilation must not start.",
+        "Resource snapshot test checks recipe and real resource files, ignores changed build cache and detects changed caption input. Invalid relative/absolute/empty/null/list/missing selections preserve prior release, report SDK_NATIVE_RESOURCES_INVALID and start neither compiler nor resource build.",
+        "Right double-click regression posts actual WM_RBUTTONDBLCLK to the owned native test window, removes/dispatches the queued message and checks resident marker110 equals generation+1 across both payload generations. Lost, duplicate or post-HMR delivery failures change the assertion. Context and dispatch-marker cleanup assertion follows.",
+        "Independently SHA256-matched xalkit.py, plugin_core.py, test_plugin_watch.py and test_xalkit.py against native-resources-independent-source-review-closed.json. Both confirmed race fixes and their tests remain exact sources. Prior closure is not treated as the full gate.",
+        "Read source-publication-devkit-4231ae3d.json and log: passedtrue; all configured operations and explicit-base secrets exit0. Python216 OK22.248s, Node8/8, native9/9 CTest5.99s; full wrapper85.6852167s. Reviewer did not rerun."
+      ],
+      "reviewer": "/root/source_release_tests"
+    },
+    "docs": {
+      "reviewer": "/root/source_release_docs",
+      "verdict": "PASS",
+      "score": 10,
+      "scoreFormula": "max(0, 10 - 20*blockers - 3*majors - minors)",
+      "findings": [],
+      "rounds": 1,
+      "roundCap": 3,
+      "scope": "Configured base..HEAD source publication documentation review. Canonical website articles remain unpublished. No final player package or current combined-artifact acceptance.",
+      "limits": [
+        "Independent read-only documentation review by a separate agent; no source edits, game actions, tests, focus, input, screenshots, network, commit, push or attestation writes.",
+        "Current deterministic source gate receipts and their actual log conclusions were inspected; checks were not rerun by this reviewer.",
+        "Five article critic identities and accepted exact file hashes were reused; no article panel rerun and no cross-family independence is claimed.",
+        "Wheel input, fullscreen switching, final player artifact startup and complete gameplay acceptance remain outside this verdict."
+      ],
+      "repo": "devkit",
+      "head": "4231ae3daa812b38856c7c8c5cbaa99174408ace",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2",
+      "summary": {
+        "agent": "docs",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "The current SDK source packaging behavior and bilingual human instructions agree on companion resources, validation, independent installation and pending artifact acceptance."
+      },
+      "claims": [
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        }
+      ],
+      "review": {
+        "reviewer": "/root/source_release_docs",
+        "files": [
+          "AGENTS.md",
+          "CONTRIBUTING.md",
+          "NOTICE.md",
+          "README.md",
+          "docs/commands.md"
+        ],
+        "criteria": {
+          "purpose": {
+            "verdict": "PASS",
+            "evidence": "README describes creating and developing mods and independent player delivery. docs/commands links to canonical guides. The companion resource section explains how a native mod ships the text/window resources its DLL needs; no mod-specific behavior is moved into shared SDK documentation."
+          },
+          "structure": {
+            "verdict": "PASS",
+            "evidence": "All five review:info Markdown paths are covered and Git-identical to accepted6984e9d2d2ff66755725850df918a63db0782570. Read actual prior perAgent.docs PASS10 from attestationd95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02. docs/commands retains Purpose/Operation/Limits/Verification and links to the canonical native-projects article."
+          },
+          "specificity": {
+            "verdict": "PASS",
+            "evidence": "The draft resource_project example extends an existing xalkit.json, preserves other fields, resolves inside the native project and links mod.json fields to the same-language resource-project guide. Current build_native_resource_companion and package_native_resources implement this selection, build/source hashes, internal path/CRC checks and atomic publication."
+          },
+          "reproducibility": {
+            "verdict": "PASS",
+            "evidence": "A human follows xkit release project-name after declaring resources/mod.json. The article names DLL and UserMODs/workshop-recipe-id.h5u output paths, installation of both bin and UserMODs, independent uninstall and actionable SDK_NATIVE_RESOURCES_INVALID recovery. Current emitted RU/EN README.txt instructions require ordinary Heroes/Lobby launch and no SDK/Python on player systems."
+          },
+          "evidence": {
+            "verdict": "PASS",
+            "evidence": "Independently regenerated review:info base/hash at exact HEAD and verified a clean worktree. Read source-publication-devkit-4231ae3d.json and actual log:216 Python tests, native9/9, contract zero failures and explicit-base secrets PASS. Four current packaging source/test SHA256 values match native-resources-independent-source-review-closed.json; no current combined-artifact live acceptance is inferred."
+          },
+          "applicability": {
+            "verdict": "PASS",
+            "evidence": "The section explicitly labels working SDK sources without a published ready release, distinguishes packaging from hot game-resource reload, and requires separate ordinary startup/in-game verification. Native DLL and its own companion H5U form one optional mod; shared infrastructure and other mods remain independently installed."
+          },
+          "translations": {
+            "verdict": "PASS",
+            "evidence": "Current canonical RU/EN companion articles exactly match five-critic accepted raw SHA256149dc69cbf8e0955de9b717773243689ce7a449f75873123e5ea39f5e3c3eac9 and670652a29966b21f9f3459fe3a7f06ccfd9a8230f236967877f0a8861c2e4dc7. Directly compared added PO messages: resource errors, progress, original graphics DLL preservation and player install/uninstall agree across languages."
+          },
+          "maintenance": {
+            "verdict": "PASS",
+            "evidence": "README/CONTRIBUTING/AGENTS/docs/commands remain canonical-site entry points. The native-projects working article is updated with the real field, release command, validation guarantees and limitations; accepted critiques are reused only at the exact current hashes. No parallel maintained manual, new dependency or undocumented setup step is introduced."
+          }
+        },
+        "findings": []
+      }
+    },
+    "security": {
+      "head": "4231ae3daa812b38856c7c8c5cbaa99174408ace",
+      "base": "71509e43af0faf080d8a47ed5b3ff8c72da2a3e9",
+      "diffHash": "9c2da19304aa78b6a0076de8c20d5c3f8c4d1b58d4ab68a975cd20a55ddc90d2",
+      "verdict": "PASS",
+      "score": 10,
+      "findings": [],
+      "claims": [
+        {
+          "path": ".claude/review.config.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".github/workflows/verify.yml",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitignore",
+          "disposition": "judged"
+        },
+        {
+          "path": ".gitmodules",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/1216198a0dec77815837b7cddc4d81ca3ac4c291267fc6493d65e1c8034255ef.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/3c11d7431135516b8e3a66952727b86a3f593d8adcf95b9533411dc223a3e452.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/4635eb0c5b32e2e7ff285a74f78d3fa12a284ebd9eba79fd773dcbd3c265713f.json",
+          "disposition": "judged"
+        },
+        {
+          "path": ".review/attestations/d95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02.json",
+          "disposition": "judged"
+        },
+        {
+          "path": "AGENTS.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "NOTICE.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "README.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "docs/commands.md",
+          "disposition": "judged"
+        },
+        {
+          "path": "examples/native-counter/plugin.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "game-api",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/en/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.mo",
+          "disposition": "judged"
+        },
+        {
+          "path": "locale/ru/LC_MESSAGES/xalkit.po",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/CMakeLists.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_import.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/animation_preload_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_activation_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_client.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/console_module.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/crash_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/diagnostic_bus_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_owner_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_protocol.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/engine_hook_service_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_identity.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy.def",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/graphics_proxy_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/mod_loader.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/module_catalog_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_launch_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/player_plugin.cmake",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_client.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_bridge_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_fixture.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/plugin_runtime_test.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/sdk_launch_gate.cpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "native/selector_runtime.hpp",
+          "disposition": "judged"
+        },
+        {
+          "path": "pyproject.toml",
+          "disposition": "judged"
+        },
+        {
+          "path": "requirements.txt",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game-ui.ps1",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/mod-dev.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-probe.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/native-ui-resources.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-control-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-player-check.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin-watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/plugin_core.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_console_commands.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/test-map.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_config.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_runtime.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "scripts/xalkit_ui.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_game_control.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_plugin_watch.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_console.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_diagnostics.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_logging.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_sdk_storage.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "tests/test_xalkit.py",
+          "disposition": "judged"
+        },
+        {
+          "path": "xalKit.cmd",
+          "disposition": "judged"
+        },
+        {
+          "path": "xkit.cmd",
+          "disposition": "judged"
+        }
+      ],
+      "evidence": [
+        "Read repository AGENTS, CONTRIBUTING, configured security role and repository security instructions; the latter are byte-identical to Game API's canonical counterpart. Configured security skills and additional rules are empty.",
+        "Independently confirmed exact HEAD and clean worktree. Read-only node scripts/review-check.mjs --info reproduced configured base and current diffHash.",
+        "Read genuine prior perAgent.security judgment in attestationd95aa89b577a9ee0a4b005ffb2bce6576cab86e182bb1e1ead2137c2a4b08b02: reviewer/root/player_article_newcomer, PASS10, no findings, source6984e9d2d2ff66755725850df918a63db0782570.",
+        "Recomputed the prior configured-base cumulative hash with the installed harness's .review exclusion; exact match. Git verifies ancestry and71 of87 cumulative changed paths retain identical blobs.",
+        "Inspected complete bounded source delta for companion packaging, orchestration, RMB dispatch, translations and related regressions. The dependency gitlink pins exactly the Game API HEAD reviewed above.",
+        "Current xalkit.py, plugin_core.py, test_plugin_watch.py and test_xalkit.py hashes exactly match native-resources-independent-source-review-closed.json. Read its two closed defects and checked their implemented protections directly.",
+        "resource_project is rejected unless a relative existing directory resolves within the native source. Resource input snapshots resolve recipe/files paths and reject inputs escaping their project.",
+        "Companion inner ZIP validation rejects empty archives, case-insensitive duplicate members, backslashes, colons, absolute paths and empty/dot/traversal segments, then verifies CRC without extracting files. Outer archive members must exactly match the fixed native set plus canonical resource paths, with CRC and all resource/native digests checked.",
+        "Artifact and build-report digests are captured under the existing exclusive resource lock, then matched against frozen bytes before packaging. Source snapshots and the captured xalkit.json digest reject resource-generation or declaration changes during native preparation/compilation.",
+        "Native output uses a separate intermediate directory when resources are present. Final combined ZIP is written to a unique sibling temporary, fully validated and published only with os.replace; failures preserve the previous finished ZIP and remove the temporary.",
+        "Read regressions covering hostile outer/inner paths, duplicate case variants, ambiguous segments, inner CRC failure, changed artifact/report pairs, changed source inputs, changed resource declaration including initially absent companions, and preservation of the prior ZIP without a released event.",
+        "RMB admission adds only WM_RBUTTONDBLCLK to the existing input route. Main HWND, owning thread, payload-transition and reentry checks remain; runtime lifetime pin and resident lease surround dispatch. ValidEngineContext independently verifies owning process/thread and matching committed private resident allocation. The queued RMB regression checks exactly one callback across HMR.",
+        "Read source-publication-devkit-4231ae3d.json and matching log: configured unit, review-contract and native-launch gates plus explicit configured-base secrets all exit0;216 Python tests pass, native9/9 pass, review checks show skipped0. These are retained parent executions."
+      ],
+      "summary": {
+        "agent": "security",
+        "verdict": "PASS",
+        "score": 10,
+        "counts": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0,
+          "advisory": 0
+        },
+        "one_line": "No reachable exposure was established in companion publication or RMB dispatch within the exact configured cumulative diff."
+      },
+      "reviewer": "/root/source_release_security"
+    }
+  },
+  "overall": "PASS",
+  "timestamp": "2026-10-12T07:48:20.586Z"
+}
