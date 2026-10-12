@@ -735,3 +735,15 @@ msgstr "Prototypes and SDK checks"
 
 msgid "xalkit.native_sources_invalid"
 msgstr "The native source list is invalid. Check native_sources in xalkit.json."
+
+msgid "xalkit.native_resources_invalid"
+msgstr "The native mod resources could not be packaged. Check resource_project in xalkit.json, its mod.json and resource files, then rebuild. Details: {diagnostic}"
+
+msgid "xalkit.native_resources_packaging"
+msgstr "Packaging DLL and game resources for {name}"
+
+msgid "xalkit.native_player_first_install"
+msgstr "3. When installing our DLL mods for the first time, rename the original game bin/d3d9.dll to d3d9.universe.dll. Keep an existing d3d9.universe.dll unchanged."
+
+msgid "xalkit.native_resource_player_readme"
+msgstr "Companion game resources\nCopy the archive UserMODs folder into the game folder together with bin before launching Heroes/Lobby. Both the plugin DLL and {resource} belong to this mod.\nTo uninstall this mod, remove its DLL and {resource}. Keep shared DLLs and other mods."

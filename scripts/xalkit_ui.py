@@ -7,6 +7,7 @@ from xalkit_config import read_settings
 
 ERROR_REASONS = {
     'SDK_NATIVE_SOURCES_INVALID': (400, 'INVALID_ARGUMENT', 'native_sources_invalid'),
+    'SDK_NATIVE_RESOURCES_INVALID': (409, 'FAILED_PRECONDITION', 'native_resources_invalid'),
     'SDK_RESOURCE_PACKAGE_FAILED': (409, 'FAILED_PRECONDITION', 'resource_package_failed'),
     'SDK_BANK_RECOVERY_REFUSED': (409, 'FAILED_PRECONDITION', 'recover_bank_failed'),
     'SDK_STORAGE_LOW_SPACE': (507, 'RESOURCE_EXHAUSTED', 'storage_low_space'),

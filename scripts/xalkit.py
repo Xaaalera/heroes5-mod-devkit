@@ -178,7 +178,34 @@ def resource_operation(saved, name, source, action):
             workshop.build()
             deployment = workshop.deploy()
             return workshop.launch() if action == 'start' else deployment
-        return workshop.build()
+        result = workshop.build()
+        return {**result, 'artifact': str(workshop.artifact), 'build_sha256': hashlib.sha256(
+            workshop.artifact.with_suffix('.build.json').read_bytes()).hexdigest()}
+
+
+def build_native_resource_companion(saved, source, manifest_content):
+    """Build the resource project explicitly declared by a native project."""
+    from plugin_core import resource_source_snapshot
+    metadata = json.loads(manifest_content) if manifest_content is not None else {}
+    if not isinstance(metadata, dict):
+        raise ValueError('Native project manifest must be an object')
+    if 'resource_project' not in metadata:
+        return None
+    relative = metadata['resource_project']
+    if not isinstance(relative, str) or not relative or Path(relative).is_absolute() or Path(relative).drive or '..' in Path(relative).parts:
+        raise ValueError('Resource project must be a relative directory within the native project')
+    project = (source / relative).resolve(strict=True)
+    if not project.is_relative_to(source.resolve()) or not project.is_dir():
+        raise ValueError('Resource project escapes its native project')
+    recipe = json.loads((project / 'mod.json').read_text(encoding='utf-8'))
+    identifier = recipe.get('id') if isinstance(recipe, dict) else None
+    if not isinstance(identifier, str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', identifier):
+        raise ValueError('Resource recipe needs a valid mod ID')
+    snapshot = resource_source_snapshot(project)
+    result = resource_operation(saved, identifier, project, 'build')
+    artifact = Path(result.get('artifact') or Path(saved['workspace']) / '.local/test-state' / (identifier + '.h5u'))
+    return {'name': identifier, 'artifact': artifact, 'source': project, 'snapshot': snapshot,
+            'artifact_sha256': result['artifact_sha256'], 'build_sha256': result['build_sha256']}
 
 
 def build_project(saved, name, source, native, events, *, player=False):
@@ -242,14 +269,44 @@ def build_project(saved, name, source, native, events, *, player=False):
             return str(archive)
         events.emit({'status': 'released', 'message': text('resource_released', path=released), 'artifact': str(released)})
         return str(released)
+    try:
+        marker = source / 'xalkit.json'
+        manifest_content = marker.read_bytes() if marker.is_file() else None
+        manifest_sha256 = hashlib.sha256(manifest_content).hexdigest() if manifest_content is not None else None
+        companion = build_native_resource_companion(saved, source, manifest_content)
+    except (OSError, ValueError, RuntimeError, KeyError, BadZipFile) as failure:
+        events.emit({'status': 'native_resources_failed', 'diagnostic': str(failure)})
+        raise CommandFailure(error('SDK_NATIVE_RESOURCES_INVALID', diagnostic=str(events.directory))) from failure
     toolchain, compiler, environment, built, loader = native_tools(saved, events)
     module = load_backend('plugin-watch.py')
     output = Path(saved['workspace']) / '.local/xalkit/releases' / name
-    watcher = module.PluginWatch(source, output, compiler, environment, None)
-    result = watcher.update(watcher.snapshot(), time.perf_counter(), name, loader, DEVKIT / 'native')
-    events.emit(result)
+    # The native intermediate cannot replace the finished ZIP until its H5U
+    # and source generation have passed the complete package check.
+    watcher = module.PluginWatch(source, output / 'native-build' if companion else output, compiler, environment, None)
+    snapshot = watcher.snapshot()
+    if snapshot.get('xalkit.json') != manifest_sha256:
+        events.emit({'status': 'native_resources_failed', 'diagnostic': 'Native resource declaration changed during tool preparation; rebuild'})
+        raise CommandFailure(error('SDK_NATIVE_RESOURCES_INVALID', diagnostic=str(events.directory)))
+    result = watcher.update(snapshot, time.perf_counter(), name, loader, DEVKIT / 'native')
+    if companion and result['status'] == 'released':
+        events.emit({'status': 'building', 'stage': 'resources', 'message': text('native_resources_packaging', name=name)})
+    else:
+        events.emit(result)
     if result['status'] != 'released':
         raise RuntimeError(text('failure', reason=result['status']))
+    if companion:
+        from plugin_core import package_native_resources, resource_source_snapshot
+        try:
+            if resource_source_snapshot(companion['source']) != companion['snapshot']:
+                raise ValueError('Resource sources changed during native compilation; rebuild')
+            artifact = package_native_resources(result['archive'], companion['artifact'], companion['name'], output / (name + '.zip'),
+                                                source_hashes=companion['snapshot'], expected_artifact_sha256=companion['artifact_sha256'],
+                                                expected_build_sha256=companion['build_sha256'])
+        except (OSError, ValueError, RuntimeError, KeyError, BadZipFile) as failure:
+            events.emit({'status': 'native_resources_failed', 'diagnostic': str(failure)})
+            raise CommandFailure(error('SDK_NATIVE_RESOURCES_INVALID', diagnostic=str(events.directory))) from failure
+        events.emit({'status': 'released', 'artifact': str(artifact), 'resource': str(companion['artifact'])})
+        return str(artifact)
     return result['archive']
 
 

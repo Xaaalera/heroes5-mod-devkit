@@ -1169,6 +1169,163 @@ class PluginWatchBoundaries(unittest.TestCase):
             self.assertEqual(manifest['graphics_facade_sha256'], hashlib.sha256(archive.read('bin/d3d9.dll')).hexdigest())
             self.assertNotIn('bin/d3d9.universe.dll', archive.namelist())
             members = {name: archive.read(name) for name in archive.namelist()}
+        # A resource companion is part of the same independently installable mod.
+        from plugin_core import package_native_resources
+        resource = self.root / 'one-ui.h5u'
+        with ZipFile(resource, 'w') as contents:
+            contents.writestr('UI/One/Caption.txt', b'fixture caption')
+        resource.with_suffix('.build.json').write_text(json.dumps({
+            'artifact_sha256': hashlib.sha256(resource.read_bytes()).hexdigest()}))
+        original_build_report = resource.with_suffix('.build.json').read_bytes()
+        resource_receipt = {'artifact': str(resource), 'artifact_sha256': hashlib.sha256(resource.read_bytes()).hexdigest(),
+                            'build_sha256': hashlib.sha256(original_build_report).hexdigest()}
+        expected_resource = {'expected_artifact_sha256': resource_receipt['artifact_sha256'],
+                             'expected_build_sha256': resource_receipt['build_sha256']}
+        resource_sources = {'mod.json': hashlib.sha256(b'{"id":"one-ui"}').hexdigest()}
+        bundled = package_native_resources(result['archive'], resource, 'one-ui', self.root / 'bundled.zip', source_hashes=resource_sources,
+                                           **expected_resource)
+        with ZipFile(bundled) as archive:
+            validated = validate_player_archive(archive, 'one-plugin')
+            resource_member = 'UserMODs/workshop-one-ui.h5u'
+            self.assertEqual(archive.read(resource_member), resource.read_bytes())
+            self.assertEqual(validated['resources'], {resource_member: hashlib.sha256(resource.read_bytes()).hexdigest()})
+            self.assertEqual(archive.read('bin/Heroes5Mods/Plugins/one-plugin.dll'), b'one-plugin')
+            self.assertIn(resource_member, archive.read('README.txt').decode('utf-8'))
+            self.assertFalse(any(name.endswith('.exe') for name in archive.namelist()))
+            bundled_members = {name: archive.read(name) for name in archive.namelist()}
+        for scenario in ('changed_bytes', 'unsafe_outer_path', 'bad_inner_crc', 'unsafe_inner_path',
+                         'duplicate_inner_name', 'ambiguous_inner_path', 'missing_source_fingerprints'):
+            with self.subTest(resource_scenario=scenario):
+                modified = dict(bundled_members)
+                resource_manifest = json.loads(modified['release.json'])
+                if scenario == 'changed_bytes':
+                    modified[resource_member] = b'changed after bundle'
+                elif scenario == 'unsafe_outer_path':
+                    modified['../one-ui.h5u'] = modified.pop(resource_member)
+                    resource_manifest['resources'] = {'../one-ui.h5u': validated['resources'][resource_member]}
+                elif scenario == 'missing_source_fingerprints':
+                    resource_manifest.pop('resource_source_hashes')
+                else:
+                    content = io.BytesIO()
+                    with ZipFile(content, 'w') as resources:
+                        inner_name = '../escape.txt' if scenario == 'unsafe_inner_path' else 'UI/Caption.txt'
+                        if scenario == 'ambiguous_inner_path':
+                            inner_name = 'UI//Caption.txt'
+                        resources.writestr(inner_name, b'caption')
+                        if scenario == 'duplicate_inner_name':
+                            resources.writestr('ui/caption.TXT', b'duplicate on Windows')
+                    data = bytearray(content.getvalue())
+                    if scenario == 'bad_inner_crc':
+                        with ZipFile(io.BytesIO(data)) as resources:
+                            item = resources.infolist()[0]
+                            offset = item.header_offset + 30 + len(item.filename.encode()) + len(item.extra)
+                        data[offset] ^= 1
+                    modified[resource_member] = bytes(data)
+                    resource_manifest['resources'][resource_member] = hashlib.sha256(data).hexdigest()
+                modified['release.json'] = json.dumps(resource_manifest).encode()
+                content = io.BytesIO()
+                with ZipFile(content, 'w') as archive:
+                    for name, data in modified.items():
+                        archive.writestr(name, data)
+                with ZipFile(io.BytesIO(content.getvalue())) as archive:
+                    with self.assertRaises(ValueError):
+                        validate_player_archive(archive, 'one-plugin')
+        previous_bundle = Path(bundled).read_bytes()
+        original_resource = resource.read_bytes()
+        resource.write_bytes(b'changed after resource build')
+        with self.assertRaisesRegex(ValueError, 'Resource changed'):
+            package_native_resources(result['archive'], resource, 'one-ui', bundled, source_hashes=resource_sources, **expected_resource)
+        self.assertEqual(Path(bundled).read_bytes(), previous_bundle)
+        resource.write_bytes(original_resource)
+
+        # Exercise the public build orchestration with external build fixtures.
+        import xalkit
+        from xalkit_ui import CommandFailure
+        project = self.source / 'ui'; project.mkdir()
+        (project / 'mod.json').write_text('{"id":"one-ui"}')
+        (project / 'files').mkdir()
+        input_file = project / 'files/caption.txt'; input_file.write_text('first source generation')
+        (self.source / 'xalkit.json').write_text(json.dumps({
+            'kind': 'native', 'native_sources': ['plugin.cpp'], 'resource_project': 'ui'}))
+        events = Mock(); events.directory = self.root / 'logs'
+        with patch.object(xalkit, 'native_tools', return_value=(None, 'cl.exe', {}, {}, loader)), \
+                patch.object(xalkit, 'load_backend', return_value=watch_module), \
+                patch.object(xalkit, 'resource_operation', return_value=resource_receipt), \
+                patch.object(watch_module.shutil, 'which', return_value=str(self.entry)), \
+                patch.object(watch_module.CoreBuild, 'release', side_effect=release_fixture):
+            published = xalkit.build_project({'workspace': str(self.root)}, 'one-plugin', self.source, True, events, player=True)
+        self.assertEqual(Path(published), self.root / '.local/xalkit/releases/one-plugin/one-plugin.zip')
+        with ZipFile(published) as archive:
+            self.assertEqual(archive.read(resource_member), original_resource)
+            validate_player_archive(archive, 'one-plugin')
+        previous_published = Path(published).read_bytes()
+        events.reset_mock()
+        def release_changed_resources(sources, generation, payload, include):
+            outcome = release_fixture(sources, generation, payload, include)
+            input_file.write_text('second source generation')
+            return outcome
+        with patch.object(xalkit, 'native_tools', return_value=(None, 'cl.exe', {}, {}, loader)), \
+                patch.object(xalkit, 'load_backend', return_value=watch_module), \
+                patch.object(xalkit, 'resource_operation', return_value=resource_receipt), \
+                patch.object(watch_module.shutil, 'which', return_value=str(self.entry)), \
+                patch.object(watch_module.CoreBuild, 'release', side_effect=release_changed_resources):
+            with self.assertRaises(CommandFailure) as refused:
+                xalkit.build_project({'workspace': str(self.root)}, 'one-plugin', self.source, True, events, player=True)
+        self.assertEqual(refused.exception.payload['details'][0]['reason'], 'SDK_NATIVE_RESOURCES_INVALID')
+        self.assertEqual(Path(published).read_bytes(), previous_published)
+        self.assertFalse(any(call.args[0].get('status') == 'released' for call in events.emit.call_args_list))
+        # Another project can rebuild the same shared resource ID while the
+        # native compiler runs. A matching new H5U/report pair is still foreign.
+        for scenario in ('artifact_and_report', 'report_only'):
+            with self.subTest(resource_interleaving=scenario):
+                resource.write_bytes(original_resource)
+                resource.with_suffix('.build.json').write_bytes(original_build_report)
+                events.reset_mock()
+                def release_foreign_resource(sources, generation, payload, include):
+                    outcome = release_fixture(sources, generation, payload, include)
+                    if scenario == 'artifact_and_report':
+                        with ZipFile(resource, 'w') as replacement:
+                            replacement.writestr('UI/Foreign/Caption.txt', b'another project')
+                    resource.with_suffix('.build.json').write_text(json.dumps({
+                        'artifact_sha256': hashlib.sha256(resource.read_bytes()).hexdigest(),
+                        'source_path': 'another project input'}))
+                    return outcome
+                with patch.object(xalkit, 'native_tools', return_value=(None, 'cl.exe', {}, {}, loader)), \
+                        patch.object(xalkit, 'load_backend', return_value=watch_module), \
+                        patch.object(xalkit, 'resource_operation', return_value=resource_receipt), \
+                        patch.object(watch_module.shutil, 'which', return_value=str(self.entry)), \
+                        patch.object(watch_module.CoreBuild, 'release', side_effect=release_foreign_resource):
+                    with self.assertRaises(CommandFailure):
+                        xalkit.build_project({'workspace': str(self.root)}, 'one-plugin', self.source, True, events, player=True)
+                self.assertEqual(Path(published).read_bytes(), previous_published)
+                self.assertFalse(any(call.args[0].get('status') == 'released' for call in events.emit.call_args_list))
+        resource.write_bytes(original_resource)
+        resource.with_suffix('.build.json').write_bytes(original_build_report)
+        # A changed selection must be rejected even when it predates the
+        # watcher's first snapshot, including adding resources to a native mod.
+        original_manifest = (self.source / 'xalkit.json').read_bytes()
+        for initially_declared in (True, False):
+            with self.subTest(initial_resource_declaration=initially_declared):
+                metadata = json.loads(original_manifest)
+                if not initially_declared:
+                    del metadata['resource_project']
+                (self.source / 'xalkit.json').write_text(json.dumps(metadata))
+                events.reset_mock()
+                def tools_with_changed_declaration(saved, log):
+                    changed = dict(metadata, resource_project='other-ui')
+                    (self.source / 'xalkit.json').write_text(json.dumps(changed))
+                    return None, 'cl.exe', {}, {}, loader
+                with patch.object(xalkit, 'native_tools', side_effect=tools_with_changed_declaration), \
+                        patch.object(xalkit, 'load_backend', return_value=watch_module), \
+                        patch.object(xalkit, 'resource_operation', return_value=resource_receipt), \
+                        patch.object(watch_module.shutil, 'which', return_value=str(self.entry)), \
+                        patch.object(watch_module.CoreBuild, 'release', side_effect=release_fixture) as compile_native:
+                    with self.assertRaises(CommandFailure):
+                        xalkit.build_project({'workspace': str(self.root)}, 'one-plugin', self.source, True, events, player=True)
+                compile_native.assert_not_called()
+                self.assertEqual(Path(published).read_bytes(), previous_published)
+                self.assertFalse(any(call.args[0].get('status') == 'released' for call in events.emit.call_args_list))
+        (self.source / 'xalkit.json').write_bytes(original_manifest)
         for scenario in ('missing_notice', 'changed_graphics', 'development_payload', 'forwarded_entry',
                          'empty_entry', 'wrong_architecture', 'developer_import', 'delayed_developer_import',
                          'partial_parse', 'unparsed_imports', 'unparsed_delayed_imports'):

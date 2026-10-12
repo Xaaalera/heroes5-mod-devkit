@@ -18,7 +18,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from workspace import DEVKIT, workspace_root
 from plugin_core import CoreBuild, CoreClient
 from sdk_logging import EventLog
-from xalkit_ui import CommandFailure, error, text
+from xalkit_ui import CommandFailure, error, text, translations
 
 def project_adapter(source):
     marker=Path(source)/'mod.json'
@@ -707,7 +707,7 @@ class PluginWatch:
                     '1. Закрой игру.',
                     '2. Распакуй архив в отдельную папку.',
                     'Перед заменой сохрани существующие dinput8.dll, d3d9.dll и d3d9.universe.dll (если есть) в отдельную резервную папку.',
-                    '3. При первой установке xkit переименуй исходный bin/d3d9.dll игры в d3d9.universe.dll. Если d3d9.universe.dll уже есть, сохрани его без изменений.',
+                    translations('ru').gettext('xalkit.native_player_first_install'),
                     'Существующий d3d9.universe.dll должен быть проверенным оригиналом поддерживаемой Universe, сохранённым при предыдущей установке наших модов. Если происхождение файла неизвестно, останови установку до копирования: сохрани файлы и восстанови оригинал из своей проверенной установки Universe.',
                     '4. Скопируй папку bin из архива в папку игры: общие DLL должны оказаться рядом с H5_Game.exe.',
                     '5. Запусти игру через Heroes/Lobby обычным способом. SDK и Python игроку не нужны.',
@@ -723,7 +723,7 @@ class PluginWatch:
                     '1. Close the game.',
                     '2. Extract the archive into a separate folder.',
                     'Before replacement, back up existing dinput8.dll, d3d9.dll and d3d9.universe.dll (if present) into a separate folder.',
-                    '3. On first xkit installation, rename the game bin/d3d9.dll to d3d9.universe.dll. Keep an existing d3d9.universe.dll unchanged.',
+                    translations('en').gettext('xalkit.native_player_first_install'),
                     'An existing d3d9.universe.dll must be the verified original from the supported Universe build, retained during an earlier installation of our mods. If its origin is unknown, stop before copying: keep backups and restore the original from your verified Universe installation.',
                     '4. Copy the archive bin folder into the game folder; shared DLLs belong beside H5_Game.exe.',
                     '5. Start Heroes/Lobby normally. Players need neither the SDK nor Python.',

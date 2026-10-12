@@ -13,7 +13,7 @@ import time
 import uuid
 import os
 import re
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile, ZIP_DEFLATED, BadZipFile
 
 
 def runtime_source(sdk, name):
@@ -223,6 +223,84 @@ def package_sdk_runtime(sdk, built, archive):
     return archive
 
 
+def validate_resource_archive(content):
+    """Validate an embedded H5U without extracting any resource to disk."""
+    try:
+        with ZipFile(io.BytesIO(content)) as resources:
+            names = resources.namelist()
+            if not names or len({name.casefold() for name in names}) != len(names):
+                raise ValueError('Resource archive is empty or contains duplicate members')
+            for name in names:
+                if '\\' in name or ':' in name or name.startswith('/') or any(part in ('', '.', '..') for part in name.rstrip('/').split('/')):
+                    raise ValueError('Resource archive contains an unsafe member path')
+            if resources.testzip() is not None:
+                raise ValueError('Resource archive CRC differs')
+    except BadZipFile as failure:
+        raise ValueError('Resource archive is not a valid H5U ZIP') from failure
+
+
+def resource_source_snapshot(source):
+    """Freeze recipe and local resource inputs; reject redirected outside files."""
+    source = Path(source).resolve(strict=True)
+    result = {}
+    files = source / 'files'
+    if files.exists() and not files.resolve(strict=True).is_relative_to(source):
+        raise ValueError('Resource files directory escapes its project')
+    # Workshop.build reads the recipe and files/, not caches, native sources or
+    # dependency checkouts which may also live beside a root-level recipe.
+    paths = [source / 'mod.json', *(path for path in files.rglob('*') if path.is_file())]
+    for path in sorted(paths):
+        if path.is_file():
+            if not path.resolve(strict=True).is_relative_to(source):
+                raise ValueError('Resource input escapes its project')
+            result[path.relative_to(source).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return result
+
+
+def package_native_resources(native_archive, resource, name, archive, *, source_hashes,
+                             expected_artifact_sha256, expected_build_sha256):
+    """Publish one native ZIP with its verified companion H5U atomically."""
+    from xalkit_ui import translations
+    if not isinstance(name, str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', name):
+        raise ValueError('Invalid native resource project name')
+    resource, archive = Path(resource), Path(archive)
+    content = resource.read_bytes()
+    build_content = resource.with_suffix('.build.json').read_bytes()
+    build = json.loads(build_content)
+    resource_hash = hashlib.sha256(content).hexdigest()
+    if resource_hash != expected_artifact_sha256 or hashlib.sha256(build_content).hexdigest() != expected_build_sha256:
+        raise ValueError('Resource changed after the selected build; rebuild')
+    if not isinstance(build, dict) or build.get('artifact_sha256') != resource_hash:
+        raise ValueError('Resource changed after its verified build')
+    validate_resource_archive(content)
+    with ZipFile(native_archive) as original:
+        manifest = validate_player_archive(original, Path(native_archive).stem)
+        if manifest.get('resources'):
+            raise ValueError('Native package already contains companion resources')
+        members = {member: original.read(member) for member in original.namelist()}
+    member = 'UserMODs/workshop-' + name + '.h5u'
+    members[member] = content
+    manifest['resources'] = {member: resource_hash}
+    manifest['resource_build_sha256'] = hashlib.sha256(build_content).hexdigest()
+    manifest['resource_source_hashes'] = source_hashes
+    members['release.json'] = (json.dumps(manifest, indent=2) + '\n').encode('utf-8')
+    instructions = '\n\n'.join(translations(language).gettext('xalkit.native_resource_player_readme').format(
+        resource=member) for language in ('ru', 'en'))
+    members['README.txt'] += ('\n' + instructions + '\n').encode('utf-8')
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    temporary = archive.with_name(archive.name + '.' + uuid.uuid4().hex + '.tmp')
+    try:
+        with ZipFile(temporary, 'w', ZIP_DEFLATED) as package:
+            for member, data in members.items():
+                package.writestr(member, data)
+        with ZipFile(temporary) as package:
+            validate_player_archive(package, Path(native_archive).stem)
+        os.replace(temporary, archive)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return archive
+
+
 def package_resource_player(sdk, resource, name, archive):
     """Keep the H5U separate and package only its compiler-free graphics dependency."""
     from xalkit_ui import translations
@@ -240,9 +318,7 @@ def package_resource_player(sdk, resource, name, archive):
     resource_hash = hashlib.sha256(resource_bytes).hexdigest()
     if build.get('artifact_sha256') != resource_hash:
         raise ValueError('Resource changed after its verified build')
-    with ZipFile(io.BytesIO(resource_bytes)) as contents:
-        if contents.testzip() is not None:
-            raise ValueError('Resource archive CRC differs')
+    validate_resource_archive(resource_bytes)
     graphics_bytes = Path(ready['graphics']).read_bytes()
     graphics_hash = hashlib.sha256(graphics_bytes).hexdigest()
     if graphics_hash != ready['manifest']['files']['d3d9.dll']:
@@ -277,11 +353,36 @@ def validate_player_archive(archive, name):
 
     plugin = 'bin/Heroes5Mods/Plugins/' + name + '.dll'
     expected = {plugin, 'bin/dinput8.dll', 'bin/d3d9.dll', 'release.json', 'README.txt', 'NOTICE.txt'}
-    if len(archive.namelist()) != len(expected) or set(archive.namelist()) != expected or archive.testzip() is not None:
-        raise ValueError('Native player archive contents or CRC differ')
-    manifest = json.loads(archive.read('release.json'))
+    try:
+        manifest = json.loads(archive.read('release.json'))
+    except (KeyError, ValueError, BadZipFile) as failure:
+        raise ValueError('Native player archive manifest is missing or invalid') from failure
     if not isinstance(manifest, dict) or manifest.get('abi') != 3:
         raise ValueError('Native player archive ABI differs')
+    resources = manifest.get('resources', {})
+    if not isinstance(resources, dict) or any(not isinstance(member, str) or
+            not re.fullmatch(r'UserMODs/workshop-[a-z0-9]+(?:-[a-z0-9]+)*\.h5u', member) or
+            not isinstance(digest, str) or not re.fullmatch(r'[a-f0-9]{64}', digest)
+            for member, digest in resources.items()):
+        raise ValueError('Native resource manifest paths or checksums differ')
+    expected.update(resources)
+    if resources:
+        sources = manifest.get('resource_source_hashes')
+        if not isinstance(sources, dict) or 'mod.json' not in sources or any(
+                not isinstance(path, str) or (path != 'mod.json' and not path.startswith('files/')) or
+                '\\' in path or ':' in path or any(part in ('', '.', '..') for part in path.split('/')) or
+                not isinstance(digest, str) or not re.fullmatch(r'[a-f0-9]{64}', digest)
+                for path, digest in sources.items()):
+            raise ValueError('Native resource source fingerprints are missing or invalid')
+        if not isinstance(manifest.get('resource_build_sha256'), str) or not re.fullmatch(r'[a-f0-9]{64}', manifest['resource_build_sha256']):
+            raise ValueError('Native resource build fingerprint is missing or invalid')
+    if len(archive.namelist()) != len(expected) or set(archive.namelist()) != expected or archive.testzip() is not None:
+        raise ValueError('Native player archive contents or CRC differ')
+    for member, digest in resources.items():
+        content = archive.read(member)
+        if hashlib.sha256(content).hexdigest() != digest:
+            raise ValueError('Native resource archive checksum differs: ' + member)
+        validate_resource_archive(content)
     for member, key in ((plugin, 'plugin_sha256'), ('bin/dinput8.dll', 'loader_sha256'),
                         ('bin/d3d9.dll', 'graphics_facade_sha256')):
         if hashlib.sha256(archive.read(member)).hexdigest() != manifest.get(key):

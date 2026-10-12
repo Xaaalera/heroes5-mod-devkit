@@ -452,6 +452,37 @@ class XalKitTests(unittest.TestCase):
                 xalkit.build_project({'workspace': str(self.root)}, 'bank', source, False, Mock())
         self.assertEqual(Path(archive).read_bytes(), original_archive)
 
+    def test_native_resource_snapshot_ignores_build_caches_and_tracks_real_inputs(self):
+        from plugin_core import resource_source_snapshot
+        source = self.root / 'resource'; (source / 'files/UI').mkdir(parents=True)
+        (source / 'mod.json').write_text('{"id":"resource"}')
+        caption = source / 'files/UI/Caption.txt'; caption.write_text('first')
+        (source / '.local').mkdir(); cache = source / '.local/large-build-cache.bin'; cache.write_bytes(b'cache')
+        before = resource_source_snapshot(source)
+        self.assertEqual(set(before), {'mod.json', 'files/UI/Caption.txt'})
+        cache.write_bytes(b'changed cache')
+        self.assertEqual(resource_source_snapshot(source), before)
+        caption.write_text('second')
+        self.assertNotEqual(resource_source_snapshot(source), before)
+
+    def test_native_resource_project_refuses_invalid_paths_without_replacing_a_release(self):
+        from xalkit_ui import CommandFailure
+        source = self.root / 'plugins/native'
+        source.mkdir(parents=True)
+        released = self.root / '.local/xalkit/releases/native/native.zip'
+        released.parent.mkdir(parents=True); released.write_bytes(b'previous accepted release')
+        events = Mock(); events.directory = self.root / 'logs'
+        for declared in ('../escape', str(self.root), '', None, ['ui'], 'missing'):
+            with self.subTest(resource_project=declared):
+                (source / 'xalkit.json').write_text(json.dumps({'resource_project': declared}))
+                with patch.object(xalkit, 'native_tools') as compiler, patch.object(xalkit, 'resource_operation') as build:
+                    with self.assertRaises(CommandFailure) as refused:
+                        xalkit.build_project({'workspace': str(self.root)}, 'native', source, True, events, player=True)
+                self.assertEqual(refused.exception.payload['details'][0]['reason'], 'SDK_NATIVE_RESOURCES_INVALID')
+                self.assertIn('resource_project', refused.exception.payload['message'])
+                self.assertEqual(released.read_bytes(), b'previous accepted release')
+                compiler.assert_not_called(); build.assert_not_called()
+
     def test_unknown_native_adapter_is_refused_before_resource_build(self):
         source = self.root / 'mods/unknown'
         source.mkdir(parents=True)
@@ -654,7 +685,11 @@ with module.exclusive(root / '.local', process_lease=True):
         backend = Mock()
         workshop = backend.Workshop.return_value
         workshop.local = self.root / '.local/test-state'
-        workshop.build.return_value = {'artifact': 'mod.h5u'}
+        workshop.artifact = self.root / 'mod.h5u'
+        workshop.artifact.write_bytes(b'resource build')
+        build_report = {'artifact_sha256': hashlib.sha256(workshop.artifact.read_bytes()).hexdigest()}
+        workshop.artifact.with_suffix('.build.json').write_text(json.dumps(build_report))
+        workshop.build.return_value = build_report
         backend.exclusive.return_value.__enter__ = Mock()
         backend.exclusive.return_value.__exit__ = Mock(return_value=False)
         with patch.object(xalkit, 'load_backend', return_value=backend):
@@ -664,7 +699,9 @@ with module.exclusive(root / '.local', process_lease=True):
         workshop.launch.assert_not_called()
         workshop.deploy.assert_not_called()
         backend.require_stopped.assert_called_once()
-        self.assertEqual(result['artifact'], 'mod.h5u')
+        self.assertEqual(result['artifact'], str(workshop.artifact))
+        self.assertEqual(result['artifact_sha256'], build_report['artifact_sha256'])
+        self.assertEqual(result['build_sha256'], hashlib.sha256(workshop.artifact.with_suffix('.build.json').read_bytes()).hexdigest())
 
     def test_hmr_readiness_waits_for_selected_plugin_and_is_reported_once(self):
         import xalkit_runtime

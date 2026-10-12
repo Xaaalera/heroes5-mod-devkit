@@ -736,3 +736,15 @@ msgstr "Прототипы и проверки SDK"
 
 msgid "xalkit.native_sources_invalid"
 msgstr "Список исходников недопустим. Проверь native_sources в xalkit.json."
+
+msgid "xalkit.native_resources_invalid"
+msgstr "Не удалось упаковать ресурсы нативного мода. Проверь resource_project в xalkit.json, его mod.json и файлы ресурсов, затем повтори сборку. Подробности: {diagnostic}"
+
+msgid "xalkit.native_resources_packaging"
+msgstr "Упаковка DLL и игровых ресурсов для {name}"
+
+msgid "xalkit.native_player_first_install"
+msgstr "3. При первой установке наших DLL-модов переименуй исходный bin/d3d9.dll игры в d3d9.universe.dll. Если d3d9.universe.dll уже есть, сохрани его без изменений."
+
+msgid "xalkit.native_resource_player_readme"
+msgstr "Игровые ресурсы мода\nДо запуска Heroes/Lobby скопируй папку UserMODs из архива в папку игры вместе с bin. DLL плагина и {resource} входят в один мод.\nДля удаления мода убери его DLL и {resource}. Общие DLL и другие моды оставь."
